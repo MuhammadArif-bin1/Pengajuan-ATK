@@ -1,0 +1,88 @@
+// Prisma Schema for Sistem Pengajuan ATK
+// Database: PostgreSQL (Neon for production)
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ============================================
+// ENUMS
+// ============================================
+
+enum Role {
+  ADMIN
+  USER
+}
+
+enum RequestStatus {
+  MENUNGGU
+  DISETUJUI
+  DITOLAK
+  DIPROSES
+  SELESAI
+}
+
+// ============================================
+// MODELS
+// ============================================
+
+model User {
+  id         String   @id @default(cuid())
+  name       String
+  email      String   @unique
+  password   String
+  role       Role     @default(USER)
+  department String
+  position   String
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  // Relations
+  requests       AtkRequest[] @relation("UserRequests")
+  processedItems AtkRequest[] @relation("ProcessedBy")
+
+  @@map("users")
+}
+
+model AtkItem {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  stock       Int      @default(0)
+  unit        String   @default("pcs")
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  requests AtkRequest[]
+
+  @@map("atk_items")
+}
+
+model AtkRequest {
+  id          String        @id @default(cuid())
+  userId      String
+  atkItemId   String
+  quantity    Int
+  reason      String
+  status      RequestStatus @default(MENUNGGU)
+  adminNote   String?
+  processedBy String?
+  processedAt DateTime?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  // Relations
+  user      User    @relation("UserRequests", fields: [userId], references: [id])
+  atkItem   AtkItem @relation(fields: [atkItemId], references: [id])
+  processor User?   @relation("ProcessedBy", fields: [processedBy], references: [id])
+
+  @@map("atk_requests")
+}

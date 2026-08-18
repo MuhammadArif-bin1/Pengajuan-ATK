@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  // No redirects - routing handled by proxy.ts
 };
 
 export default nextConfig;
