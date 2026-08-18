@@ -22,7 +22,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   role,
   isOpen = false,
   onClose,
-  userName = "ADMIN MAS DENI",
+  userName = "ADMIN LOGISTIK",
 }) => {
   const pathname = usePathname();
   const router = useRouter();
@@ -70,15 +70,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
       ),
     },
     {
-      label: "Data Karyawan",
-      href: "/admin/karyawan",
-      icon: (
-        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-        </svg>
-      ),
-    },
-    {
       label: "Laporan ATK",
       href: "/admin/laporan",
       icon: (
@@ -113,7 +104,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         />
       )}
 
-      {/* Sidebar container - Vibrant Orange background */}
+      {/* Sidebar container - Vibrant Orange #FF5500 */}
       <aside
         className={`fixed top-0 bottom-0 left-0 z-40 w-64 bg-[#FF5500] text-white flex flex-col justify-between transition-transform duration-200 ease-in-out lg:translate-x-0 ${
           isOpen ? "translate-x-0" : "-translate-x-full"
@@ -133,7 +124,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   Hasamitra
                 </h1>
                 <p className="text-[10px] text-white/80 font-medium uppercase tracking-wider mt-0.5">
-                  {userName || "ADMIN MAS DENI"}
+                  {userName || "PORTAL ADMIN"}
                 </p>
               </div>
             </div>
@@ -171,7 +162,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       : "text-white/90 hover:bg-white/15 hover:text-white"
                   }`}
                 >
-                  <span className={`${isActive ? "text-[#FF5500]" : "text-white"}`}>
+                  <span className={isActive ? "text-[#FF5500]" : "text-white"}>
                     {item.icon}
                   </span>
                   <span>{item.label}</span>

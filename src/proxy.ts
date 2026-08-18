@@ -45,9 +45,11 @@ export async function proxy(request: NextRequest) {
   if (
     pathname === "/api/auth/login" ||
     pathname === "/api/auth/logout" ||
+    pathname === "/api/auth/captcha" ||
     pathname === "/api/users/departments" ||
     (pathname === "/api/atk" && method === "GET") ||
-    (pathname === "/api/requests" && (method === "GET" || method === "POST"))
+    (pathname === "/api/requests" && (method === "GET" || method === "POST")) ||
+    (pathname === "/api/requests/purchase" && method === "POST")
   ) {
     return NextResponse.next();
   }

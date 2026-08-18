@@ -1,9 +1,6 @@
-// ===========================================
-// GET /api/requests/[id]
-// ===========================================
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/session";
-import { getRequestById } from "@/services/request.service";
+import { getRequestById, deleteRequest } from "@/services/request.service";
 
 export async function GET(
   request: NextRequest,
@@ -38,6 +35,35 @@ export async function GET(
     console.error("GET /api/requests/[id] error:", error);
     return NextResponse.json(
       { error: "Gagal mengambil data pengajuan" },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const session = await getSession();
+    if (!session || session.role !== "ADMIN") {
+      return NextResponse.json(
+        { error: "Forbidden: Akses Admin diperlukan untuk menghapus pengajuan" },
+        { status: 403 }
+      );
+    }
+
+    const { id } = await params;
+    await deleteRequest(id);
+
+    return NextResponse.json({
+      success: true,
+      message: "Data pengajuan berhasil dihapus",
+    });
+  } catch (error: any) {
+    console.error("DELETE /api/requests/[id] error:", error);
+    return NextResponse.json(
+      { error: error.message || "Gagal menghapus data pengajuan" },
       { status: 500 }
     );
   }

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import Link from "next/link";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Card } from "@/components/ui/Card";
@@ -31,11 +31,23 @@ export default function AdminPengajuanPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
 
+  // Selection state for Bulk Delete
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+
   // Modal States
   const [selectedRequest, setSelectedRequest] = useState<AtkRequestData | null>(null);
   const [rejectModalOpen, setRejectModalOpen] = useState(false);
   const [rejectNote, setRejectNote] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
+
+  // Delete Modals
+  const [singleDeleteTarget, setSingleDeleteTarget] = useState<AtkRequestData | null>(null);
+  const [bulkDeleteModalOpen, setBulkDeleteModalOpen] = useState(false);
+  const [deleteAllModalOpen, setDeleteAllModalOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [lastRefreshed, setLastRefreshed] = useState<Date>(new Date());
 
   const fetchDepartments = async () => {
     try {
@@ -49,41 +61,72 @@ export default function AdminPengajuanPage() {
     }
   };
 
-  const fetchRequests = useCallback(async () => {
-    try {
-      setLoading(true);
-      const params = new URLSearchParams();
-      params.set("page", page.toString());
-      params.set("limit", "10");
-      if (search) params.set("search", search);
-      if (statusFilter) params.set("status", statusFilter);
-      if (departmentFilter) params.set("department", departmentFilter);
-      if (startDate) params.set("startDate", startDate);
-      if (endDate) params.set("endDate", endDate);
+  const fetchRequests = useCallback(
+    async (showLoading = true) => {
+      try {
+        if (showLoading) setLoading(true);
+        const params = new URLSearchParams();
+        params.set("page", page.toString());
+        params.set("limit", "10");
+        if (search) params.set("search", search);
+        if (statusFilter) params.set("status", statusFilter);
+        if (departmentFilter) params.set("department", departmentFilter);
+        if (startDate) params.set("startDate", startDate);
+        if (endDate) params.set("endDate", endDate);
 
-      const res = await fetch(`/api/requests?${params.toString()}`);
-      if (res.ok) {
-        const data = await res.json();
-        setRequests(data.data || []);
-        setTotal(data.total || 0);
-        setTotalPages(data.totalPages || 1);
+        const res = await fetch(`/api/requests?${params.toString()}`);
+        if (res.ok) {
+          const data = await res.json();
+          setRequests(data.data || []);
+          setTotal(data.total || 0);
+          setTotalPages(data.totalPages || 1);
+          setLastRefreshed(new Date());
+        }
+      } catch (err) {
+        console.error("Fetch requests error:", err);
+        if (showLoading) toast.error("Gagal memuat daftar pengajuan");
+      } finally {
+        if (showLoading) setLoading(false);
       }
-    } catch (err) {
-      console.error("Fetch requests error:", err);
-      toast.error("Gagal memuat daftar pengajuan");
-    } finally {
-      setLoading(false);
-    }
-  }, [page, search, statusFilter, departmentFilter, startDate, endDate, toast]);
+    },
+    [page, search, statusFilter, departmentFilter, startDate, endDate, toast]
+  );
 
   useEffect(() => {
     fetchDepartments();
   }, []);
 
+  // Initial load
   useEffect(() => {
-    fetchRequests();
+    fetchRequests(true);
   }, [fetchRequests]);
 
+  // Real-time auto refresh polling (every 5 seconds & on window focus)
+  useEffect(() => {
+    const interval = setInterval(() => {
+      fetchRequests(false);
+    }, 5000);
+
+    const handleFocus = () => {
+      fetchRequests(false);
+    };
+
+    window.addEventListener("focus", handleFocus);
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener("focus", handleFocus);
+    };
+  }, [fetchRequests]);
+
+  const handleManualRefresh = async () => {
+    setIsRefreshing(true);
+    await fetchRequests(false);
+    await fetchDepartments();
+    setIsRefreshing(false);
+    toast.success("Data pengajuan berhasil diperbarui!");
+  };
+
+  // Status update
   const handleUpdateStatus = async (
     requestId: string,
     status: RequestStatusType,
@@ -98,22 +141,129 @@ export default function AdminPengajuanPage() {
       });
 
       const data = await res.json();
+
       if (!res.ok) {
-        toast.error(data.error || "Gagal mengubah status");
-        return;
+        throw new Error(data.error || "Gagal mengubah status pengajuan");
       }
 
-      toast.success(data.message || `Status berhasil diubah menjadi ${status}`);
+      toast.success(data.message || `Status pengajuan berhasil diubah menjadi ${status}`);
       setSelectedRequest(null);
       setRejectModalOpen(false);
       setRejectNote("");
       fetchRequests();
-    } catch (err) {
-      console.error("Update status error:", err);
-      toast.error("Terjadi gangguan koneksi");
+    } catch (err: any) {
+      toast.error(err.message || "Terjadi kesalahan saat mengubah status");
     } finally {
       setIsProcessing(false);
     }
+  };
+
+  // ─── SINGLE DELETE ───
+  const handleDeleteSingle = async () => {
+    if (!singleDeleteTarget) return;
+
+    try {
+      setIsDeleting(true);
+      const res = await fetch(`/api/requests/${singleDeleteTarget.id}`, {
+        method: "DELETE",
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Gagal menghapus pengajuan");
+      }
+
+      toast.success("Pengajuan berhasil dihapus");
+      setSingleDeleteTarget(null);
+      setSelectedRequest(null);
+      // Remove from selectedIds if present
+      setSelectedIds((prev) => prev.filter((id) => id !== singleDeleteTarget.id));
+      fetchRequests();
+    } catch (err: any) {
+      toast.error(err.message || "Terjadi kesalahan saat menghapus data");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  // ─── BULK DELETE (Selected Items) ───
+  const handleDeleteBulk = async () => {
+    if (selectedIds.length === 0) return;
+
+    try {
+      setIsDeleting(true);
+      const res = await fetch("/api/requests/bulk-delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids: selectedIds }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Gagal menghapus data terpilih");
+      }
+
+      toast.success(data.message || `${selectedIds.length} pengajuan berhasil dihapus`);
+      setSelectedIds([]);
+      setBulkDeleteModalOpen(false);
+      fetchRequests();
+    } catch (err: any) {
+      toast.error(err.message || "Terjadi kesalahan saat menghapus pengajuan");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  // ─── DELETE ALL (Clear All Records) ───
+  const handleDeleteAll = async () => {
+    try {
+      setIsDeleting(true);
+      const res = await fetch("/api/requests/bulk-delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ all: true }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Gagal menghapus seluruh pengajuan");
+      }
+
+      toast.success(data.message || "Seluruh data pengajuan berhasil dibersihkan");
+      setSelectedIds([]);
+      setDeleteAllModalOpen(false);
+      setPage(1);
+      fetchRequests();
+    } catch (err: any) {
+      toast.error(err.message || "Terjadi kesalahan saat menghapus data");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  // ─── Checkbox Selection Handlers ───
+  const isAllCurrentPageSelected = useMemo(() => {
+    if (requests.length === 0) return false;
+    return requests.every((r) => selectedIds.includes(r.id));
+  }, [requests, selectedIds]);
+
+  const handleToggleSelectAll = () => {
+    if (isAllCurrentPageSelected) {
+      // Unselect all on current page
+      const pageIds = requests.map((r) => r.id);
+      setSelectedIds((prev) => prev.filter((id) => !pageIds.includes(id)));
+    } else {
+      // Select all on current page
+      const pageIds = requests.map((r) => r.id);
+      const combined = Array.from(new Set([...selectedIds, ...pageIds]));
+      setSelectedIds(combined);
+    }
+  };
+
+  const handleToggleSelectRow = (id: string) => {
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+    );
   };
 
   const handleResetFilters = () => {
@@ -125,12 +275,37 @@ export default function AdminPengajuanPage() {
     setPage(1);
   };
 
+  // ─── Columns Definition ───
   const columns: Column<AtkRequestData>[] = [
     {
+      header: (
+        <div className="flex items-center justify-center">
+          <input
+            type="checkbox"
+            checked={isAllCurrentPageSelected}
+            onChange={handleToggleSelectAll}
+            className="w-4 h-4 rounded border-gray-300 text-[#FF5500] focus:ring-[#FF5500]/30 cursor-pointer"
+            title="Pilih Semua di Halaman Ini"
+          />
+        </div>
+      ),
+      className: "w-10 text-center",
+      headerClassName: "w-10 text-center",
+      accessor: (row) => (
+        <div className="flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
+          <input
+            type="checkbox"
+            checked={selectedIds.includes(row.id)}
+            onChange={() => handleToggleSelectRow(row.id)}
+            className="w-4 h-4 rounded border-gray-300 text-[#FF5500] focus:ring-[#FF5500]/30 cursor-pointer"
+          />
+        </div>
+      ),
+    },
+    {
       header: "No",
-      className: "w-12 text-center text-slate-400 text-xs",
-      headerClassName: "text-center",
-      accessor: (_row: AtkRequestData, idx: number) => (page - 1) * 10 + idx + 1,
+      className: "w-12 text-slate-400 text-xs",
+      accessor: (_row, idx) => (page - 1) * 10 + idx + 1,
     },
     {
       header: "Karyawan",
@@ -144,7 +319,7 @@ export default function AdminPengajuanPage() {
     {
       header: "Departemen",
       accessor: (row) => (
-        <span className="text-xs font-medium text-slate-700 bg-slate-100 px-2 py-0.5 rounded-md">
+        <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-slate-100 text-slate-700">
           {row.user.department}
         </span>
       ),
@@ -184,7 +359,7 @@ export default function AdminPengajuanPage() {
       className: "text-right",
       headerClassName: "text-right",
       accessor: (row) => (
-        <div className="flex items-center justify-end gap-1.5">
+        <div className="flex items-center justify-end gap-1.5" onClick={(e) => e.stopPropagation()}>
           <Button
             variant="outline"
             size="sm"
@@ -192,13 +367,18 @@ export default function AdminPengajuanPage() {
           >
             Review
           </Button>
-          <Link href={`/admin/pengajuan/${row.id}`}>
-            <Button variant="ghost" size="sm">
-              <svg className="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-              </svg>
-            </Button>
-          </Link>
+
+          {/* Delete Single Button */}
+          <button
+            type="button"
+            onClick={() => setSingleDeleteTarget(row)}
+            title="Hapus Pengajuan Ini"
+            className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition cursor-pointer border border-transparent hover:border-rose-200"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+          </button>
         </div>
       ),
     },
@@ -207,15 +387,49 @@ export default function AdminPengajuanPage() {
   return (
     <AdminLayout>
       <div className="space-y-6">
-        {/* Page Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        {/* Page Header with Action Buttons */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-2 border-b border-gray-200/80">
           <div>
             <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
               Manajemen Pengajuan ATK
             </h1>
             <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
-              Kelola, setujui, tolak, dan proses seluruh permohonan pengadaan alat tulis kantor.
+              Kelola, setujui, tolak, dan bersihkan permohonan pengadaan alat tulis kantor.
             </p>
+          </div>
+
+          <div className="flex items-center gap-2.5 self-start sm:self-auto">
+            {/* Refresh Button */}
+            <Button
+              variant="outline"
+              size="sm"
+              isLoading={isRefreshing}
+              onClick={handleManualRefresh}
+              className="text-slate-700 hover:text-[#FF5500] hover:border-orange-300 font-semibold"
+              leftIcon={
+                <svg className={`w-4 h-4 ${isRefreshing ? "animate-spin" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+              }
+            >
+              Refresh Data
+            </Button>
+
+            {/* Delete All Button */}
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={total === 0}
+              onClick={() => setDeleteAllModalOpen(true)}
+              className="text-rose-600 border-rose-200 hover:bg-rose-50 hover:border-rose-300 font-semibold"
+              leftIcon={
+                <svg className="w-4 h-4 text-rose-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+              }
+            >
+              Hapus Semua Pengajuan
+            </Button>
           </div>
         </div>
 
@@ -315,6 +529,42 @@ export default function AdminPengajuanPage() {
           )}
         </Card>
 
+        {/* ─── BULK ACTION TOOLBAR (When items are selected) ─── */}
+        {selectedIds.length > 0 && (
+          <div className="p-3.5 bg-orange-50 border border-orange-200 rounded-xl flex flex-col sm:flex-row items-center justify-between gap-3 shadow-sm animate-in fade-in duration-150">
+            <div className="flex items-center gap-2 text-xs font-bold text-orange-950">
+              <span className="w-6 h-6 rounded-full bg-[#FF5500] text-white flex items-center justify-center text-xs font-bold">
+                {selectedIds.length}
+              </span>
+              <span>Data pengajuan terpilih</span>
+            </div>
+
+            <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+              <Button
+                variant="ghost"
+                size="xs"
+                onClick={() => setSelectedIds([])}
+                className="text-slate-600 hover:text-slate-900"
+              >
+                Batalkan Pilihan
+              </Button>
+
+              <Button
+                variant="danger"
+                size="xs"
+                onClick={() => setBulkDeleteModalOpen(true)}
+                leftIcon={
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                }
+              >
+                Hapus ({selectedIds.length}) Data Terpilih
+              </Button>
+            </div>
+          </div>
+        )}
+
         {/* Requests Table */}
         <Card noPadding>
           <Table
@@ -331,7 +581,7 @@ export default function AdminPengajuanPage() {
         </Card>
       </div>
 
-      {/* Review Modal */}
+      {/* ─── REVIEW MODAL ─── */}
       {selectedRequest && (
         <Modal
           isOpen={!!selectedRequest}
@@ -341,13 +591,31 @@ export default function AdminPengajuanPage() {
           size="lg"
           footer={
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between w-full gap-3">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setSelectedRequest(null)}
-              >
-                Tutup
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setSelectedRequest(null)}
+                >
+                  Tutup
+                </Button>
+
+                {/* Delete Button inside Review Modal */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    const req = selectedRequest;
+                    setSelectedRequest(null);
+                    setSingleDeleteTarget(req);
+                  }}
+                  className="px-3 py-1.5 rounded-lg text-xs font-semibold text-rose-600 hover:bg-rose-50 border border-rose-200 transition cursor-pointer flex items-center gap-1"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                  <span>Hapus Pengajuan</span>
+                </button>
+              </div>
 
               <div className="flex flex-wrap items-center gap-1.5 justify-end">
                 <span className="text-xs text-slate-400 font-medium mr-1 hidden sm:inline">
@@ -454,49 +722,50 @@ export default function AdminPengajuanPage() {
               </div>
             </div>
 
-            {/* Item & Quantity */}
-            <div className="grid grid-cols-2 gap-4 text-xs">
-              <div>
-                <p className="text-slate-400 font-medium">Barang ATK</p>
-                <p className="font-semibold text-slate-900 text-sm mt-0.5">
-                  {selectedRequest.atkItem.name}
-                </p>
-              </div>
-              <div>
-                <p className="text-slate-400 font-medium">Jumlah Pengajuan</p>
-                <p className="font-semibold text-slate-900 text-sm mt-0.5">
-                  {selectedRequest.quantity} {selectedRequest.atkItem.unit}
-                </p>
-              </div>
-              <div>
-                <p className="text-slate-400 font-medium">Waktu Pengajuan</p>
-                <p className="font-semibold text-slate-900 mt-0.5">
-                  {new Date(selectedRequest.createdAt).toLocaleString("id-ID")}
-                </p>
-              </div>
-              <div>
-                <p className="text-slate-400 font-medium">Diproses Oleh</p>
-                <p className="font-semibold text-slate-900 mt-0.5">
-                  {selectedRequest.processor?.name || "-"}
-                </p>
+            {/* Item details */}
+            <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200/60">
+              <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">
+                Barang yang Diajukan
+              </p>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs">
+                <div>
+                  <p className="text-slate-400 font-medium">Nama Barang</p>
+                  <p className="font-semibold text-slate-900">
+                    {selectedRequest.atkItem.name}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-slate-400 font-medium">Jumlah</p>
+                  <p className="font-semibold text-slate-900">
+                    {selectedRequest.quantity} {selectedRequest.atkItem.unit}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-slate-400 font-medium">Stok Tersedia</p>
+                  <p className="font-semibold text-slate-900">
+                    {selectedRequest.atkItem.stock !== undefined ? `${selectedRequest.atkItem.stock} ${selectedRequest.atkItem.unit}` : "-"}
+                  </p>
+                </div>
               </div>
             </div>
 
+            {/* Reason */}
             <div>
-              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">
+              <p className="text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
                 Alasan / Keperluan
               </p>
-              <div className="p-3 bg-slate-50 rounded-xl text-xs text-slate-700 leading-relaxed border border-slate-100">
-                {selectedRequest.reason}
-              </div>
+              <p className="text-xs text-slate-800 bg-slate-50 p-3 rounded-lg border border-slate-200/60 leading-relaxed whitespace-pre-line">
+                {selectedRequest.reason || "Tidak ada alasan spesifik"}
+              </p>
             </div>
 
+            {/* Admin note if any */}
             {selectedRequest.adminNote && (
-              <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl">
-                <p className="text-xs font-bold text-amber-800 uppercase tracking-wider mb-1">
+              <div>
+                <p className="text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
                   Catatan Admin
                 </p>
-                <p className="text-xs text-amber-900">
+                <p className="text-xs text-slate-600 bg-amber-50 p-3 rounded-lg border border-amber-200/60 leading-relaxed">
                   {selectedRequest.adminNote}
                 </p>
               </div>
@@ -505,20 +774,26 @@ export default function AdminPengajuanPage() {
         </Modal>
       )}
 
-      {/* Reject Modal */}
+      {/* ─── REJECT MODAL ─── */}
       {rejectModalOpen && selectedRequest && (
         <Modal
           isOpen={rejectModalOpen}
-          onClose={() => setRejectModalOpen(false)}
+          onClose={() => {
+            setRejectModalOpen(false);
+            setRejectNote("");
+          }}
           title="Tolak Pengajuan ATK"
-          subtitle={`Pemohon: ${selectedRequest.user.name} • Barang: ${selectedRequest.atkItem.name}`}
+          subtitle={`Pengajuan #${selectedRequest.id.slice(-8)} oleh ${selectedRequest.user.name}`}
           size="sm"
           footer={
-            <>
+            <div className="flex items-center justify-end gap-2 w-full">
               <Button
-                variant="secondary"
+                variant="outline"
                 size="sm"
-                onClick={() => setRejectModalOpen(false)}
+                onClick={() => {
+                  setRejectModalOpen(false);
+                  setRejectNote("");
+                }}
               >
                 Batal
               </Button>
@@ -526,35 +801,165 @@ export default function AdminPengajuanPage() {
                 variant="danger"
                 size="sm"
                 isLoading={isProcessing}
-                onClick={() => {
-                  if (!rejectNote.trim()) {
-                    toast.error("Alasan penolakan wajib diisi!");
-                    return;
-                  }
+                onClick={() =>
                   handleUpdateStatus(
                     selectedRequest.id,
                     "DITOLAK",
-                    rejectNote.trim()
-                  );
-                }}
+                    rejectNote || undefined
+                  )
+                }
               >
                 Konfirmasi Tolak
               </Button>
-            </>
+            </div>
           }
         >
           <div className="space-y-3">
             <p className="text-xs text-slate-600">
-              Mohon berikan alasan penolakan yang jelas agar pemohon memahami pertimbangan Admin.
+              Apakah Anda yakin ingin menolak pengajuan ini? Berikan catatan alasan penolakan untuk pemohon.
             </p>
             <Textarea
-              label="Alasan Penolakan"
-              required
-              rows={4}
-              placeholder="Contoh: Stok sedang dialokasikan untuk kegiatan prioritas divisi..."
+              label="Alasan Penolakan (Opsional)"
+              placeholder="Contoh: Stok tidak mencukupi, silakan ajukan ulang minggu depan..."
               value={rejectNote}
               onChange={(e) => setRejectNote(e.target.value)}
+              rows={3}
             />
+          </div>
+        </Modal>
+      )}
+
+      {/* ─── 1. MODAL: DELETE SINGLE REQUEST ─── */}
+      {singleDeleteTarget && (
+        <Modal
+          isOpen={!!singleDeleteTarget}
+          onClose={() => setSingleDeleteTarget(null)}
+          title="Hapus Pengajuan ATK"
+          subtitle={`Konfirmasi Penghapusan Data`}
+          size="sm"
+          footer={
+            <div className="flex items-center justify-end gap-2 w-full">
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={isDeleting}
+                onClick={() => setSingleDeleteTarget(null)}
+              >
+                Batal
+              </Button>
+              <Button
+                variant="danger"
+                size="sm"
+                isLoading={isDeleting}
+                onClick={handleDeleteSingle}
+              >
+                Ya, Hapus Data
+              </Button>
+            </div>
+          }
+        >
+          <div className="space-y-3">
+            <div className="flex items-start gap-3 p-3 bg-rose-50 border border-rose-200 rounded-xl text-rose-800 text-xs">
+              <svg className="w-5 h-5 text-rose-500 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              <div>
+                <p className="font-bold">Hapus Pengajuan Ini?</p>
+                <p className="mt-0.5">
+                  Pengajuan barang <b>{singleDeleteTarget.atkItem?.name}</b> ({singleDeleteTarget.quantity} {singleDeleteTarget.atkItem?.unit}) atas nama <b>{singleDeleteTarget.user?.name}</b> ({singleDeleteTarget.user?.department}) akan dihapus secara permanen dari sistem.
+                </p>
+              </div>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* ─── 2. MODAL: BULK DELETE SELECTED REQUESTS ─── */}
+      {bulkDeleteModalOpen && (
+        <Modal
+          isOpen={bulkDeleteModalOpen}
+          onClose={() => setBulkDeleteModalOpen(false)}
+          title="Hapus Pengajuan Terpilih"
+          subtitle={`Konfirmasi Penghapusan Massal`}
+          size="sm"
+          footer={
+            <div className="flex items-center justify-end gap-2 w-full">
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={isDeleting}
+                onClick={() => setBulkDeleteModalOpen(false)}
+              >
+                Batal
+              </Button>
+              <Button
+                variant="danger"
+                size="sm"
+                isLoading={isDeleting}
+                onClick={handleDeleteBulk}
+              >
+                Ya, Hapus ({selectedIds.length}) Data
+              </Button>
+            </div>
+          }
+        >
+          <div className="space-y-3">
+            <div className="flex items-start gap-3 p-3 bg-rose-50 border border-rose-200 rounded-xl text-rose-800 text-xs">
+              <svg className="w-5 h-5 text-rose-500 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              <div>
+                <p className="font-bold">Hapus {selectedIds.length} Pengajuan Sekaligus?</p>
+                <p className="mt-0.5">
+                  Sebanyak <b>{selectedIds.length} data pengajuan</b> yang Anda pilih akan dihapus secara permanen dari database. Tindakan ini tidak dapat dibatalkan.
+                </p>
+              </div>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* ─── 3. MODAL: DELETE ALL REQUESTS ─── */}
+      {deleteAllModalOpen && (
+        <Modal
+          isOpen={deleteAllModalOpen}
+          onClose={() => setDeleteAllModalOpen(false)}
+          title="Hapus SEMUA Data Pengajuan"
+          subtitle="Peringatan Pembersihan Seluruh Database Pengajuan"
+          size="sm"
+          footer={
+            <div className="flex items-center justify-end gap-2 w-full">
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={isDeleting}
+                onClick={() => setDeleteAllModalOpen(false)}
+              >
+                Batal
+              </Button>
+              <Button
+                variant="danger"
+                size="sm"
+                isLoading={isDeleting}
+                onClick={handleDeleteAll}
+              >
+                Ya, Bersihkan Semua Data ({total})
+              </Button>
+            </div>
+          }
+        >
+          <div className="space-y-3">
+            <div className="flex items-start gap-3 p-3 bg-red-100 border border-red-300 rounded-xl text-red-900 text-xs">
+              <svg className="w-6 h-6 text-red-600 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              <div>
+                <p className="font-extrabold text-red-950 uppercase tracking-wide">Peringatan Penting!</p>
+                <p className="mt-1 leading-relaxed">
+                  Apakah Anda yakin ingin menghapus <b>SELURUH ({total}) data pengajuan ATK</b> di sistem? Semua riwayat pengajuan akan dibersihkan secara permanen.
+                </p>
+              </div>
+            </div>
           </div>
         </Modal>
       )}

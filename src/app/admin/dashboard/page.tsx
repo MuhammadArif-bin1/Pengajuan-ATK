@@ -54,6 +54,20 @@ export default function AdminDashboardPage() {
 
   useEffect(() => {
     loadDashboardData();
+
+    const interval = setInterval(() => {
+      loadDashboardData();
+    }, 5000);
+
+    const handleFocus = () => {
+      loadDashboardData();
+    };
+
+    window.addEventListener("focus", handleFocus);
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener("focus", handleFocus);
+    };
   }, []);
 
   const handleUpdateStatus = async (
@@ -141,36 +155,36 @@ export default function AdminDashboardPage() {
 
       {/* ─── STAT CARDS GRID (2 Columns) ─── */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-        {/* Card 1: Total Pengajuan Nasabah */}
-        <div className="bg-white border border-gray-200/70 rounded-2xl p-6 shadow-2xs flex flex-col justify-between">
+        {/* Card 1: Total Pengajuan ATK */}
+        <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-2xs flex flex-col justify-between">
           <div className="flex items-start justify-between">
-            <span className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">
-              TOTAL PENGAJUAN NASABAH
+            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">
+              TOTAL PENGAJUAN ATK
             </span>
-            <div className="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center text-slate-500">
+            <div className="w-9 h-9 rounded-xl bg-orange-50 text-[#FF5500] flex items-center justify-center">
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
             </div>
           </div>
 
           <div className="mt-4">
-            <h2 className="text-4xl font-extrabold text-gray-900 tracking-tight">
+            <h2 className="text-4xl font-black text-slate-900 tracking-tight">
               {stats.requests.total}
             </h2>
-            <p className="text-xs text-gray-400 font-medium mt-1">
-              Nasabah baru terdaftar online
+            <p className="text-xs text-slate-500 font-medium mt-1">
+              Total permohonan ATK masuk dari karyawan
             </p>
           </div>
         </div>
 
-        {/* Card 2: Katalog Produk Aktif */}
-        <div className="bg-white border border-gray-200/70 rounded-2xl p-6 shadow-2xs flex flex-col justify-between">
+        {/* Card 2: Katalog Barang Gudang */}
+        <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-2xs flex flex-col justify-between">
           <div className="flex items-start justify-between">
-            <span className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">
-              KATALOG PRODUK AKTIF
+            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">
+              TOTAL BARANG PERSEDIAAN
             </span>
-            <div className="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center text-slate-500">
+            <div className="w-9 h-9 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center">
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
               </svg>
@@ -178,26 +192,26 @@ export default function AdminDashboardPage() {
           </div>
 
           <div className="mt-4">
-            <h2 className="text-4xl font-extrabold text-gray-900 tracking-tight">
+            <h2 className="text-4xl font-black text-slate-900 tracking-tight">
               {stats.atk.total}
             </h2>
-            <p className="text-xs text-gray-400 font-medium mt-1">
-              Produk perbankan aktif di website utama
+            <p className="text-xs text-slate-500 font-medium mt-1">
+              Jenis alat tulis kantor aktif di gudang
             </p>
           </div>
         </div>
       </div>
 
-      {/* ─── TABLE CARD: Pendaftaran Nasabah Terbaru ─── */}
-      <div className="bg-white border border-gray-200/70 rounded-2xl shadow-2xs overflow-hidden">
+      {/* ─── TABLE CARD: Pengajuan ATK Terbaru ─── */}
+      <div className="bg-white border border-slate-200 rounded-2xl shadow-2xs overflow-hidden">
         {/* Table Card Header */}
-        <div className="px-6 py-5 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+        <div className="px-6 py-5 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div>
-            <h2 className="text-base font-bold text-gray-900">
-              Pendaftaran Nasabah Terbaru
+            <h2 className="text-base font-bold text-slate-900">
+              Pengajuan ATK Terbaru
             </h2>
-            <p className="text-xs text-gray-400 mt-0.5 font-medium">
-              Daftar calon nasabah yang baru masuk
+            <p className="text-xs text-slate-500 mt-0.5 font-medium">
+              Daftar permohonan ATK yang baru diajukan karyawan
             </p>
           </div>
 
@@ -205,48 +219,48 @@ export default function AdminDashboardPage() {
             href="/admin/pengajuan"
             className="text-xs font-bold text-[#FF5500] hover:underline flex items-center gap-1 self-start sm:self-auto"
           >
-            <span>Kelola Semua Pendaftaran</span>
+            <span>Kelola Semua Pengajuan</span>
             <span>→</span>
           </Link>
         </div>
 
         {/* Table Content */}
         {loading ? (
-          <div className="py-16 text-center text-gray-400 text-xs font-medium">
-            Memuat data pendaftaran...
+          <div className="py-16 text-center text-slate-400 text-xs font-medium">
+            Memuat data pengajuan...
           </div>
         ) : recentRequests.length === 0 ? (
-          <div className="py-16 text-center text-gray-400 text-xs font-medium">
-            Belum ada data pendaftaran yang masuk.
+          <div className="py-16 text-center text-slate-400 text-xs font-medium">
+            Belum ada data pengajuan yang masuk.
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-xs">
               <thead>
-                <tr className="border-b border-gray-100 bg-slate-50/50">
-                  <th className="text-left px-6 py-3.5 font-bold text-gray-400 uppercase tracking-wider text-[10px]">
-                    NAMA PEMOHON
+                <tr className="border-b border-slate-100 bg-slate-50/70">
+                  <th className="text-left px-6 py-3.5 font-bold text-slate-600 uppercase tracking-wider text-[10px]">
+                    PEMOHON
                   </th>
-                  <th className="text-left px-6 py-3.5 font-bold text-gray-400 uppercase tracking-wider text-[10px]">
-                    PRODUK DIAJUKAN
+                  <th className="text-left px-6 py-3.5 font-bold text-slate-600 uppercase tracking-wider text-[10px]">
+                    BARANG DIAJUKAN
                   </th>
-                  <th className="text-left px-6 py-3.5 font-bold text-gray-400 uppercase tracking-wider text-[10px]">
+                  <th className="text-left px-6 py-3.5 font-bold text-slate-600 uppercase tracking-wider text-[10px]">
                     STATUS
                   </th>
-                  <th className="text-left px-6 py-3.5 font-bold text-gray-400 uppercase tracking-wider text-[10px]">
-                    TANGGAL MASUK
+                  <th className="text-left px-6 py-3.5 font-bold text-slate-600 uppercase tracking-wider text-[10px]">
+                    TANGGAL
                   </th>
-                  <th className="text-right px-6 py-3.5 font-bold text-gray-400 uppercase tracking-wider text-[10px]">
+                  <th className="text-right px-6 py-3.5 font-bold text-slate-600 uppercase tracking-wider text-[10px]">
                     AKSI
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-slate-100">
                 {recentRequests.map((req) => (
-                  <tr key={req.id} className="hover:bg-gray-50/60 transition-colors">
+                  <tr key={req.id} className="hover:bg-slate-50/60 transition-colors">
                     <td className="px-6 py-4">
-                      <p className="font-bold text-gray-900 text-xs">{req.user.name}</p>
-                      <p className="text-[11px] text-gray-400 mt-0.5">
+                      <p className="font-bold text-slate-900 text-xs">{req.user.name}</p>
+                      <p className="text-[11px] text-slate-500 mt-0.5">
                         {req.user.department} • {req.user.position}
                       </p>
                     </td>

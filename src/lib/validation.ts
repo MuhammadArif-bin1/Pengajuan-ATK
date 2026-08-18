@@ -136,13 +136,14 @@ export const createRequestSchema = z.object({
     .min(1, "Jumlah minimal 1"),
   reason: z
     .string()
-    .min(1, "Alasan/keperluan wajib diisi")
-    .max(500, "Alasan maksimal 500 karakter"),
+    .max(500, "Alasan maksimal 500 karakter")
+    .optional()
+    .default(""),
   // Optional public employee fields
   userName: z.string().min(1, "Nama karyawan wajib diisi").optional(),
-  userEmail: z.string().email("Format email tidak valid").optional(),
-  department: z.string().min(1, "Departemen wajib diisi").optional(),
-  position: z.string().min(1, "Jabatan wajib diisi").optional(),
+  userEmail: z.string().optional(),
+  department: z.string().optional(),
+  position: z.string().optional(),
 });
 
 export const createPublicRequestSchema = z.object({
@@ -150,10 +151,7 @@ export const createPublicRequestSchema = z.object({
     .string()
     .min(1, "Nama karyawan wajib diisi")
     .max(100, "Nama maksimal 100 karakter"),
-  userEmail: z
-    .string()
-    .min(1, "Email karyawan wajib diisi")
-    .email("Format email tidak valid"),
+  userEmail: z.string().optional(),
   department: z
     .string()
     .min(1, "Departemen/divisi wajib diisi")
@@ -167,10 +165,7 @@ export const createPublicRequestSchema = z.object({
     .number()
     .int("Jumlah harus berupa angka bulat")
     .min(1, "Jumlah minimal 1"),
-  reason: z
-    .string()
-    .min(1, "Alasan/keperluan wajib diisi")
-    .max(500, "Alasan maksimal 500 karakter"),
+  reason: z.string().max(500, "Alasan maksimal 500 karakter").optional(),
 });
 
 export const updateRequestStatusSchema = z.object({

@@ -43,11 +43,11 @@ export const Button: React.FC<ButtonProps> = ({
 
   const variantStyles = {
     primary:
-      "bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs hover:shadow focus:ring-indigo-500 active:bg-indigo-800",
+      "bg-[#FF5500] hover:bg-[#E04B00] text-white shadow-xs hover:shadow focus:ring-[#FF5500]/50 active:bg-[#C93E00]",
     secondary:
       "bg-slate-100 hover:bg-slate-200 text-slate-700 focus:ring-slate-400 active:bg-slate-300",
     outline:
-      "border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 shadow-xs focus:ring-indigo-500",
+      "border border-slate-300 bg-white hover:bg-orange-50 text-slate-700 hover:text-[#FF5500] hover:border-orange-300 shadow-xs focus:ring-[#FF5500]/50",
     danger:
       "bg-rose-600 hover:bg-rose-700 text-white shadow-xs hover:shadow focus:ring-rose-500 active:bg-rose-800",
     success:

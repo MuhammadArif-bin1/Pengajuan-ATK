@@ -95,22 +95,26 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Require email and name if not logged in
-    if (!parsed.data.userEmail || !parsed.data.userName) {
+    // Require name if not logged in
+    if (!parsed.data.userName) {
       return NextResponse.json(
-        { error: "Nama dan Email karyawan pemohon wajib diisi" },
+        { error: "Nama karyawan pemohon wajib diisi" },
         { status: 400 }
       );
     }
 
+    const emailFallback =
+      parsed.data.userEmail ||
+      `${parsed.data.userName.toLowerCase().replace(/[^a-z0-9]/g, "") || "karyawan"}@hasamitra.internal`;
+
     const newRequest = await createRequest({
       userName: parsed.data.userName,
-      userEmail: parsed.data.userEmail,
+      userEmail: emailFallback,
       department: parsed.data.department || "Umum",
       position: parsed.data.position || "Staff",
       atkItemId: parsed.data.atkItemId,
       quantity: parsed.data.quantity,
-      reason: parsed.data.reason,
+      reason: parsed.data.reason?.trim() || "Kebutuhan operasional kantor",
     });
 
     return NextResponse.json(

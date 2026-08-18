@@ -22,7 +22,6 @@ export const Navbar: React.FC<NavbarProps> = ({ onToggleSidebar }) => {
     if (pathname.includes("/dashboard")) return "Dashboard";
     if (pathname.includes("/pengajuan")) return "Pengajuan ATK";
     if (pathname.includes("/barang")) return "Kelola Barang ATK";
-    if (pathname.includes("/karyawan")) return "Data Karyawan";
     if (pathname.includes("/laporan")) return "Laporan ATK";
     return "Dashboard";
   };

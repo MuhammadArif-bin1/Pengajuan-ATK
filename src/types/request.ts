@@ -32,6 +32,7 @@ export interface AtkRequestData {
     id: string;
     name: string;
     unit: string;
+    stock?: number;
   };
   processor?: {
     id: string;

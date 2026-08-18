@@ -22,9 +22,21 @@ export async function createRequest(data: {
   let targetUserId = data.userId;
 
   // If public employee info is provided, find or create user
-  if (!targetUserId && data.userEmail) {
-    let existingUser = await prisma.user.findUnique({
-      where: { email: data.userEmail.toLowerCase().trim() },
+  if (!targetUserId && (data.userName || data.userEmail)) {
+    const cleanName = (data.userName || "Karyawan").trim();
+    const cleanDept = (data.department || "Umum").trim();
+    const cleanPos = (data.position || "Staff").trim();
+    const emailKey =
+      data.userEmail?.toLowerCase().trim() ||
+      `${cleanName.toLowerCase().replace(/[^a-z0-9]/g, "")}.${cleanDept.toLowerCase().replace(/[^a-z0-9]/g, "")}@hasamitra.internal`;
+
+    let existingUser = await prisma.user.findFirst({
+      where: {
+        OR: [
+          { email: emailKey },
+          { name: { equals: cleanName, mode: "insensitive" }, department: cleanDept },
+        ],
+      },
     });
 
     if (!existingUser) {
@@ -33,27 +45,25 @@ export async function createRequest(data: {
       const defaultPassword = await hashPassword("User123!");
       existingUser = await prisma.user.create({
         data: {
-          name: data.userName || "Karyawan",
-          email: data.userEmail.toLowerCase().trim(),
+          name: cleanName,
+          email: emailKey,
           password: defaultPassword,
           role: "USER",
-          department: data.department || "Umum",
-          position: data.position || "Staff",
+          department: cleanDept,
+          position: cleanPos,
           isActive: true,
         },
       });
     } else {
-      // Update name/dept/position if provided
-      if (data.userName || data.department || data.position) {
-        existingUser = await prisma.user.update({
-          where: { id: existingUser.id },
-          data: {
-            name: data.userName || existingUser.name,
-            department: data.department || existingUser.department,
-            position: data.position || existingUser.position,
-          },
-        });
-      }
+      // Update name/dept/position to ensure 100% exact match with submitted form
+      existingUser = await prisma.user.update({
+        where: { id: existingUser.id },
+        data: {
+          name: cleanName,
+          department: cleanDept,
+          position: cleanPos,
+        },
+      });
     }
     targetUserId = existingUser.id;
   }
@@ -520,4 +530,90 @@ export async function getDepartments() {
   });
   return departments.map((d: { department: string }) => d.department);
 }
+
+export async function deleteRequest(id: string) {
+  const existing = await prisma.atkRequest.findUnique({
+    where: { id },
+    select: { id: true, userId: true },
+  });
+
+  if (!existing) {
+    throw new Error("Data pengajuan tidak ditemukan");
+  }
+
+  const deleted = await prisma.atkRequest.delete({
+    where: { id },
+  });
+
+  // Check if the user has any remaining requests
+  if (existing.userId) {
+    const remainingRequests = await prisma.atkRequest.count({
+      where: { userId: existing.userId },
+    });
+
+    if (remainingRequests === 0) {
+      // Delete user from users table if not ADMIN
+      await prisma.user.deleteMany({
+        where: {
+          id: existing.userId,
+          role: { not: "ADMIN" },
+        },
+      });
+    }
+  }
+
+  return deleted;
+}
+
+export async function deleteMultipleRequests(ids: string[]) {
+  if (!ids || ids.length === 0) {
+    throw new Error("Tidak ada data pengajuan yang dipilih");
+  }
+
+  // Get userIds of requests being deleted
+  const requests = await prisma.atkRequest.findMany({
+    where: { id: { in: ids } },
+    select: { userId: true },
+  });
+
+  const userIds = Array.from(new Set(requests.map((r) => r.userId).filter(Boolean)));
+
+  const deleted = await prisma.atkRequest.deleteMany({
+    where: {
+      id: { in: ids },
+    },
+  });
+
+  // Clean up users who no longer have any requests (except ADMIN)
+  for (const uId of userIds) {
+    const remaining = await prisma.atkRequest.count({
+      where: { userId: uId },
+    });
+
+    if (remaining === 0) {
+      await prisma.user.deleteMany({
+        where: {
+          id: uId,
+          role: { not: "ADMIN" },
+        },
+      });
+    }
+  }
+
+  return deleted;
+}
+
+export async function deleteAllRequests() {
+  const deletedRequests = await prisma.atkRequest.deleteMany({});
+
+  // Sync: Delete all non-admin users from users table
+  await prisma.user.deleteMany({
+    where: {
+      role: { not: "ADMIN" },
+    },
+  });
+
+  return deletedRequests;
+}
+
 
