@@ -10,7 +10,7 @@ import {
   getAllRequests,
 } from "@/services/request.service";
 import { createRequestSchema, formatZodError } from "@/lib/validation";
-import type { RequestStatus } from "@/generated/prisma";
+import type { RequestStatus } from "@/generated/prisma/enums";
 
 export async function GET(request: NextRequest) {
   try {

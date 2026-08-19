@@ -9,7 +9,7 @@ import {
   checkEmailExists,
 } from "@/services/user.service";
 import { createUserSchema, formatZodError } from "@/lib/validation";
-import type { Role } from "@/generated/prisma";
+import type { Role } from "@/generated/prisma/enums";
 
 export async function GET(request: NextRequest) {
   try {

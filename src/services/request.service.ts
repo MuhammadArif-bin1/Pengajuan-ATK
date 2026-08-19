@@ -3,7 +3,7 @@
 // ===========================================
 
 import { prisma } from "@/lib/prisma";
-import type { RequestStatus } from "@/generated/prisma";
+import type { RequestStatus } from "@/generated/prisma/enums";
 
 // ===========================================
 // CRUD Operations
