@@ -53,7 +53,7 @@ export interface StatCardProps {
     value: string;
     isPositive?: boolean;
   };
-  color?: "indigo" | "amber" | "emerald" | "rose" | "blue" | "purple";
+  color?: "indigo" | "amber" | "emerald" | "rose" | "blue" | "purple" | "orange";
   onClick?: () => void;
 }
 
@@ -72,6 +72,7 @@ export const StatCard: React.FC<StatCardProps> = ({
     rose: "bg-rose-50 text-rose-600 border-rose-100",
     blue: "bg-blue-50 text-blue-600 border-blue-100",
     purple: "bg-purple-50 text-purple-600 border-purple-100",
+    orange: "bg-orange-50 text-[#FF5500] border-orange-100",
   };
 
   return (
