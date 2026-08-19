@@ -38,8 +38,14 @@ export interface ItemSummaryExport {
  */
 function escapeCsv(val: string | number | null | undefined): string {
   if (val === null || val === undefined) return '""';
-  const str = String(val);
-  if (str.includes(",") || str.includes('"') || str.includes("\n") || str.includes("\r") || str.includes(";")) {
+  const str = String(val).trim();
+  if (
+    str.includes(",") ||
+    str.includes('"') ||
+    str.includes("\n") ||
+    str.includes("\r") ||
+    str.includes(";")
+  ) {
     return `"${str.replace(/"/g, '""')}"`;
   }
   return `"${str}"`;
@@ -62,13 +68,12 @@ export function exportReportToCsv(params: {
     if (!dateStr) return "-";
     try {
       const d = new Date(dateStr);
-      return d.toLocaleDateString("id-ID", {
-        day: "2-digit",
-        month: "short",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-      });
+      const day = String(d.getDate()).padStart(2, "0");
+      const month = String(d.getMonth() + 1).padStart(2, "0");
+      const year = d.getFullYear();
+      const hours = String(d.getHours()).padStart(2, "0");
+      const mins = String(d.getMinutes()).padStart(2, "0");
+      return `${day}/${month}/${year} ${hours}:${mins}`;
     } catch {
       return dateStr;
     }
@@ -84,50 +89,53 @@ export function exportReportToCsv(params: {
       ? "Pengajuan Pembelian ATK Saja"
       : filterInfo.type === "regular"
       ? "Permintaan ATK Gudang Saja"
-      : "Semua Pengajuan";
+      : "Semua Kategori (Permintaan & Pembelian)";
 
   const departmentText = filterInfo.department || "Semua Departemen";
-  const printedAt = new Date().toLocaleDateString("id-ID", {
+  
+  const now = new Date();
+  const printedAt = now.toLocaleDateString("id-ID", {
     day: "2-digit",
     month: "long",
     year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  }) + ` ${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")} WIB`;
 
   const lines: string[] = [];
 
   // ══════════════════════════════════════════════════════════════════
-  // HEADER DOKUMEN
+  // HEADER UTAMA PERUSAHAAN & LAPORAN
   // ══════════════════════════════════════════════════════════════════
-  lines.push([escapeCsv("LAPORAN TRANSAKSI PENGAJUAN ALAT TULIS KANTOR")].join(","));
-  lines.push([escapeCsv("HASAMITRA - SISTEM INFORMASI ATK")].join(","));
+  lines.push([escapeCsv("LAPORAN REKAPITULASI PENGAJUAN ALAT TULIS KANTOR (ATK)")].join(","));
+  lines.push([escapeCsv("PT HASAMITRA BERSAMA - SISTEM INFORMASI PENGELOLAAN ATK")].join(","));
   lines.push("");
-  lines.push([escapeCsv("Periode Laporan"), escapeCsv(periodText)].join(","));
-  lines.push([escapeCsv("Kategori Filter"), escapeCsv(categoryText)].join(","));
-  lines.push([escapeCsv("Departemen"), escapeCsv(departmentText)].join(","));
+
+  // Metadata / Parameter Filter
+  lines.push([escapeCsv("INFORMASI & FILTER LAPORAN")].join(","));
+  lines.push([escapeCsv("Periode Tanggal"), escapeCsv(periodText)].join(","));
+  lines.push([escapeCsv("Kategori Pengajuan"), escapeCsv(categoryText)].join(","));
+  lines.push([escapeCsv("Departemen / Divisi"), escapeCsv(departmentText)].join(","));
   lines.push([escapeCsv("Waktu Cetak / Unduh"), escapeCsv(printedAt)].join(","));
-  lines.push([escapeCsv("Total Transaksi"), escapeCsv(`${transactions.length} Data`)].join(","));
+  lines.push([escapeCsv("Total Transaksi Masuk"), escapeCsv(`${transactions.length} Berkas`)].join(","));
   lines.push("");
 
   // ══════════════════════════════════════════════════════════════════
-  // SECTION 1: RINCIAN TRANSAKSI PENGAJUAN
+  // TABEL 1: RINCIAN TRANSAKSI PENGAJUAN
   // ══════════════════════════════════════════════════════════════════
-  lines.push([escapeCsv("=== 1. RINCIAN TRANSAKSI PENGAJUAN ATK ===")].join(","));
+  lines.push([escapeCsv("1. DAFTAR RINCIAN TRANSAKSI PENGAJUAN ATK")].join(","));
   lines.push(
     [
-      escapeCsv("NO"),
-      escapeCsv("TANGGAL PENGAJUAN"),
-      escapeCsv("JENIS PENGAJUAN"),
-      escapeCsv("NAMA KARYAWAN"),
-      escapeCsv("DEPARTEMEN"),
-      escapeCsv("JABATAN"),
-      escapeCsv("NAMA BARANG ATK"),
-      escapeCsv("JUMLAH"),
-      escapeCsv("SATUAN"),
-      escapeCsv("STATUS PENGAJUAN"),
-      escapeCsv("ALASAN / KEPERLUAN"),
-      escapeCsv("CATATAN ADMIN"),
+      escapeCsv("No"),
+      escapeCsv("Tanggal Pengajuan"),
+      escapeCsv("Jenis Pengajuan"),
+      escapeCsv("Nama Pemohon"),
+      escapeCsv("Departemen"),
+      escapeCsv("Jabatan"),
+      escapeCsv("Nama Barang ATK"),
+      escapeCsv("Jumlah"),
+      escapeCsv("Satuan"),
+      escapeCsv("Status"),
+      escapeCsv("Alasan / Keterangan"),
+      escapeCsv("Catatan Admin"),
     ].join(",")
   );
 
@@ -164,20 +172,19 @@ export function exportReportToCsv(params: {
   });
 
   lines.push("");
-  lines.push("");
 
   // ══════════════════════════════════════════════════════════════════
-  // SECTION 2: REKAPITULASI PER DEPARTEMEN
+  // TABEL 2: REKAPITULASI PER DEPARTEMEN
   // ══════════════════════════════════════════════════════════════════
-  lines.push([escapeCsv("=== 2. REKAPITULASI PER DEPARTEMEN / DIVISI ===")].join(","));
+  lines.push([escapeCsv("2. REKAPITULASI PENGAJUAN PER DEPARTEMEN / DIVISI")].join(","));
   lines.push(
     [
-      escapeCsv("NO"),
-      escapeCsv("NAMA DEPARTEMEN"),
-      escapeCsv("TOTAL PENGAJUAN"),
-      escapeCsv("DISETUJUI / SELESAI"),
-      escapeCsv("MENUNGGU / DIPROSES"),
-      escapeCsv("DITOLAK"),
+      escapeCsv("No"),
+      escapeCsv("Departemen / Divisi"),
+      escapeCsv("Total Pengajuan"),
+      escapeCsv("Disetujui / Selesai"),
+      escapeCsv("Menunggu / Diproses"),
+      escapeCsv("Ditolak"),
     ].join(",")
   );
 
@@ -195,19 +202,18 @@ export function exportReportToCsv(params: {
   });
 
   lines.push("");
-  lines.push("");
 
   // ══════════════════════════════════════════════════════════════════
-  // SECTION 3: TOP BARANG ATK
+  // TABEL 3: REKAPITULASI BARANG ATK
   // ══════════════════════════════════════════════════════════════════
-  lines.push([escapeCsv("=== 3. REKAPITULASI PENGGUNAAN BARANG ATK ===")].join(","));
+  lines.push([escapeCsv("3. REKAPITULASI PENGGUNAAN BARANG ATK")].join(","));
   lines.push(
     [
-      escapeCsv("NO"),
-      escapeCsv("NAMA BARANG ATK"),
-      escapeCsv("FREKUENSI PENGAJUAN"),
-      escapeCsv("TOTAL KUANTITAS"),
-      escapeCsv("SATUAN"),
+      escapeCsv("No"),
+      escapeCsv("Nama Barang ATK"),
+      escapeCsv("Frekuensi Pengajuan"),
+      escapeCsv("Total Kuantitas"),
+      escapeCsv("Satuan"),
     ].join(",")
   );
 
@@ -223,13 +229,15 @@ export function exportReportToCsv(params: {
     );
   });
 
-  // UTF-8 BOM (\uFEFF) ensures Excel correctly displays Indonesian characters and formatting without corrupted symbols
+  lines.push("");
+  lines.push([escapeCsv("Dokumen ini digenerate secara otomatis oleh Sistem Informasi Pengajuan ATK PT Hasamitra Bersama.")].join(","));
+
+  // UTF-8 BOM (\uFEFF) ensures Excel and spreadsheet software correctly display UTF-8 without corrupted characters
   const csvContent = "\uFEFF" + lines.join("\r\n");
 
   const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
 
-  const now = new Date();
   const dateStamp = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}_${String(now.getHours()).padStart(2, "0")}${String(now.getMinutes()).padStart(2, "0")}`;
   const fileName = `Laporan_ATK_Hasamitra_${dateStamp}.csv`;
 
