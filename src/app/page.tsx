@@ -462,9 +462,13 @@ export default function PublicUserPortalPage() {
                         <input
                           type="text"
                           inputMode="numeric"
-                          placeholder=""
+                          pattern="[0-9]*"
+                          placeholder="Masukkan jumlah angka..."
                           value={requestForm.quantity}
-                          onChange={(e) => setRequestForm({ ...requestForm, quantity: e.target.value })}
+                          onChange={(e) => {
+                            const onlyNums = e.target.value.replace(/\D/g, "");
+                            setRequestForm({ ...requestForm, quantity: onlyNums });
+                          }}
                           className={`w-full rounded-xl border px-3.5 py-2.5 text-xs text-gray-900 font-medium bg-white focus:outline-none focus:ring-2 focus:ring-[#FF5500]/30 focus:border-[#FF5500] transition ${
                             requestErrors.quantity ? "border-red-400 bg-red-50/20" : "border-gray-300"
                           }`}
@@ -642,14 +646,16 @@ export default function PublicUserPortalPage() {
                         <input
                           type="text"
                           inputMode="numeric"
-                          placeholder=""
+                          pattern="[0-9]*"
+                          placeholder="Masukkan jumlah angka..."
                           value={purchaseForm.quantity}
-                          onChange={(e) =>
+                          onChange={(e) => {
+                            const onlyNums = e.target.value.replace(/\D/g, "");
                             setPurchaseForm({
                               ...purchaseForm,
-                              quantity: e.target.value,
-                            })
-                          }
+                              quantity: onlyNums,
+                            });
+                          }}
                           className={`w-full rounded-xl border px-3.5 py-2.5 text-xs text-gray-900 font-medium bg-white focus:outline-none focus:ring-2 focus:ring-[#FF5500]/30 focus:border-[#FF5500] transition ${
                             purchaseErrors.quantity
                               ? "border-red-400 bg-red-50/20"
