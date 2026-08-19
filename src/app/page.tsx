@@ -701,7 +701,7 @@ export default function PublicUserPortalPage() {
           className="bg-white/95 hover:bg-white text-slate-800 hover:text-[#229ED9] text-[11px] sm:text-xs font-bold px-3.5 py-1.5 rounded-xl shadow-md hover:shadow-lg border border-slate-200/90 transition-all flex items-center gap-1.5 cursor-pointer group"
         >
           <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
-          <span>Butuh Bantuan? Hubungi CS Sekarang</span>
+          <span>fast track? Hubungi Admin</span>
           <span className="text-[#229ED9] text-xs">💬</span>
         </a>
 
