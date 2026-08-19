@@ -3,6 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { NotificationDropdown } from "./NotificationDropdown";
 
 export interface NavbarProps {
   user?: {
@@ -21,7 +22,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onToggleSidebar }) => {
   const getBreadcrumb = () => {
     if (pathname.includes("/dashboard")) return "Dashboard";
     if (pathname.includes("/pengajuan")) return "Pengajuan ATK";
-    if (pathname.includes("/barang")) return "Kelola Barang ATK";
+    if (pathname.includes("/barang") || pathname.includes("/pembelian")) return "Daftar Pengajuan Pembelian ATK";
     if (pathname.includes("/laporan")) return "Laporan ATK";
     return "Dashboard";
   };
@@ -49,8 +50,11 @@ export const Navbar: React.FC<NavbarProps> = ({ onToggleSidebar }) => {
         </div>
       </div>
 
-      {/* Right side: Status Badge & Website Link */}
-      <div className="flex items-center gap-3">
+      {/* Right side: Realtime Notifications, Status Badge & Website Link */}
+      <div className="flex items-center gap-2.5 sm:gap-3">
+        {/* Realtime Notification Bell & Dropdown */}
+        <NotificationDropdown />
+
         <div className="hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200/80 text-emerald-600 text-xs font-semibold">
           <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
           <span>Sistem Online</span>

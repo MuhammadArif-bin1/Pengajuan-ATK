@@ -88,7 +88,7 @@ export async function createRequest(data: {
     throw new Error("Barang ATK tidak aktif atau tidak ditemukan");
   }
 
-  if (item.stock < data.quantity) {
+  if (data.userId && item.stock < data.quantity) {
     throw new Error(
       `Stok tidak mencukupi. Stok tersedia: ${item.stock} ${item.unit}`
     );
@@ -171,6 +171,7 @@ export async function getAllRequests(filters?: {
   search?: string;
   startDate?: string;
   endDate?: string;
+  type?: "purchase" | "regular";
   page?: number;
   limit?: number;
 }) {
@@ -186,6 +187,12 @@ export async function getAllRequests(filters?: {
 
   if (filters?.department) {
     where.user = { department: filters.department };
+  }
+
+  if (filters?.type === "purchase") {
+    where.reason = { contains: "[PENGAJUAN PEMBELIAN ATK BARU]" };
+  } else if (filters?.type === "regular") {
+    where.NOT = { reason: { contains: "[PENGAJUAN PEMBELIAN ATK BARU]" } };
   }
 
   if (filters?.search) {
@@ -419,8 +426,14 @@ export async function updateRequestStatus(
 // Statistics
 // ===========================================
 
-export async function getRequestStats(userId?: string) {
-  const where = userId ? { userId } : {};
+export async function getRequestStats(userId?: string, type?: "purchase" | "regular") {
+  const where: Record<string, unknown> = userId ? { userId } : {};
+
+  if (type === "purchase") {
+    where.reason = { contains: "[PENGAJUAN PEMBELIAN ATK BARU]" };
+  } else if (type === "regular") {
+    where.NOT = { reason: { contains: "[PENGAJUAN PEMBELIAN ATK BARU]" } };
+  }
 
   const [total, menunggu, disetujui, ditolak, diproses, selesai] =
     await Promise.all([
@@ -449,11 +462,18 @@ export async function getReportData(filters?: {
   startDate?: string;
   endDate?: string;
   department?: string;
+  type?: "purchase" | "regular";
 }) {
   const where: Record<string, unknown> = {};
 
   if (filters?.department) {
     where.user = { department: filters.department };
+  }
+
+  if (filters?.type === "purchase") {
+    where.reason = { contains: "[PENGAJUAN PEMBELIAN ATK BARU]" };
+  } else if (filters?.type === "regular") {
+    where.NOT = { reason: { contains: "[PENGAJUAN PEMBELIAN ATK BARU]" } };
   }
 
   if (filters?.startDate || filters?.endDate) {
@@ -474,10 +494,10 @@ export async function getReportData(filters?: {
     where,
     include: {
       user: {
-        select: { name: true, department: true },
+        select: { name: true, department: true, position: true, email: true },
       },
       atkItem: {
-        select: { name: true, unit: true },
+        select: { name: true, unit: true, stock: true },
       },
     },
     orderBy: { createdAt: "desc" },
@@ -486,27 +506,29 @@ export async function getReportData(filters?: {
   // Aggregate by department
   const byDepartment: Record<
     string,
-    { total: number; approved: number; rejected: number }
+    { total: number; approved: number; rejected: number; inProgress: number }
   > = {};
   // Aggregate by item
-  const byItem: Record<string, { total: number; quantity: number }> = {};
+  const byItem: Record<string, { total: number; quantity: number; unit: string }> = {};
 
   for (const req of requests) {
-    const dept = req.user.department;
+    const dept = req.user.department || "Umum";
     if (!byDepartment[dept]) {
-      byDepartment[dept] = { total: 0, approved: 0, rejected: 0 };
+      byDepartment[dept] = { total: 0, approved: 0, rejected: 0, inProgress: 0 };
     }
     byDepartment[dept].total++;
-    if (req.status === "DISETUJUI" || req.status === "DIPROSES" || req.status === "SELESAI") {
+    if (req.status === "DISETUJUI" || req.status === "SELESAI") {
       byDepartment[dept].approved++;
-    }
-    if (req.status === "DITOLAK") {
+    } else if (req.status === "DIPROSES" || req.status === "MENUNGGU") {
+      byDepartment[dept].inProgress++;
+    } else if (req.status === "DITOLAK") {
       byDepartment[dept].rejected++;
     }
 
     const itemName = req.atkItem.name;
+    const unit = req.atkItem.unit || "pcs";
     if (!byItem[itemName]) {
-      byItem[itemName] = { total: 0, quantity: 0 };
+      byItem[itemName] = { total: 0, quantity: 0, unit };
     }
     byItem[itemName].total++;
     byItem[itemName].quantity += req.quantity;

@@ -3,6 +3,7 @@
 // ===========================================
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/session";
+import { prisma } from "@/lib/prisma";
 import {
   createRequest,
   getRequestsByUser,
@@ -16,6 +17,7 @@ export async function GET(request: NextRequest) {
     const session = await getSession();
     const { searchParams } = new URL(request.url);
     const status = (searchParams.get("status") as RequestStatus) || undefined;
+    const type = (searchParams.get("type") as "purchase" | "regular") || undefined;
     const page = parseInt(searchParams.get("page") || "1", 10);
     const limit = parseInt(searchParams.get("limit") || "10", 10);
     const department = searchParams.get("department") || undefined;
@@ -40,6 +42,7 @@ export async function GET(request: NextRequest) {
       search,
       startDate,
       endDate,
+      type,
       page,
       limit,
     });
@@ -69,9 +72,40 @@ export async function POST(request: NextRequest) {
         );
       }
 
+      let atkItemId = parsed.data.atkItemId;
+      if (!atkItemId && parsed.data.itemName) {
+        let atkItem = await prisma.atkItem.findFirst({
+          where: {
+            name: {
+              equals: parsed.data.itemName.trim(),
+              mode: "insensitive",
+            },
+          },
+        });
+        if (!atkItem) {
+          atkItem = await prisma.atkItem.create({
+            data: {
+              name: parsed.data.itemName.trim(),
+              description: "Permintaan ATK Karyawan",
+              unit: "pcs",
+              stock: 0,
+              isActive: true,
+            },
+          });
+        }
+        atkItemId = atkItem.id;
+      }
+
+      if (!atkItemId) {
+        return NextResponse.json(
+          { error: "Nama barang ATK wajib diisi" },
+          { status: 400 }
+        );
+      }
+
       const newRequest = await createRequest({
         userId: session.userId,
-        atkItemId: parsed.data.atkItemId,
+        atkItemId,
         quantity: parsed.data.quantity,
         reason: parsed.data.reason,
       });
@@ -103,6 +137,37 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    let atkItemId = parsed.data.atkItemId;
+    if (!atkItemId && parsed.data.itemName) {
+      let atkItem = await prisma.atkItem.findFirst({
+        where: {
+          name: {
+            equals: parsed.data.itemName.trim(),
+            mode: "insensitive",
+          },
+        },
+      });
+      if (!atkItem) {
+        atkItem = await prisma.atkItem.create({
+          data: {
+            name: parsed.data.itemName.trim(),
+            description: "Permintaan ATK Karyawan",
+            unit: "pcs",
+            stock: 0,
+            isActive: true,
+          },
+        });
+      }
+      atkItemId = atkItem.id;
+    }
+
+    if (!atkItemId) {
+      return NextResponse.json(
+        { error: "Nama barang ATK wajib diisi" },
+        { status: 400 }
+      );
+    }
+
     const emailFallback =
       parsed.data.userEmail ||
       `${parsed.data.userName.toLowerCase().replace(/[^a-z0-9]/g, "") || "karyawan"}@hasamitra.internal`;
@@ -112,7 +177,7 @@ export async function POST(request: NextRequest) {
       userEmail: emailFallback,
       department: parsed.data.department || "Umum",
       position: parsed.data.position || "Staff",
-      atkItemId: parsed.data.atkItemId,
+      atkItemId,
       quantity: parsed.data.quantity,
       reason: parsed.data.reason?.trim() || "Kebutuhan operasional kantor",
     });

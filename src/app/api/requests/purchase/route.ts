@@ -11,7 +11,6 @@ export async function POST(request: NextRequest) {
       department,
       position,
       itemName,
-      category,
       quantity,
       reason,
     } = body;
@@ -92,7 +91,7 @@ export async function POST(request: NextRequest) {
       atkItem = await prisma.atkItem.create({
         data: {
           name: itemName.trim(),
-          description: `Kategori: ${category || "Alat Tulis"} (Pengadaan Baru)`,
+          description: "Pengadaan ATK Baru",
           unit: "pcs",
           stock: 0,
           isActive: true,
@@ -103,7 +102,6 @@ export async function POST(request: NextRequest) {
     // 3. Construct Reason text
     const fullReason = [
       `[PENGAJUAN PEMBELIAN ATK BARU]`,
-      `Kategori: ${category || "Alat Tulis"}`,
       reason?.trim() ? `Alasan: ${reason.trim()}` : `Alasan: Permohonan pengadaan barang baru untuk operasional kantor`,
     ].join("\n");
 

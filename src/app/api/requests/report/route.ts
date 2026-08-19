@@ -19,11 +19,13 @@ export async function GET(request: NextRequest) {
     const startDate = searchParams.get("startDate") || undefined;
     const endDate = searchParams.get("endDate") || undefined;
     const department = searchParams.get("department") || undefined;
+    const type = (searchParams.get("type") as "purchase" | "regular") || undefined;
 
     const report = await getReportData({
       startDate,
       endDate,
       department,
+      type,
     });
 
     return NextResponse.json(report);

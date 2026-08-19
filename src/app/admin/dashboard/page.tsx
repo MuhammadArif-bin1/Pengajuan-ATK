@@ -10,9 +10,8 @@ import type { AtkRequestData, RequestStatusType } from "@/types/request";
 export default function AdminDashboardPage() {
   const toast = useToast();
   const [stats, setStats] = useState({
-    requests: { total: 0, menunggu: 0, disetujui: 0, ditolak: 0, diproses: 0, selesai: 0 },
-    users: { total: 0, active: 0, inactive: 0 },
-    atk: { total: 0, active: 0, lowStock: 0 },
+    regular: { total: 0, menunggu: 0, disetujui: 0, diproses: 0, selesai: 0, ditolak: 0 },
+    purchase: { total: 0, menunggu: 0, disetujui: 0, diproses: 0, selesai: 0, ditolak: 0 },
   });
   const [recentRequests, setRecentRequests] = useState<AtkRequestData[]>([]);
   const [loading, setLoading] = useState(true);
@@ -26,17 +25,18 @@ export default function AdminDashboardPage() {
   const loadDashboardData = async () => {
     try {
       setLoading(true);
-      const [statsRes, requestsRes] = await Promise.all([
-        fetch("/api/requests/stats"),
+      const [regularStatsRes, purchaseStatsRes, requestsRes] = await Promise.all([
+        fetch("/api/requests/stats?type=regular"),
+        fetch("/api/requests/stats?type=purchase"),
         fetch("/api/requests?limit=6"),
       ]);
 
-      if (statsRes.ok) {
-        const sData = await statsRes.json();
+      if (regularStatsRes.ok && purchaseStatsRes.ok) {
+        const regData = await regularStatsRes.json();
+        const purData = await purchaseStatsRes.json();
         setStats({
-          requests: sData.requests || stats.requests,
-          users: sData.users || stats.users,
-          atk: sData.atk || stats.atk,
+          regular: regData.requests || stats.regular,
+          purchase: purData.requests || stats.purchase,
         });
       }
 
@@ -155,8 +155,11 @@ export default function AdminDashboardPage() {
 
       {/* ─── STAT CARDS GRID (2 Columns) ─── */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-        {/* Card 1: Total Pengajuan ATK */}
-        <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-2xs flex flex-col justify-between">
+        {/* Card 1: Total Pengajuan ATK (Permintaan Gudang) */}
+        <Link
+          href="/admin/pengajuan"
+          className="bg-white border border-slate-200 rounded-2xl p-6 shadow-2xs hover:border-[#FF5500]/50 hover:shadow-md transition-all flex flex-col justify-between block"
+        >
           <div className="flex items-start justify-between">
             <span className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">
               TOTAL PENGAJUAN ATK
@@ -170,36 +173,39 @@ export default function AdminDashboardPage() {
 
           <div className="mt-4">
             <h2 className="text-4xl font-black text-slate-900 tracking-tight">
-              {stats.requests.total}
+              {stats.regular.total}
             </h2>
             <p className="text-xs text-slate-500 font-medium mt-1">
-              Total permohonan ATK masuk dari karyawan
+              Permohonan permintaan ATK dari stok gudang
             </p>
           </div>
-        </div>
+        </Link>
 
-        {/* Card 2: Katalog Barang Gudang */}
-        <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-2xs flex flex-col justify-between">
+        {/* Card 2: Pengajuan Pembelian ATK */}
+        <Link
+          href="/admin/barang"
+          className="bg-white border border-slate-200 rounded-2xl p-6 shadow-2xs hover:border-[#FF5500]/50 hover:shadow-md transition-all flex flex-col justify-between block"
+        >
           <div className="flex items-start justify-between">
             <span className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">
-              TOTAL BARANG PERSEDIAAN
+              TOTAL PENGAJUAN PEMBELIAN ATK
             </span>
             <div className="w-9 h-9 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center">
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
               </svg>
             </div>
           </div>
 
           <div className="mt-4">
             <h2 className="text-4xl font-black text-slate-900 tracking-tight">
-              {stats.atk.total}
+              {stats.purchase.total}
             </h2>
             <p className="text-xs text-slate-500 font-medium mt-1">
-              Jenis alat tulis kantor aktif di gudang
+              Permohonan pengadaan & pembelian barang baru
             </p>
           </div>
-        </div>
+        </Link>
       </div>
 
       {/* ─── TABLE CARD: Pengajuan ATK Terbaru ─── */}

@@ -129,7 +129,8 @@ export const updateAtkItemSchema = z.object({
 // ===========================================
 
 export const createRequestSchema = z.object({
-  atkItemId: z.string().min(1, "Barang ATK wajib dipilih"),
+  atkItemId: z.string().optional(),
+  itemName: z.string().optional(),
   quantity: z
     .number()
     .int("Jumlah harus berupa angka bulat")

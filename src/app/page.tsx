@@ -1,101 +1,29 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState } from "react";
 import Link from "next/link";
 import { useToast } from "@/components/ui/Toast";
-import type { AtkItemData } from "@/types/atk";
-
-const ATK_PURCHASE_CATEGORIES: Record<string, string[]> = {
-  "Alat Tulis & Menggambar": [
-    "Pulpen Gel Hitam Standar (1 Box / Lusin)",
-    "Pulpen Gel Biru Standar (1 Box / Lusin)",
-    "Pulpen Gel Merah (1 Box)",
-    "Spidol Whiteboard Boardmarker Hitam/Biru (Snowman)",
-    "Spidol Permanent Marker Hitam/Biru",
-    "Pensil 2B (Faber-Castell / Joyko)",
-    "Penghapus Karet Pensil Putih",
-    "Correction Tape / Tipp-Ex Kertas Roll",
-    "Highlighter / Stabilo Warna Warni",
-    "Penggaris Besi / Plastik 30cm",
-  ],
-  "Kertas & Buku Catatan": [
-    "Kertas HVS A4 70 gsm (1 Rim)",
-    "Kertas HVS A4 80 gsm (1 Rim)",
-    "Kertas HVS F4 / Folio 70 gsm (1 Rim)",
-    "Kertas HVS F4 / Folio 80 gsm (1 Rim)",
-    "Kertas Foto Glossy A4",
-    "Kertas NCR 2 Ply / 3 Ply Rangkap",
-    "Buku Tulis Ekspedisi / Folio Bergaris",
-    "Buku Catatan Agenda Rapat Hardcover A5",
-    "Sticky Notes Yellow 3x3 (Post-it)",
-    "Post-it Index Penanda Pembatas Halaman",
-  ],
-  "Media Cetak & Tinta Printer": [
-    "Tinta Printer Canon GI-790 Black (Hitam)",
-    "Tinta Printer Canon GI-790 Cyan / Magenta / Yellow (Warna)",
-    "Tinta Printer Epson 003 Black (Hitam)",
-    "Tinta Printer Epson 003 Color (C/M/Y)",
-    "Tinta Printer Brother BT-D60BK",
-    "Toner Laser HP / Canon 85A Standar",
-    "Pita Ribbon Kasir / Dot Matrix",
-    "Kertas Thermal Roll Kasir 58mm / 80mm",
-  ],
-  "Filing & Dokumen (Map/Ordner)": [
-    "Map Plastik L Folder A4 / F4 Transparan (1 Lusin)",
-    "Map Plastik Snelhechter / Lubang Berpenjepit",
-    "Map Kancing Zipper Dokumen",
-    "Ordner / Binder Dokumen Tebal (Bantex)",
-    "Stopmap Kertas Folio Standar (1 Pack)",
-    "Clear Holder Dokumen 20 / 40 Lembar",
-    "Amplop Putih Standar Perekat (1 Kotak)",
-    "Amplop Coklat Tali / Non-Tali F4 (1 Kotak)",
-    "Pembatas Dokumen / Divider Binder",
-  ],
-  "Peralatan & Perlengkapan Kantor": [
-    "Stapler Sedang HD-10 (Joyko / Max)",
-    "Stapler Besar HD-50 Heavy Duty",
-    "Isi Staples No.10 Max / Joyko (1 Kotak)",
-    "Isi Staples No.3 / 24/6 (1 Kotak)",
-    "Gunting Stainless Kantor Sedang / Besar",
-    "Cutter Besar L-500 & Isi Ulang Pisau",
-    "Lakban Bening / Coklat 2 Inch",
-    "Double Tape Busa / Kertas 1 Inch",
-    "Paper Clip / Klip Kertas Trigonal No.3",
-    "Binder Clip Sedang (No. 155 / 200)",
-    "Binder Clip Besar (No. 260)",
-    "Lem Kertas Stik / Cair Joyko",
-    "Kalkulator Meja 12 Digit Citizen / Casio",
-    "Papan Tulis Whiteboard 90x60cm / 120x80cm",
-    "Stempel Tanggal & Tinta Bak Stempel",
-  ],
-  "Perangkat IT & Elektronik Kantor": [
-    "Mouse USB Optik Standar (Logitech)",
-    "Mouse Wireless USB",
-    "Keyboard Standar USB",
-    "Flashdisk 32 GB SanDisk Original",
-    "Flashdisk 64 GB SanDisk Original",
-    "Baterai Alkaline AA (1 Pack)",
-    "Baterai Alkaline AAA (1 Pack)",
-    "Kabel Colokan Stop Kontak Sambung 5 Lubang",
-  ],
-  "Lainnya": [
-    "Pengadaan ATK Baru Lainnya (Tuliskan di Catatan)",
-  ],
-};
 
 export default function PublicUserPortalPage() {
   const toast = useToast();
 
-  const [activeTab, setActiveTab] = useState<"request" | "purchase" | "catalog">("request");
+  const [activeTab, setActiveTab] = useState<"request" | "purchase">("request");
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   // Form 1: Permintaan ATK dari Gudang
-  const [requestForm, setRequestForm] = useState({
+  const [requestForm, setRequestForm] = useState<{
+    userName: string;
+    department: string;
+    position: string;
+    itemName: string;
+    quantity: string | number;
+    reason: string;
+  }>({
     userName: "",
     department: "",
     position: "",
-    atkItemId: "",
-    quantity: 1,
+    itemName: "",
+    quantity: "1",
     reason: "",
   });
   const [requestErrors, setRequestErrors] = useState<Record<string, string>>({});
@@ -103,47 +31,24 @@ export default function PublicUserPortalPage() {
   const [submittedRequestSuccess, setSubmittedRequestSuccess] = useState<any | null>(null);
 
   // Form 2: Pengajuan Pembelian ATK Baru
-  const [purchaseForm, setPurchaseForm] = useState({
+  const [purchaseForm, setPurchaseForm] = useState<{
+    userName: string;
+    department: string;
+    position: string;
+    itemName: string;
+    quantity: string | number;
+    reason: string;
+  }>({
     userName: "",
     department: "",
     position: "",
-    category: "Alat Tulis & Menggambar",
     itemName: "",
-    quantity: 1,
+    quantity: "1",
     reason: "",
   });
   const [purchaseErrors, setPurchaseErrors] = useState<Record<string, string>>({});
   const [submittingPurchase, setSubmittingPurchase] = useState(false);
   const [submittedPurchaseSuccess, setSubmittedPurchaseSuccess] = useState<any | null>(null);
-
-  // Items State (Gudang)
-  const [items, setItems] = useState<AtkItemData[]>([]);
-  const [loadingItems, setLoadingItems] = useState(true);
-  const [catalogSearch, setCatalogSearch] = useState("");
-
-  const fetchItems = async () => {
-    try {
-      setLoadingItems(true);
-      const res = await fetch("/api/atk");
-      if (res.ok) {
-        const data = await res.json();
-        setItems(data.data || []);
-      }
-    } catch (err) {
-      console.error("Fetch items error:", err);
-    } finally {
-      setLoadingItems(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchItems();
-  }, []);
-
-  const selectedItemObj = useMemo(
-    () => items.find((i) => i.id === requestForm.atkItemId),
-    [items, requestForm.atkItemId]
-  );
 
   // Validation Form 1
   const validateRequestForm = () => {
@@ -151,11 +56,10 @@ export default function PublicUserPortalPage() {
     if (!requestForm.userName.trim()) errors.userName = "Nama lengkap pemohon wajib diisi";
     if (!requestForm.department.trim()) errors.department = "Departemen/Divisi wajib diisi";
     if (!requestForm.position.trim()) errors.position = "Jabatan pemohon wajib diisi";
-    if (!requestForm.atkItemId) errors.atkItemId = "Silakan pilih barang ATK dari gudang";
-    if (!requestForm.quantity || requestForm.quantity < 1) errors.quantity = "Jumlah minimal 1";
-    if (selectedItemObj && requestForm.quantity > selectedItemObj.stock) {
-      errors.quantity = `Kuantitas melebihi stok tersedia (${selectedItemObj.stock} ${selectedItemObj.unit})`;
-    }
+    if (!requestForm.itemName.trim()) errors.itemName = "Nama barang ATK wajib diisi";
+
+    const parsedQty = parseInt(String(requestForm.quantity).replace(/\D/g, ""), 10);
+    if (!parsedQty || parsedQty < 1) errors.quantity = "Jumlah minimal 1";
 
     setRequestErrors(errors);
     return Object.keys(errors).length === 0;
@@ -167,10 +71,14 @@ export default function PublicUserPortalPage() {
 
     setSubmittingRequest(true);
     try {
+      const parsedQty = parseInt(String(requestForm.quantity).replace(/\D/g, ""), 10) || 1;
       const res = await fetch("/api/requests", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(requestForm),
+        body: JSON.stringify({
+          ...requestForm,
+          quantity: parsedQty,
+        }),
       });
 
       const result = await res.json();
@@ -183,12 +91,11 @@ export default function PublicUserPortalPage() {
 
       setRequestForm((prev) => ({
         ...prev,
-        atkItemId: "",
-        quantity: 1,
+        itemName: "",
+        quantity: "1",
         reason: "",
       }));
       setRequestErrors({});
-      fetchItems();
     } catch (err: any) {
       toast.error(err.message || "Terjadi kendala saat mengirim pengajuan");
     } finally {
@@ -203,7 +110,9 @@ export default function PublicUserPortalPage() {
     if (!purchaseForm.department.trim()) errors.department = "Departemen/Divisi wajib diisi";
     if (!purchaseForm.position.trim()) errors.position = "Jabatan pemohon wajib diisi";
     if (!purchaseForm.itemName.trim()) errors.itemName = "Nama barang ATK yang ingin dibeli wajib diisi";
-    if (!purchaseForm.quantity || purchaseForm.quantity < 1) errors.quantity = "Jumlah pembelian minimal 1";
+
+    const parsedQty = parseInt(String(purchaseForm.quantity).replace(/\D/g, ""), 10);
+    if (!parsedQty || parsedQty < 1) errors.quantity = "Jumlah pembelian minimal 1";
 
     setPurchaseErrors(errors);
     return Object.keys(errors).length === 0;
@@ -215,10 +124,14 @@ export default function PublicUserPortalPage() {
 
     setSubmittingPurchase(true);
     try {
+      const parsedQty = parseInt(String(purchaseForm.quantity).replace(/\D/g, ""), 10) || 1;
       const res = await fetch("/api/requests/purchase", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(purchaseForm),
+        body: JSON.stringify({
+          ...purchaseForm,
+          quantity: parsedQty,
+        }),
       });
 
       const result = await res.json();
@@ -232,7 +145,7 @@ export default function PublicUserPortalPage() {
       setPurchaseForm((prev) => ({
         ...prev,
         itemName: "",
-        quantity: 1,
+        quantity: "1",
         reason: "",
       }));
       setPurchaseErrors({});
@@ -242,21 +155,6 @@ export default function PublicUserPortalPage() {
       setSubmittingPurchase(false);
     }
   };
-
-  const handleSelectFromCatalog = (itemId: string) => {
-    setRequestForm((prev) => ({ ...prev, atkItemId: itemId }));
-    setActiveTab("request");
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
-
-  const filteredCatalog = useMemo(() => {
-    return items.filter((item) => {
-      return (
-        item.name.toLowerCase().includes(catalogSearch.toLowerCase()) ||
-        (item.description && item.description.toLowerCase().includes(catalogSearch.toLowerCase()))
-      );
-    });
-  }, [items, catalogSearch]);
 
   const navTabs = [
     {
@@ -277,15 +175,6 @@ export default function PublicUserPortalPage() {
         </svg>
       ),
     },
-    {
-      key: "catalog" as const,
-      label: "Katalog ATK",
-      icon: (
-        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-        </svg>
-      ),
-    },
   ];
 
   const getBreadcrumb = () => {
@@ -294,8 +183,6 @@ export default function PublicUserPortalPage() {
         return "Form Pengajuan";
       case "purchase":
         return "Pengajuan Pembelian ATK";
-      case "catalog":
-        return "Katalog ATK";
     }
   };
 
@@ -482,7 +369,7 @@ export default function PublicUserPortalPage() {
                         </label>
                         <input
                           type="text"
-                          placeholder="Contoh: Budi Santoso"
+                          placeholder=""
                           value={requestForm.userName}
                           onChange={(e) => setRequestForm({ ...requestForm, userName: e.target.value })}
                           className={`w-full rounded-xl border px-3.5 py-2.5 text-xs text-gray-900 font-medium bg-white focus:outline-none focus:ring-2 focus:ring-[#FF5500]/30 focus:border-[#FF5500] transition ${
@@ -498,7 +385,7 @@ export default function PublicUserPortalPage() {
                         </label>
                         <input
                           type="text"
-                          placeholder="Contoh: Keuangan, HRD, IT"
+                          placeholder=""
                           value={requestForm.department}
                           onChange={(e) => setRequestForm({ ...requestForm, department: e.target.value })}
                           className={`w-full rounded-xl border px-3.5 py-2.5 text-xs text-gray-900 font-medium bg-white focus:outline-none focus:ring-2 focus:ring-[#FF5500]/30 focus:border-[#FF5500] transition ${
@@ -514,7 +401,7 @@ export default function PublicUserPortalPage() {
                         </label>
                         <input
                           type="text"
-                          placeholder="Contoh: Staff Keuangan, Supervisor"
+                          placeholder=""
                           value={requestForm.position}
                           onChange={(e) => setRequestForm({ ...requestForm, position: e.target.value })}
                           className={`w-full rounded-xl border px-3.5 py-2.5 text-xs text-gray-900 font-medium bg-white focus:outline-none focus:ring-2 focus:ring-[#FF5500]/30 focus:border-[#FF5500] transition ${
@@ -534,59 +421,39 @@ export default function PublicUserPortalPage() {
                       2. DETAIL BARANG YANG DIAJUKAN
                     </span>
                     <div className="space-y-4">
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                        <div className="sm:col-span-2">
-                          <label className="block text-xs font-semibold text-gray-700 mb-1">
-                            Pilih Barang ATK <span className="text-red-500">*</span>
-                          </label>
-                          <select
-                            value={requestForm.atkItemId}
-                            onChange={(e) => setRequestForm({ ...requestForm, atkItemId: e.target.value })}
-                            className={`w-full rounded-xl border px-3.5 py-2.5 text-xs text-gray-900 font-medium bg-white focus:outline-none focus:ring-2 focus:ring-[#FF5500]/30 focus:border-[#FF5500] transition ${
-                              requestErrors.atkItemId ? "border-red-400 bg-red-50/20" : "border-gray-300"
-                            }`}
-                          >
-                            <option value="">-- Pilih Barang dari Gudang --</option>
-                            {items.map((item) => (
-                              <option key={item.id} value={item.id}>
-                                {item.name} — (Stok Tersedia: {item.stock} {item.unit})
-                              </option>
-                            ))}
-                          </select>
-                          {requestErrors.atkItemId && <p className="text-[11px] text-red-500 mt-1">{requestErrors.atkItemId}</p>}
-                        </div>
-
-                        <div>
-                          <label className="block text-xs font-semibold text-gray-700 mb-1">
-                            Jumlah yang Dibutuhkan <span className="text-red-500">*</span>
-                          </label>
-                          <input
-                            type="number"
-                            min="1"
-                            max={selectedItemObj ? selectedItemObj.stock : undefined}
-                            value={requestForm.quantity}
-                            onChange={(e) => setRequestForm({ ...requestForm, quantity: parseInt(e.target.value, 10) || 1 })}
-                            className={`w-full rounded-xl border px-3.5 py-2.5 text-xs text-gray-900 font-medium bg-white focus:outline-none focus:ring-2 focus:ring-[#FF5500]/30 focus:border-[#FF5500] transition ${
-                              requestErrors.quantity ? "border-red-400 bg-red-50/20" : "border-gray-300"
-                            }`}
-                          />
-                          {requestErrors.quantity && <p className="text-[11px] text-red-500 mt-1">{requestErrors.quantity}</p>}
-                        </div>
+                      <div>
+                        <label className="block text-xs font-semibold text-gray-700 mb-1">
+                          Nama Barang ATK <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          placeholder=""
+                          value={requestForm.itemName}
+                          onChange={(e) => setRequestForm({ ...requestForm, itemName: e.target.value })}
+                          className={`w-full rounded-xl border px-3.5 py-2.5 text-xs text-gray-900 font-medium bg-white focus:outline-none focus:ring-2 focus:ring-[#FF5500]/30 focus:border-[#FF5500] transition ${
+                            requestErrors.itemName ? "border-red-400 bg-red-50/20" : "border-gray-300"
+                          }`}
+                        />
+                        {requestErrors.itemName && <p className="text-[11px] text-red-500 mt-1">{requestErrors.itemName}</p>}
                       </div>
 
-                      {selectedItemObj && (
-                        <div className="flex items-center justify-between p-3.5 bg-orange-50/60 border border-orange-200/80 rounded-xl text-xs">
-                          <div>
-                            <p className="font-bold text-gray-900">{selectedItemObj.name}</p>
-                            {selectedItemObj.description && (
-                              <p className="text-[11px] text-gray-500 mt-0.5">{selectedItemObj.description}</p>
-                            )}
-                          </div>
-                          <span className="px-2.5 py-1 rounded-lg bg-[#FF5500] text-white font-bold text-[11px] shrink-0">
-                            Stok: {selectedItemObj.stock} {selectedItemObj.unit}
-                          </span>
-                        </div>
-                      )}
+                      <div>
+                        <label className="block text-xs font-semibold text-gray-700 mb-1">
+                          Jumlah yang Dibutuhkan <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          inputMode="numeric"
+                          placeholder=""
+                          value={requestForm.quantity}
+                          onChange={(e) => setRequestForm({ ...requestForm, quantity: e.target.value })}
+                          className={`w-full rounded-xl border px-3.5 py-2.5 text-xs text-gray-900 font-medium bg-white focus:outline-none focus:ring-2 focus:ring-[#FF5500]/30 focus:border-[#FF5500] transition ${
+                            requestErrors.quantity ? "border-red-400 bg-red-50/20" : "border-gray-300"
+                          }`}
+                        />
+                        {requestErrors.quantity && <p className="text-[11px] text-red-500 mt-1">{requestErrors.quantity}</p>}
+                      </div>
+
 
                       <div>
                         <label className="block text-xs font-semibold text-gray-700 mb-1">
@@ -676,7 +543,7 @@ export default function PublicUserPortalPage() {
                         </label>
                         <input
                           type="text"
-                          placeholder="Contoh: Budi Santoso"
+                          placeholder=""
                           value={purchaseForm.userName}
                           onChange={(e) => setPurchaseForm({ ...purchaseForm, userName: e.target.value })}
                           className={`w-full rounded-xl border px-3.5 py-2.5 text-xs text-gray-900 font-medium bg-white focus:outline-none focus:ring-2 focus:ring-[#FF5500]/30 focus:border-[#FF5500] transition ${
@@ -692,7 +559,7 @@ export default function PublicUserPortalPage() {
                         </label>
                         <input
                           type="text"
-                          placeholder="Contoh: Marketing, HRD, IT"
+                          placeholder=""
                           value={purchaseForm.department}
                           onChange={(e) => setPurchaseForm({ ...purchaseForm, department: e.target.value })}
                           className={`w-full rounded-xl border px-3.5 py-2.5 text-xs text-gray-900 font-medium bg-white focus:outline-none focus:ring-2 focus:ring-[#FF5500]/30 focus:border-[#FF5500] transition ${
@@ -708,7 +575,7 @@ export default function PublicUserPortalPage() {
                         </label>
                         <input
                           type="text"
-                          placeholder="Contoh: Staff Marketing, Officer"
+                          placeholder=""
                           value={purchaseForm.position}
                           onChange={(e) => setPurchaseForm({ ...purchaseForm, position: e.target.value })}
                           className={`w-full rounded-xl border px-3.5 py-2.5 text-xs text-gray-900 font-medium bg-white focus:outline-none focus:ring-2 focus:ring-[#FF5500]/30 focus:border-[#FF5500] transition ${
@@ -724,68 +591,29 @@ export default function PublicUserPortalPage() {
 
                   {/* Section 2: Detail Pembelian */}
                   <div>
-                    <span className="text-[11px] font-extrabold text-[#FF5500] uppercase tracking-widest block mb-3">
-                      2. DETAIL BARANG PEMBELIAN YANG DIAJUKAN
-                    </span>
                     <div className="space-y-4">
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        {/* Dropdown 1: Kategori Barang */}
-                        <div>
-                          <label className="block text-xs font-semibold text-gray-700 mb-1">
-                            Pilih Kategori Barang <span className="text-red-500">*</span>
-                          </label>
-                          <select
-                            value={purchaseForm.category}
-                            onChange={(e) => {
-                              const newCat = e.target.value;
-                              setPurchaseForm({
-                                ...purchaseForm,
-                                category: newCat,
-                                itemName: "",
-                              });
-                            }}
-                            className="w-full rounded-xl border border-gray-300 px-3.5 py-2.5 text-xs text-gray-900 font-medium bg-white focus:outline-none focus:ring-2 focus:ring-[#FF5500]/30 focus:border-[#FF5500] transition cursor-pointer"
-                          >
-                            {Object.keys(ATK_PURCHASE_CATEGORIES).map((cat) => (
-                              <option key={cat} value={cat}>
-                                {cat}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-
-                        {/* Dropdown 2: Nama Barang ATK (Pilihan Berdasarkan Kategori) */}
-                        <div>
-                          <label className="block text-xs font-semibold text-gray-700 mb-1">
-                            Pilih Nama Barang ATK <span className="text-red-500">*</span>
-                          </label>
-                          <select
-                            value={purchaseForm.itemName}
-                            onChange={(e) =>
-                              setPurchaseForm({ ...purchaseForm, itemName: e.target.value })
-                            }
-                            className={`w-full rounded-xl border px-3.5 py-2.5 text-xs text-gray-900 font-medium bg-white focus:outline-none focus:ring-2 focus:ring-[#FF5500]/30 focus:border-[#FF5500] transition cursor-pointer ${
-                              purchaseErrors.itemName
-                                ? "border-red-400 bg-red-50/20"
-                                : "border-gray-300"
-                            }`}
-                          >
-                            <option value="">-- Silakan Pilih Barang ATK --</option>
-                            {(
-                              ATK_PURCHASE_CATEGORIES[purchaseForm.category] ||
-                              ATK_PURCHASE_CATEGORIES["Alat Tulis & Menggambar"]
-                            ).map((item) => (
-                              <option key={item} value={item}>
-                                {item}
-                              </option>
-                            ))}
-                          </select>
-                          {purchaseErrors.itemName && (
-                            <p className="text-[11px] text-red-500 mt-1">
-                              {purchaseErrors.itemName}
-                            </p>
-                          )}
-                        </div>
+                      <div>
+                        <label className="block text-xs font-semibold text-gray-700 mb-1">
+                          Nama Barang ATK <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          placeholder=""
+                          value={purchaseForm.itemName}
+                          onChange={(e) =>
+                            setPurchaseForm({ ...purchaseForm, itemName: e.target.value })
+                          }
+                          className={`w-full rounded-xl border px-3.5 py-2.5 text-xs text-gray-900 font-medium bg-white focus:outline-none focus:ring-2 focus:ring-[#FF5500]/30 focus:border-[#FF5500] transition ${
+                            purchaseErrors.itemName
+                              ? "border-red-400 bg-red-50/20"
+                              : "border-gray-300"
+                          }`}
+                        />
+                        {purchaseErrors.itemName && (
+                          <p className="text-[11px] text-red-500 mt-1">
+                            {purchaseErrors.itemName}
+                          </p>
+                        )}
                       </div>
 
                       {/* Jumlah Kuantitas */}
@@ -794,16 +622,17 @@ export default function PublicUserPortalPage() {
                           Jumlah yang Dibutuhkan <span className="text-red-500">*</span>
                         </label>
                         <input
-                          type="number"
-                          min="1"
+                          type="text"
+                          inputMode="numeric"
+                          placeholder=""
                           value={purchaseForm.quantity}
                           onChange={(e) =>
                             setPurchaseForm({
                               ...purchaseForm,
-                              quantity: parseInt(e.target.value, 10) || 1,
+                              quantity: e.target.value,
                             })
                           }
-                          className={`w-full sm:w-48 rounded-xl border px-3.5 py-2.5 text-xs text-gray-900 font-medium bg-white focus:outline-none focus:ring-2 focus:ring-[#FF5500]/30 focus:border-[#FF5500] transition ${
+                          className={`w-full rounded-xl border px-3.5 py-2.5 text-xs text-gray-900 font-medium bg-white focus:outline-none focus:ring-2 focus:ring-[#FF5500]/30 focus:border-[#FF5500] transition ${
                             purchaseErrors.quantity
                               ? "border-red-400 bg-red-50/20"
                               : "border-gray-300"
@@ -858,98 +687,37 @@ export default function PublicUserPortalPage() {
             </div>
           )}
 
-          {/* ═══════════════════════════════════════════════════════════ */}
-          {/* ═══ TAB 3: KATALOG BARANG ATK PERSEDIAAN GUDANG ═════════ */}
-          {/* ═══════════════════════════════════════════════════════════ */}
-          {activeTab === "catalog" && (
-            <div className="space-y-6">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div>
-                  <h1 className="text-xl font-bold text-gray-900 tracking-tight">
-                    Katalog Persediaan ATK
-                  </h1>
-                  <p className="text-xs text-gray-500 font-medium mt-0.5">
-                    Daftar alat tulis kantor yang siap diajukan untuk operasional kerja.
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setActiveTab("purchase")}
-                  className="px-4 py-2 bg-[#FF5500] hover:bg-[#e04b00] text-white text-xs font-bold rounded-xl transition-colors cursor-pointer self-start sm:self-auto shadow-2xs"
-                >
-                  + Ajukan Pembelian Barang Baru
-                </button>
-              </div>
 
-              {/* Search Filters */}
-              <div className="bg-white border border-gray-200/70 rounded-2xl p-4 shadow-2xs">
-                <input
-                  type="text"
-                  placeholder="Cari nama barang ATK..."
-                  value={catalogSearch}
-                  onChange={(e) => setCatalogSearch(e.target.value)}
-                  className="w-full rounded-xl border border-gray-300 text-xs px-3.5 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#FF5500]/30 focus:border-[#FF5500] transition"
-                />
-              </div>
-
-              {/* Catalog Grid */}
-              {loadingItems ? (
-                <div className="py-16 text-center text-gray-400 text-xs font-medium">
-                  Memuat katalog barang...
-                </div>
-              ) : filteredCatalog.length === 0 ? (
-                <div className="py-16 text-center text-gray-400 text-xs font-medium">
-                  Belum ada data barang ATK di gudang.
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-                  {filteredCatalog.map((item) => (
-                    <div
-                      key={item.id}
-                      className="bg-white border border-gray-200/70 rounded-2xl p-5 shadow-2xs hover:border-[#FF5500]/50 hover:shadow-md transition-all flex flex-col justify-between"
-                    >
-                      <div>
-                        <div className="flex items-start justify-between gap-2 mb-2">
-                          <h3 className="font-bold text-gray-900 text-sm">{item.name}</h3>
-                          <span
-                            className={`text-[10px] font-extrabold px-2.5 py-0.5 rounded-full whitespace-nowrap ${
-                              item.stock > 10
-                                ? "bg-emerald-100 text-emerald-800"
-                                : item.stock > 0
-                                ? "bg-amber-100 text-amber-800"
-                                : "bg-red-100 text-red-800"
-                            }`}
-                          >
-                            {item.stock > 0 ? `Stok: ${item.stock} ${item.unit}` : "Habis"}
-                          </span>
-                        </div>
-                        <p className="text-xs text-gray-500 line-clamp-2">
-                          {item.description || "Alat tulis kantor standar perusahaan."}
-                        </p>
-                      </div>
-
-                      <div className="mt-5 pt-4 border-t border-gray-100">
-                        <button
-                          type="button"
-                          disabled={item.stock === 0}
-                          onClick={() => handleSelectFromCatalog(item.id)}
-                          className={`w-full py-2.5 rounded-xl text-xs font-bold transition-colors cursor-pointer ${
-                            item.stock > 0
-                              ? "bg-[#FF5500] hover:bg-[#e04b00] text-white shadow-2xs"
-                              : "bg-gray-100 text-gray-400 cursor-not-allowed"
-                          }`}
-                        >
-                          {item.stock > 0 ? "Ajukan Barang Ini" : "Stok Habis"}
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
         </main>
       </div>
+
+      {/* ─── FLOATING TELEGRAM LOGO BUTTON (Portal Karyawan) ─── */}
+      <aside aria-label="Telegram" className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-2">
+        {/* Label / Bubble Text Diatas Logo */}
+        <a
+          href="https://t.me/DennyXIX"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="bg-white/95 hover:bg-white text-slate-800 hover:text-[#229ED9] text-[11px] sm:text-xs font-bold px-3.5 py-1.5 rounded-xl shadow-md hover:shadow-lg border border-slate-200/90 transition-all flex items-center gap-1.5 cursor-pointer group"
+        >
+          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+          <span>Butuh Bantuan? Hubungi CS Sekarang</span>
+          <span className="text-[#229ED9] text-xs">💬</span>
+        </a>
+
+        {/* Circular Logo Button */}
+        <a
+          href="https://t.me/DennyXIX"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Telegram"
+          className="flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 bg-[#229ED9] hover:bg-[#1b8ec5] text-white rounded-full shadow-lg hover:shadow-2xl hover:scale-110 active:scale-95 transition-all duration-200 cursor-pointer group shrink-0"
+        >
+          <svg className="w-6 h-6 sm:w-7 sm:h-7 text-white" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 00-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.2-1.12-.31-1.08-.66.02-.18.27-.36.75-.55 2.92-1.27 4.86-2.11 5.83-2.51 2.78-1.16 3.35-1.36 3.73-1.36.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06.01.24 0 .38z"/>
+          </svg>
+        </a>
+      </aside>
     </div>
   );
 }

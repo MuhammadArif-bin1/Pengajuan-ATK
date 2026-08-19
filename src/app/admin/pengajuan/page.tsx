@@ -68,6 +68,7 @@ export default function AdminPengajuanPage() {
         const params = new URLSearchParams();
         params.set("page", page.toString());
         params.set("limit", "10");
+        params.set("type", "regular");
         if (search) params.set("search", search);
         if (statusFilter) params.set("status", statusFilter);
         if (departmentFilter) params.set("department", departmentFilter);
