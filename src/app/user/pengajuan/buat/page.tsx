@@ -78,8 +78,6 @@ export default function BuatPengajuanPage() {
 
     if (!quantity || Number(quantity) <= 0) {
       newErrors.quantity = "Jumlah barang minimal 1";
-    } else if (selectedItem && Number(quantity) > selectedItem.stock) {
-      newErrors.quantity = `Jumlah melebihi stok yang tersedia (${selectedItem.stock} ${selectedItem.unit})`;
     }
 
     if (!reason.trim()) {
@@ -199,8 +197,7 @@ export default function BuatPengajuanPage() {
                 error={errors.atkItemId}
                 options={items.map((item) => ({
                   value: item.id,
-                  label: `${item.name} (Tersedia: ${item.stock} ${item.unit})`,
-                  disabled: item.stock <= 0,
+                  label: `${item.name} (Stok: ${item.stock} ${item.unit})`,
                 }))}
               />
 
@@ -219,7 +216,7 @@ export default function BuatPengajuanPage() {
                   </div>
                   <div className="text-right">
                     <span className="text-[10px] text-indigo-500 uppercase font-semibold block">
-                      Stok Tersedia
+                      Stok di Gudang
                     </span>
                     <span className="font-bold text-indigo-900 text-sm">
                       {selectedItem.stock} {selectedItem.unit}
@@ -237,7 +234,6 @@ export default function BuatPengajuanPage() {
                 }`}
                 type="number"
                 min="1"
-                max={selectedItem ? selectedItem.stock : undefined}
                 required
                 placeholder="Contoh: 2"
                 value={quantity}
@@ -247,11 +243,7 @@ export default function BuatPengajuanPage() {
                   setErrors((prev) => ({ ...prev, quantity: "" }));
                 }}
                 error={errors.quantity}
-                helperText={
-                  selectedItem
-                    ? `Masukkan jumlah kebutuhan (Maksimal ${selectedItem.stock} ${selectedItem.unit})`
-                    : undefined
-                }
+                helperText="Masukkan jumlah kebutuhan yang diajukan"
               />
             </div>
 

@@ -9,7 +9,6 @@ import {
   getRequestsByUser,
   getAllRequests,
 } from "@/services/request.service";
-import { createRequestSchema, formatZodError } from "@/lib/validation";
 import type { RequestStatus } from "@/generated/prisma/enums";
 
 export async function GET(request: NextRequest) {
@@ -62,138 +61,199 @@ export async function POST(request: NextRequest) {
     const session = await getSession();
     const body = await request.json();
 
-    // If user is logged in
-    if (session) {
-      const parsed = createRequestSchema.safeParse(body);
-      if (!parsed.success) {
-        return NextResponse.json(
-          { error: formatZodError(parsed.error) },
-          { status: 400 }
-        );
-      }
+    const {
+      userName,
+      userEmail,
+      department,
+      position,
+      reason,
+      items,
+      itemName,
+      quantity,
+      atkItemId,
+    } = body;
 
-      let atkItemId = parsed.data.atkItemId;
-      if (!atkItemId && parsed.data.itemName) {
-        let atkItem = await prisma.atkItem.findFirst({
-          where: {
-            name: {
-              equals: parsed.data.itemName.trim(),
-              mode: "insensitive",
-            },
-          },
-        });
-        if (!atkItem) {
-          atkItem = await prisma.atkItem.create({
-            data: {
-              name: parsed.data.itemName.trim(),
-              description: "Permintaan ATK Karyawan",
-              unit: "pcs",
-              stock: 0,
-              isActive: true,
-            },
+    // Build list of items to process (supports multi-item list or single item fallback)
+    interface ItemPayload {
+      atkItemId?: string;
+      itemName: string;
+      quantity: number;
+    }
+
+    const itemsToProcess: ItemPayload[] = [];
+
+    if (Array.isArray(items) && items.length > 0) {
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i];
+        const cleanName = String(item.itemName || "").trim();
+        const qty = parseInt(String(item.quantity).replace(/\D/g, ""), 10) || 0;
+
+        if (!cleanName && items.length === 1) {
+          return NextResponse.json(
+            { error: "Nama barang ATK wajib diisi" },
+            { status: 400 }
+          );
+        }
+        if (cleanName) {
+          if (qty < 1) {
+            return NextResponse.json(
+              { error: `Jumlah barang "${cleanName}" minimal 1` },
+              { status: 400 }
+            );
+          }
+          itemsToProcess.push({
+            atkItemId: item.atkItemId,
+            itemName: cleanName,
+            quantity: qty,
           });
         }
-        atkItemId = atkItem.id;
       }
-
-      if (!atkItemId) {
-        return NextResponse.json(
-          { error: "Nama barang ATK wajib diisi" },
-          { status: 400 }
-        );
-      }
-
-      const newRequest = await createRequest({
-        userId: session.userId,
+    } else if (itemName || atkItemId) {
+      const cleanName = String(itemName || "").trim();
+      const qty = parseInt(String(quantity).replace(/\D/g, ""), 10) || 1;
+      itemsToProcess.push({
         atkItemId,
-        quantity: parsed.data.quantity,
-        reason: parsed.data.reason,
+        itemName: cleanName,
+        quantity: qty,
       });
+    }
+
+    if (itemsToProcess.length === 0) {
+      return NextResponse.json(
+        { error: "Minimal masukkan 1 barang ATK yang diajukan" },
+        { status: 400 }
+      );
+    }
+
+    const cleanReason = String(reason || "").trim() || "Kebutuhan operasional kantor";
+
+    // 1. Explicit employee information provided (e.g. from Portal Karyawan)
+    if (userName && String(userName).trim()) {
+      const cleanUserName = String(userName).trim();
+      const cleanDept = String(department || "Umum").trim();
+      const cleanPos = String(position || "Staff").trim();
+      const emailFallback =
+        userEmail?.trim() ||
+        `${cleanUserName.toLowerCase().replace(/[^a-z0-9]/g, "")}@hasamitra.internal`;
+
+      const createdRequests = [];
+
+      for (const itm of itemsToProcess) {
+        let finalItemId = itm.atkItemId;
+
+        if (!finalItemId && itm.itemName) {
+          let atkItem = await prisma.atkItem.findFirst({
+            where: {
+              name: {
+                equals: itm.itemName,
+                mode: "insensitive",
+              },
+            },
+          });
+
+          if (!atkItem) {
+            atkItem = await prisma.atkItem.create({
+              data: {
+                name: itm.itemName,
+                description: "Permintaan ATK Karyawan",
+                unit: "pcs",
+                stock: 0,
+                isActive: true,
+              },
+            });
+          }
+          finalItemId = atkItem.id;
+        }
+
+        if (!finalItemId) continue;
+
+        const newRequest = await createRequest({
+          userName: cleanUserName,
+          userEmail: emailFallback,
+          department: cleanDept,
+          position: cleanPos,
+          atkItemId: finalItemId,
+          quantity: itm.quantity,
+          reason: cleanReason,
+        });
+
+        createdRequests.push(newRequest);
+      }
 
       return NextResponse.json(
         {
           success: true,
-          message: "Pengajuan ATK berhasil dibuat dan menunggu persetujuan",
-          data: newRequest,
+          message: `Berhasil mengirim ${createdRequests.length} pengajuan ATK!`,
+          data: createdRequests.length === 1 ? createdRequests[0] : createdRequests,
+          items: createdRequests,
         },
         { status: 201 }
       );
     }
 
-    // If public user (without login)
-    const parsed = createRequestSchema.safeParse(body);
-    if (!parsed.success) {
-      return NextResponse.json(
-        { error: formatZodError(parsed.error) },
-        { status: 400 }
-      );
-    }
+    // 2. Logged-in session without explicit userName
+    if (session) {
+      const createdRequests = [];
 
-    // Require name if not logged in
-    if (!parsed.data.userName) {
-      return NextResponse.json(
-        { error: "Nama karyawan pemohon wajib diisi" },
-        { status: 400 }
-      );
-    }
+      for (const itm of itemsToProcess) {
+        let finalItemId = itm.atkItemId;
 
-    let atkItemId = parsed.data.atkItemId;
-    if (!atkItemId && parsed.data.itemName) {
-      let atkItem = await prisma.atkItem.findFirst({
-        where: {
-          name: {
-            equals: parsed.data.itemName.trim(),
-            mode: "insensitive",
-          },
-        },
-      });
-      if (!atkItem) {
-        atkItem = await prisma.atkItem.create({
-          data: {
-            name: parsed.data.itemName.trim(),
-            description: "Permintaan ATK Karyawan",
-            unit: "pcs",
-            stock: 0,
-            isActive: true,
-          },
+        if (!finalItemId && itm.itemName) {
+          let atkItem = await prisma.atkItem.findFirst({
+            where: {
+              name: {
+                equals: itm.itemName,
+                mode: "insensitive",
+              },
+            },
+          });
+
+          if (!atkItem) {
+            atkItem = await prisma.atkItem.create({
+              data: {
+                name: itm.itemName,
+                description: "Permintaan ATK Karyawan",
+                unit: "pcs",
+                stock: 0,
+                isActive: true,
+              },
+            });
+          }
+          finalItemId = atkItem.id;
+        }
+
+        if (!finalItemId) continue;
+
+        const newRequest = await createRequest({
+          userId: session.userId,
+          atkItemId: finalItemId,
+          quantity: itm.quantity,
+          reason: cleanReason,
         });
-      }
-      atkItemId = atkItem.id;
-    }
 
-    if (!atkItemId) {
+        createdRequests.push(newRequest);
+      }
+
       return NextResponse.json(
-        { error: "Nama barang ATK wajib diisi" },
-        { status: 400 }
+        {
+          success: true,
+          message: `Berhasil membuat ${createdRequests.length} pengajuan ATK!`,
+          data: createdRequests.length === 1 ? createdRequests[0] : createdRequests,
+          items: createdRequests,
+        },
+        { status: 201 }
       );
     }
 
-    const emailFallback =
-      parsed.data.userEmail ||
-      `${parsed.data.userName.toLowerCase().replace(/[^a-z0-9]/g, "") || "karyawan"}@hasamitra.internal`;
-
-    const newRequest = await createRequest({
-      userName: parsed.data.userName,
-      userEmail: emailFallback,
-      department: parsed.data.department || "Umum",
-      position: parsed.data.position || "Staff",
-      atkItemId,
-      quantity: parsed.data.quantity,
-      reason: parsed.data.reason?.trim() || "Kebutuhan operasional kantor",
-    });
-
     return NextResponse.json(
-      {
-        success: true,
-        message: "Pengajuan ATK berhasil dikirim dan berstatus MENUNGGU untuk ditinjau oleh Admin",
-        data: newRequest,
-      },
-      { status: 201 }
+      { error: "Nama karyawan pemohon wajib diisi" },
+      { status: 400 }
     );
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("POST /api/requests error:", error);
+    const message = error instanceof Error ? error.message : "Gagal membuat pengajuan ATK";
     return NextResponse.json(
-      { error: error.message || "Gagal membuat pengajuan ATK" },
+      { error: message },
       { status: 400 }
     );
   }

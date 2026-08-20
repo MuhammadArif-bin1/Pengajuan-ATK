@@ -80,18 +80,12 @@ export async function createRequest(data: {
     throw new Error("Karyawan tidak aktif atau tidak ditemukan");
   }
 
-  // Validate ATK item is active and has stock
+  // Validate ATK item is active
   const item = await prisma.atkItem.findUnique({
     where: { id: data.atkItemId },
   });
   if (!item || !item.isActive) {
     throw new Error("Barang ATK tidak aktif atau tidak ditemukan");
-  }
-
-  if (data.userId && item.stock < data.quantity) {
-    throw new Error(
-      `Stok tidak mencukupi. Stok tersedia: ${item.stock} ${item.unit}`
-    );
   }
 
   return prisma.atkRequest.create({

@@ -5,74 +5,99 @@ import Link from "next/link";
 import { useToast } from "@/components/ui/Toast";
 
 // --- Types ---
-interface RequestFormData {
+interface FormItemRow {
+  id: string;
+  itemName: string;
+  quantity: string;
+}
+
+interface FormState {
   userName: string;
   department: string;
   position: string;
-  itemName: string;
-  quantity: string;
+  items: FormItemRow[];
   reason: string;
 }
 
-interface SubmittedData {
-  quantity: number;
-  atkItem?: {
-    name: string;
-    unit: string;
-  };
+interface SubmittedSuccessSummary {
+  totalItems: number;
+  itemList: Array<{ name: string; quantity: number; unit?: string }>;
 }
 
-const INITIAL_FORM: RequestFormData = {
+const createInitialItems = (): FormItemRow[] => [
+  { id: "item-1", itemName: "", quantity: "1" },
+];
+
+const INITIAL_FORM: FormState = {
   userName: "",
   department: "",
   position: "",
-  itemName: "",
-  quantity: "1",
+  items: createInitialItems(),
   reason: "",
 };
 
 // --- Helper Functions ---
 function validateForm(
-  data: RequestFormData,
+  data: FormState,
   itemErrorMessage: string
 ): Record<string, string> {
   const errors: Record<string, string> = {};
   if (!data.userName.trim()) errors.userName = "Nama lengkap pemohon wajib diisi";
   if (!data.department.trim()) errors.department = "Departemen/Divisi wajib diisi";
   if (!data.position.trim()) errors.position = "Jabatan pemohon wajib diisi";
-  if (!data.itemName.trim()) errors.itemName = itemErrorMessage;
 
-  const parsedQty = parseInt(String(data.quantity).replace(/\D/g, ""), 10);
-  if (!parsedQty || parsedQty < 1) errors.quantity = "Jumlah minimal 1";
+  if (!data.items || data.items.length === 0) {
+    errors.generalItems = "Minimal tambahkan 1 barang ATK";
+  } else {
+    data.items.forEach((itm, idx) => {
+      if (!itm.itemName.trim()) {
+        errors[`itemName_${itm.id}`] = itemErrorMessage || `Nama barang #${idx + 1} wajib diisi`;
+      }
+      const parsedQty = parseInt(String(itm.quantity).replace(/\D/g, ""), 10);
+      if (!parsedQty || parsedQty < 1) {
+        errors[`quantity_${itm.id}`] = "Jumlah minimal 1";
+      }
+    });
+  }
 
   return errors;
 }
 
-// --- Sub-components for Cleanliness & Reusability ---
+// --- Sub-components ---
 function SuccessAlert({
   title,
-  message,
+  summary,
   onClose,
 }: {
   title: string;
-  message: React.ReactNode;
+  summary: SubmittedSuccessSummary;
   onClose: () => void;
 }) {
   return (
-    <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-start justify-between gap-3 shadow-2xs">
+    <div className="p-4 sm:p-5 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-start justify-between gap-3 shadow-2xs">
       <div className="flex items-start gap-3">
-        <div className="w-7 h-7 rounded-full bg-emerald-500 text-white flex items-center justify-center font-bold text-xs shrink-0 mt-0.5">
+        <div className="w-7 h-7 rounded-full bg-emerald-500 text-white flex items-center justify-center font-bold text-xs shrink-0 mt-0.5 shadow-xs">
           ✓
         </div>
-        <div>
+        <div className="space-y-1">
           <p className="text-sm font-bold text-emerald-900">{title}</p>
-          <div className="text-xs text-emerald-700 mt-0.5">{message}</div>
+          <div className="text-xs text-emerald-800 leading-relaxed">
+            Permohonan untuk{" "}
+            <b>{summary.totalItems} jenis barang</b> telah berhasil disimpan dan sedang menunggu persetujuan Admin:
+            <ul className="mt-1.5 list-disc list-inside space-y-0.5 text-emerald-900 font-medium">
+              {summary.itemList.map((itm, i) => (
+                <li key={i}>
+                  <b>{itm.name}</b> ({itm.quantity} {itm.unit || "pcs"})
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
       </div>
       <button
         type="button"
         onClick={onClose}
-        className="text-xs font-bold text-emerald-700 hover:underline shrink-0 cursor-pointer"
+        className="text-xs font-bold text-emerald-700 hover:text-emerald-900 hover:underline shrink-0 cursor-pointer"
       >
         ✕ Tutup
       </button>
@@ -85,9 +110,9 @@ function ApplicantFields({
   errors,
   onChange,
 }: {
-  formData: RequestFormData;
+  formData: FormState;
   errors: Record<string, string>;
-  onChange: (field: keyof RequestFormData, value: string) => void;
+  onChange: (field: keyof FormState, value: string) => void;
 }) {
   return (
     <div>
@@ -101,6 +126,7 @@ function ApplicantFields({
           </label>
           <input
             type="text"
+            placeholder="Contoh: Fadli Santoso"
             value={formData.userName}
             onChange={(e) => onChange("userName", e.target.value)}
             className={`w-full rounded-xl border px-3.5 py-2.5 text-xs text-gray-900 font-medium bg-white focus:outline-none focus:ring-2 focus:ring-[#FF5500]/30 focus:border-[#FF5500] transition ${
@@ -118,6 +144,7 @@ function ApplicantFields({
           </label>
           <input
             type="text"
+            placeholder="Contoh: Operasional"
             value={formData.department}
             onChange={(e) => onChange("department", e.target.value)}
             className={`w-full rounded-xl border px-3.5 py-2.5 text-xs text-gray-900 font-medium bg-white focus:outline-none focus:ring-2 focus:ring-[#FF5500]/30 focus:border-[#FF5500] transition ${
@@ -135,6 +162,7 @@ function ApplicantFields({
           </label>
           <input
             type="text"
+            placeholder="Contoh: Staff"
             value={formData.position}
             onChange={(e) => onChange("position", e.target.value)}
             className={`w-full rounded-xl border px-3.5 py-2.5 text-xs text-gray-900 font-medium bg-white focus:outline-none focus:ring-2 focus:ring-[#FF5500]/30 focus:border-[#FF5500] transition ${
@@ -145,6 +173,129 @@ function ApplicantFields({
             <p className="text-[11px] text-red-500 mt-1">{errors.position}</p>
           )}
         </div>
+      </div>
+    </div>
+  );
+}
+
+function ItemRowsSection({
+  sectionTitle,
+  items,
+  errors,
+  onItemChange,
+  onAddItem,
+  onRemoveItem,
+  placeholderName,
+}: {
+  sectionTitle: string;
+  items: FormItemRow[];
+  errors: Record<string, string>;
+  onItemChange: (id: string, field: "itemName" | "quantity", value: string) => void;
+  onAddItem: () => void;
+  onRemoveItem: (id: string) => void;
+  placeholderName: string;
+}) {
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-3">
+        <span className="text-[11px] font-extrabold text-[#FF5500] uppercase tracking-widest">
+          {sectionTitle}
+        </span>
+        <span className="text-[11px] text-gray-400 font-medium">
+          Total {items.length} Barang
+        </span>
+      </div>
+
+      <div className="space-y-3">
+        {items.map((row, index) => {
+          const itemError = errors[`itemName_${row.id}`];
+          const qtyError = errors[`quantity_${row.id}`];
+
+          return (
+            <div
+              key={row.id}
+              className="p-3.5 sm:p-4 rounded-xl border border-gray-200/90 bg-gray-50/50 hover:bg-white hover:border-gray-300 transition-all duration-150 relative group"
+            >
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[11px] font-bold text-gray-700 flex items-center gap-1.5">
+                  <span className="w-5 h-5 rounded-full bg-[#FF5500]/10 text-[#FF5500] inline-flex items-center justify-center text-[10px] font-extrabold">
+                    {index + 1}
+                  </span>
+                  Barang #{index + 1}
+                </span>
+
+                {items.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => onRemoveItem(row.id)}
+                    className="inline-flex items-center gap-1 text-[11px] font-semibold text-red-500 hover:text-red-700 hover:bg-red-50 px-2 py-0.5 rounded-md transition cursor-pointer"
+                    title="Hapus barang ini"
+                  >
+                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                    <span>Hapus</span>
+                  </button>
+                )}
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-start">
+                {/* Nama Barang ATK */}
+                <div className="sm:col-span-8">
+                  <label className="block text-[11px] font-semibold text-gray-600 mb-1">
+                    Nama Barang ATK <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    placeholder={placeholderName}
+                    value={row.itemName}
+                    onChange={(e) => onItemChange(row.id, "itemName", e.target.value)}
+                    className={`w-full rounded-xl border px-3.5 py-2.5 text-xs text-gray-900 font-medium bg-white focus:outline-none focus:ring-2 focus:ring-[#FF5500]/30 focus:border-[#FF5500] transition ${
+                      itemError ? "border-red-400 bg-red-50/20" : "border-gray-300"
+                    }`}
+                  />
+                  {itemError && <p className="text-[11px] text-red-500 mt-1">{itemError}</p>}
+                </div>
+
+                {/* Jumlah Kuantitas */}
+                <div className="sm:col-span-4">
+                  <label className="block text-[11px] font-semibold text-gray-600 mb-1">
+                    Jumlah <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    placeholder="Contoh: 2"
+                    value={row.quantity}
+                    onChange={(e) => {
+                      const onlyNums = e.target.value.replace(/\D/g, "");
+                      onItemChange(row.id, "quantity", onlyNums);
+                    }}
+                    className={`w-full rounded-xl border px-3.5 py-2.5 text-xs text-gray-900 font-medium bg-white focus:outline-none focus:ring-2 focus:ring-[#FF5500]/30 focus:border-[#FF5500] transition ${
+                      qtyError ? "border-red-400 bg-red-50/20" : "border-gray-300"
+                    }`}
+                  />
+                  {qtyError && <p className="text-[11px] text-red-500 mt-1">{qtyError}</p>}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Button Tambah Barang */}
+      <div className="mt-3">
+        <button
+          type="button"
+          onClick={onAddItem}
+          className="w-full py-2.5 px-4 rounded-xl border-2 border-dashed border-[#FF5500]/40 hover:border-[#FF5500] bg-orange-50/40 hover:bg-orange-50/80 text-[#FF5500] text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer group"
+        >
+          <svg className="w-4 h-4 group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+          </svg>
+          <span>+ Tambah Barang Lainnya (misal: Buku & Pulpen)</span>
+        </button>
       </div>
     </div>
   );
@@ -187,18 +338,68 @@ export default function PublicUserPortalPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   // Form 1: Permintaan ATK dari Gudang
-  const [requestForm, setRequestForm] = useState<RequestFormData>(INITIAL_FORM);
+  const [requestForm, setRequestForm] = useState<FormState>(INITIAL_FORM);
   const [requestErrors, setRequestErrors] = useState<Record<string, string>>({});
   const [submittingRequest, setSubmittingRequest] = useState(false);
-  const [submittedRequestSuccess, setSubmittedRequestSuccess] = useState<SubmittedData | null>(null);
+  const [submittedRequestSuccess, setSubmittedRequestSuccess] = useState<SubmittedSuccessSummary | null>(null);
 
   // Form 2: Pengajuan Pembelian ATK Baru
-  const [purchaseForm, setPurchaseForm] = useState<RequestFormData>(INITIAL_FORM);
+  const [purchaseForm, setPurchaseForm] = useState<FormState>(INITIAL_FORM);
   const [purchaseErrors, setPurchaseErrors] = useState<Record<string, string>>({});
   const [submittingPurchase, setSubmittingPurchase] = useState(false);
-  const [submittedPurchaseSuccess, setSubmittedPurchaseSuccess] = useState<SubmittedData | null>(null);
+  const [submittedPurchaseSuccess, setSubmittedPurchaseSuccess] = useState<SubmittedSuccessSummary | null>(null);
 
-  // Handlers for Form 1
+  // Item List Helpers for Form 1
+  const handleRequestItemChange = (id: string, field: "itemName" | "quantity", value: string) => {
+    setRequestForm((prev) => ({
+      ...prev,
+      items: prev.items.map((itm) => (itm.id === id ? { ...itm, [field]: value } : itm)),
+    }));
+  };
+
+  const handleAddRequestItem = () => {
+    setRequestForm((prev) => ({
+      ...prev,
+      items: [
+        ...prev.items,
+        { id: `item-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`, itemName: "", quantity: "1" },
+      ],
+    }));
+  };
+
+  const handleRemoveRequestItem = (id: string) => {
+    setRequestForm((prev) => ({
+      ...prev,
+      items: prev.items.filter((itm) => itm.id !== id),
+    }));
+  };
+
+  // Item List Helpers for Form 2
+  const handlePurchaseItemChange = (id: string, field: "itemName" | "quantity", value: string) => {
+    setPurchaseForm((prev) => ({
+      ...prev,
+      items: prev.items.map((itm) => (itm.id === id ? { ...itm, [field]: value } : itm)),
+    }));
+  };
+
+  const handleAddPurchaseItem = () => {
+    setPurchaseForm((prev) => ({
+      ...prev,
+      items: [
+        ...prev.items,
+        { id: `item-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`, itemName: "", quantity: "1" },
+      ],
+    }));
+  };
+
+  const handleRemovePurchaseItem = (id: string) => {
+    setPurchaseForm((prev) => ({
+      ...prev,
+      items: prev.items.filter((itm) => itm.id !== id),
+    }));
+  };
+
+  // Handlers for Form 1 Submit
   const handleRequestSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const errors = validateForm(requestForm, "Nama barang ATK wajib diisi");
@@ -210,13 +411,20 @@ export default function PublicUserPortalPage() {
 
     setSubmittingRequest(true);
     try {
-      const parsedQty = parseInt(String(requestForm.quantity).replace(/\D/g, ""), 10) || 1;
+      const payloadItems = requestForm.items.map((itm) => ({
+        itemName: itm.itemName.trim(),
+        quantity: parseInt(String(itm.quantity).replace(/\D/g, ""), 10) || 1,
+      }));
+
       const res = await fetch("/api/requests", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          ...requestForm,
-          quantity: parsedQty,
+          userName: requestForm.userName.trim(),
+          department: requestForm.department.trim(),
+          position: requestForm.position.trim(),
+          reason: requestForm.reason.trim(),
+          items: payloadItems,
         }),
       });
 
@@ -225,12 +433,26 @@ export default function PublicUserPortalPage() {
         throw new Error(result.error || "Gagal mengirim pengajuan");
       }
 
-      toast.success("Pengajuan permintaan ATK berhasil dikirim ke Admin!");
-      setSubmittedRequestSuccess(result.data);
+      toast.success(`Pengajuan ${payloadItems.length} barang ATK berhasil dikirim ke Admin!`);
+
+      const rawItems = Array.isArray(result.items)
+        ? result.items
+        : Array.isArray(result.data)
+        ? result.data
+        : [result.data];
+
+      setSubmittedRequestSuccess({
+        totalItems: payloadItems.length,
+        itemList: rawItems.map((r: any, idx: number) => ({
+          name: r?.atkItem?.name || payloadItems[idx]?.itemName || "Barang ATK",
+          quantity: r?.quantity || payloadItems[idx]?.quantity || 1,
+          unit: r?.atkItem?.unit || "pcs",
+        })),
+      });
+
       setRequestForm((prev) => ({
         ...prev,
-        itemName: "",
-        quantity: "1",
+        items: createInitialItems(),
         reason: "",
       }));
     } catch (err: unknown) {
@@ -241,7 +463,7 @@ export default function PublicUserPortalPage() {
     }
   };
 
-  // Handlers for Form 2
+  // Handlers for Form 2 Submit
   const handlePurchaseSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const errors = validateForm(purchaseForm, "Nama barang ATK yang ingin dibeli wajib diisi");
@@ -253,13 +475,20 @@ export default function PublicUserPortalPage() {
 
     setSubmittingPurchase(true);
     try {
-      const parsedQty = parseInt(String(purchaseForm.quantity).replace(/\D/g, ""), 10) || 1;
+      const payloadItems = purchaseForm.items.map((itm) => ({
+        itemName: itm.itemName.trim(),
+        quantity: parseInt(String(itm.quantity).replace(/\D/g, ""), 10) || 1,
+      }));
+
       const res = await fetch("/api/requests/purchase", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          ...purchaseForm,
-          quantity: parsedQty,
+          userName: purchaseForm.userName.trim(),
+          department: purchaseForm.department.trim(),
+          position: purchaseForm.position.trim(),
+          reason: purchaseForm.reason.trim(),
+          items: payloadItems,
         }),
       });
 
@@ -268,12 +497,26 @@ export default function PublicUserPortalPage() {
         throw new Error(result.error || "Gagal mengirim permohonan pembelian");
       }
 
-      toast.success("Pengajuan pembelian ATK berhasil dikirim!");
-      setSubmittedPurchaseSuccess(result.data);
+      toast.success(`Pengajuan pembelian ${payloadItems.length} barang ATK berhasil dikirim!`);
+
+      const rawItems = Array.isArray(result.items)
+        ? result.items
+        : Array.isArray(result.data)
+        ? result.data
+        : [result.data];
+
+      setSubmittedPurchaseSuccess({
+        totalItems: payloadItems.length,
+        itemList: rawItems.map((r: any, idx: number) => ({
+          name: r?.atkItem?.name || payloadItems[idx]?.itemName || "Barang ATK",
+          quantity: r?.quantity || payloadItems[idx]?.quantity || 1,
+          unit: r?.atkItem?.unit || "pcs",
+        })),
+      });
+
       setPurchaseForm((prev) => ({
         ...prev,
-        itemName: "",
-        quantity: "1",
+        items: createInitialItems(),
         reason: "",
       }));
     } catch (err: unknown) {
@@ -466,12 +709,7 @@ export default function PublicUserPortalPage() {
               {submittedRequestSuccess && (
                 <SuccessAlert
                   title="Pengajuan Berhasil Terkirim!"
-                  message={
-                    <>
-                      Pengajuan Anda untuk <b>{submittedRequestSuccess.atkItem?.name}</b> ({submittedRequestSuccess.quantity}{" "}
-                      {submittedRequestSuccess.atkItem?.unit || "pcs"}) telah tersimpan dan sedang menunggu persetujuan Admin.
-                    </>
-                  }
+                  summary={submittedRequestSuccess}
                   onClose={() => setSubmittedRequestSuccess(null)}
                 />
               )}
@@ -480,7 +718,7 @@ export default function PublicUserPortalPage() {
                 <div className="px-6 py-5 border-b border-gray-100">
                   <h2 className="text-lg font-bold text-gray-900">Formulir Pengajuan ATK</h2>
                   <p className="text-xs text-gray-500 mt-0.5 font-medium">
-                    Lengkapi data pemohon dan detail alat tulis kantor yang Anda butuhkan dari stok gudang.
+                    Lengkapi data pemohon dan detail alat tulis kantor yang Anda butuhkan untuk operasional kerja.
                   </p>
                 </div>
 
@@ -496,76 +734,38 @@ export default function PublicUserPortalPage() {
 
                   <hr className="border-gray-100" />
 
-                  {/* Section 2: Detail Barang */}
+                  {/* Section 2: Detail Barang (Multi-item) */}
+                  <ItemRowsSection
+                    sectionTitle="2. DETAIL BARANG YANG DIAJUKAN"
+                    items={requestForm.items}
+                    errors={requestErrors}
+                    onItemChange={handleRequestItemChange}
+                    onAddItem={handleAddRequestItem}
+                    onRemoveItem={handleRemoveRequestItem}
+                    placeholderName="Contoh: Buku Tulis, Pulpen Hitam, Kertas A4..."
+                  />
+
+                  {/* Section 3: Alasan & Catatan */}
                   <div>
-                    <span className="text-[11px] font-extrabold text-[#FF5500] uppercase tracking-widest block mb-3">
-                      2. DETAIL BARANG YANG DIAJUKAN
-                    </span>
-                    <div className="space-y-4">
-                      <div>
-                        <label className="block text-xs font-semibold text-gray-700 mb-1">
-                          Nama Barang ATK <span className="text-red-500">*</span>
-                        </label>
-                        <input
-                          type="text"
-                          value={requestForm.itemName}
-                          onChange={(e) =>
-                            setRequestForm((prev) => ({ ...prev, itemName: e.target.value }))
-                          }
-                          className={`w-full rounded-xl border px-3.5 py-2.5 text-xs text-gray-900 font-medium bg-white focus:outline-none focus:ring-2 focus:ring-[#FF5500]/30 focus:border-[#FF5500] transition ${
-                            requestErrors.itemName ? "border-red-400 bg-red-50/20" : "border-gray-300"
-                          }`}
-                        />
-                        {requestErrors.itemName && (
-                          <p className="text-[11px] text-red-500 mt-1">{requestErrors.itemName}</p>
-                        )}
-                      </div>
-
-                      <div>
-                        <label className="block text-xs font-semibold text-gray-700 mb-1">
-                          Jumlah yang Dibutuhkan <span className="text-red-500">*</span>
-                        </label>
-                        <input
-                          type="text"
-                          inputMode="numeric"
-                          pattern="[0-9]*"
-                          placeholder="Masukkan jumlah angka..."
-                          value={requestForm.quantity}
-                          onChange={(e) => {
-                            const onlyNums = e.target.value.replace(/\D/g, "");
-                            setRequestForm((prev) => ({ ...prev, quantity: onlyNums }));
-                          }}
-                          className={`w-full rounded-xl border px-3.5 py-2.5 text-xs text-gray-900 font-medium bg-white focus:outline-none focus:ring-2 focus:ring-[#FF5500]/30 focus:border-[#FF5500] transition ${
-                            requestErrors.quantity ? "border-red-400 bg-red-50/20" : "border-gray-300"
-                          }`}
-                        />
-                        {requestErrors.quantity && (
-                          <p className="text-[11px] text-red-500 mt-1">{requestErrors.quantity}</p>
-                        )}
-                      </div>
-
-                      <div>
-                        <label className="block text-xs font-semibold text-gray-700 mb-1">
-                          Alasan & Keperluan Penggunaan <span className="text-gray-400 font-normal">(Opsional)</span>
-                        </label>
-                        <textarea
-                          rows={3}
-                          placeholder="Jelaskan keperluan penggunaan ATK jika diperlukan (opsional)..."
-                          value={requestForm.reason}
-                          onChange={(e) =>
-                            setRequestForm((prev) => ({ ...prev, reason: e.target.value }))
-                          }
-                          className="w-full rounded-xl border border-gray-300 px-3.5 py-2.5 text-xs text-gray-900 font-medium bg-white focus:outline-none focus:ring-2 focus:ring-[#FF5500]/30 focus:border-[#FF5500] transition resize-none"
-                        />
-                      </div>
-                    </div>
+                    <label className="block text-xs font-semibold text-gray-700 mb-1">
+                      Alasan & Keperluan Penggunaan <span className="text-gray-400 font-normal">(Opsional)</span>
+                    </label>
+                    <textarea
+                      rows={3}
+                      placeholder="Jelaskan keperluan penggunaan ATK jika diperlukan (opsional)..."
+                      value={requestForm.reason}
+                      onChange={(e) =>
+                        setRequestForm((prev) => ({ ...prev, reason: e.target.value }))
+                      }
+                      className="w-full rounded-xl border border-gray-300 px-3.5 py-2.5 text-xs text-gray-900 font-medium bg-white focus:outline-none focus:ring-2 focus:ring-[#FF5500]/30 focus:border-[#FF5500] transition resize-none"
+                    />
                   </div>
 
                   <div className="pt-2">
                     <SubmitButton
                       loading={submittingRequest}
                       loadingText="Mengirim Pengajuan..."
-                      defaultText="Kirim Pengajuan ATK"
+                      defaultText={`Kirim Pengajuan ATK (${requestForm.items.length} Barang)`}
                     />
                   </div>
                 </form>
@@ -579,12 +779,7 @@ export default function PublicUserPortalPage() {
               {submittedPurchaseSuccess && (
                 <SuccessAlert
                   title="Pengajuan Pembelian Berhasil Terkirim!"
-                  message={
-                    <>
-                      Permohonan pembelian <b>{submittedPurchaseSuccess.atkItem?.name}</b> sejumlah{" "}
-                      <b>{submittedPurchaseSuccess.quantity} item</b> telah tersimpan dan menunggu persetujuan Admin.
-                    </>
-                  }
+                  summary={submittedPurchaseSuccess}
                   onClose={() => setSubmittedPurchaseSuccess(null)}
                 />
               )}
@@ -609,76 +804,38 @@ export default function PublicUserPortalPage() {
 
                   <hr className="border-gray-100" />
 
-                  {/* Section 2: Detail Pembelian */}
+                  {/* Section 2: Detail Pembelian (Multi-item) */}
+                  <ItemRowsSection
+                    sectionTitle="2. DETAIL BARANG PEMBELIAN"
+                    items={purchaseForm.items}
+                    errors={purchaseErrors}
+                    onItemChange={handlePurchaseItemChange}
+                    onAddItem={handleAddPurchaseItem}
+                    onRemoveItem={handleRemovePurchaseItem}
+                    placeholderName="Contoh: Spidol Whiteboard, Tinta Printer, Flashdisk..."
+                  />
+
+                  {/* Section 3: Alasan & Catatan Pembelian */}
                   <div>
-                    <span className="text-[11px] font-extrabold text-[#FF5500] uppercase tracking-widest block mb-3">
-                      2. DETAIL BARANG PEMBELIAN
-                    </span>
-                    <div className="space-y-4">
-                      <div>
-                        <label className="block text-xs font-semibold text-gray-700 mb-1">
-                          Nama Barang ATK <span className="text-red-500">*</span>
-                        </label>
-                        <input
-                          type="text"
-                          value={purchaseForm.itemName}
-                          onChange={(e) =>
-                            setPurchaseForm((prev) => ({ ...prev, itemName: e.target.value }))
-                          }
-                          className={`w-full rounded-xl border px-3.5 py-2.5 text-xs text-gray-900 font-medium bg-white focus:outline-none focus:ring-2 focus:ring-[#FF5500]/30 focus:border-[#FF5500] transition ${
-                            purchaseErrors.itemName ? "border-red-400 bg-red-50/20" : "border-gray-300"
-                          }`}
-                        />
-                        {purchaseErrors.itemName && (
-                          <p className="text-[11px] text-red-500 mt-1">{purchaseErrors.itemName}</p>
-                        )}
-                      </div>
-
-                      <div>
-                        <label className="block text-xs font-semibold text-gray-700 mb-1">
-                          Jumlah yang Dibutuhkan <span className="text-red-500">*</span>
-                        </label>
-                        <input
-                          type="text"
-                          inputMode="numeric"
-                          pattern="[0-9]*"
-                          placeholder="Masukkan jumlah angka..."
-                          value={purchaseForm.quantity}
-                          onChange={(e) => {
-                            const onlyNums = e.target.value.replace(/\D/g, "");
-                            setPurchaseForm((prev) => ({ ...prev, quantity: onlyNums }));
-                          }}
-                          className={`w-full rounded-xl border px-3.5 py-2.5 text-xs text-gray-900 font-medium bg-white focus:outline-none focus:ring-2 focus:ring-[#FF5500]/30 focus:border-[#FF5500] transition ${
-                            purchaseErrors.quantity ? "border-red-400 bg-red-50/20" : "border-gray-300"
-                          }`}
-                        />
-                        {purchaseErrors.quantity && (
-                          <p className="text-[11px] text-red-500 mt-1">{purchaseErrors.quantity}</p>
-                        )}
-                      </div>
-
-                      <div>
-                        <label className="block text-xs font-semibold text-gray-700 mb-1">
-                          Alasan & Catatan Pembelian <span className="text-gray-400 font-normal">(Opsional)</span>
-                        </label>
-                        <textarea
-                          rows={3}
-                          placeholder="Jelaskan alasan atau urgensi pembelian barang jika diperlukan (opsional)..."
-                          value={purchaseForm.reason}
-                          onChange={(e) =>
-                            setPurchaseForm((prev) => ({ ...prev, reason: e.target.value }))
-                          }
-                          className="w-full rounded-xl border border-gray-300 px-3.5 py-2.5 text-xs text-gray-900 font-medium bg-white focus:outline-none focus:ring-2 focus:ring-[#FF5500]/30 focus:border-[#FF5500] transition resize-none"
-                        />
-                      </div>
-                    </div>
+                    <label className="block text-xs font-semibold text-gray-700 mb-1">
+                      Alasan & Catatan Pembelian <span className="text-gray-400 font-normal">(Opsional)</span>
+                    </label>
+                    <textarea
+                      rows={3}
+                      placeholder="Jelaskan alasan atau urgensi pembelian barang jika diperlukan (opsional)..."
+                      value={purchaseForm.reason}
+                      onChange={(e) =>
+                        setPurchaseForm((prev) => ({ ...prev, reason: e.target.value }))
+                      }
+                      className="w-full rounded-xl border border-gray-300 px-3.5 py-2.5 text-xs text-gray-900 font-medium bg-white focus:outline-none focus:ring-2 focus:ring-[#FF5500]/30 focus:border-[#FF5500] transition resize-none"
+                    />
                   </div>
 
                   <div className="pt-2">
                     <SubmitButton
                       loading={submittingPurchase}
                       loadingText="Memproses Permohonan..."
-                      defaultText="Kirim Pengajuan Pembelian ATK"
+                      defaultText={`Kirim Pengajuan Pembelian ATK (${purchaseForm.items.length} Barang)`}
                     />
                   </div>
                 </form>
