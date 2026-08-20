@@ -20,11 +20,6 @@ interface FormState {
   reason: string;
 }
 
-interface SubmittedSuccessSummary {
-  totalItems: number;
-  itemList: Array<{ name: string; quantity: number; unit?: string }>;
-}
-
 export interface AtkCatalogItem {
   id: string;
   name: string;
@@ -145,50 +140,6 @@ function StatusBadge({ status }: { status: PortalNotificationItem["status"] }) {
 }
 
 // --- Sub-components ---
-function SuccessAlert({
-  title,
-  summary,
-  onClose,
-}: {
-  title: string;
-  summary: SubmittedSuccessSummary;
-  onClose: () => void;
-}) {
-  return (
-    <div className="p-4 sm:p-5 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-start justify-between gap-3 shadow-2xs">
-      <div className="flex items-start gap-3">
-        <div className="w-7 h-7 rounded-full bg-emerald-500 text-white flex items-center justify-center font-bold text-xs shrink-0 mt-0.5 shadow-xs">
-          ✓
-        </div>
-        <div className="space-y-1">
-          <p className="text-sm font-bold text-emerald-900">{title}</p>
-          <div className="text-xs text-emerald-800 leading-relaxed">
-            Permohonan untuk{" "}
-            <b>{summary.totalItems} jenis barang</b> telah berhasil disimpan dan sedang menunggu persetujuan Admin:
-            <ul className="mt-1.5 list-disc list-inside space-y-0.5 text-emerald-900 font-medium">
-              {summary.itemList.map((itm, i) => (
-                <li key={i}>
-                  <b>{itm.name}</b> ({itm.quantity} {itm.unit || "pcs"})
-                </li>
-              ))}
-            </ul>
-            <p className="mt-1.5 text-[11px] text-emerald-700">
-              💡 Notifikasi otomatis akan muncul di pojok kanan atas saat Admin menyetujui atau menolak permohonan ini.
-            </p>
-          </div>
-        </div>
-      </div>
-      <button
-        type="button"
-        onClick={onClose}
-        className="text-xs font-bold text-emerald-700 hover:text-emerald-900 hover:underline shrink-0 cursor-pointer"
-      >
-        ✕ Tutup
-      </button>
-    </div>
-  );
-}
-
 function ApplicantFields({
   formData,
   errors,
@@ -750,13 +701,11 @@ export default function PublicUserPortalPage() {
   const [requestForm, setRequestForm] = useState<FormState>(INITIAL_FORM);
   const [requestErrors, setRequestErrors] = useState<Record<string, string>>({});
   const [submittingRequest, setSubmittingRequest] = useState(false);
-  const [submittedRequestSuccess, setSubmittedRequestSuccess] = useState<SubmittedSuccessSummary | null>(null);
 
   // Form 2: Pengajuan Pembelian ATK Baru
   const [purchaseForm, setPurchaseForm] = useState<FormState>(INITIAL_FORM);
   const [purchaseErrors, setPurchaseErrors] = useState<Record<string, string>>({});
   const [submittingPurchase, setSubmittingPurchase] = useState(false);
-  const [submittedPurchaseSuccess, setSubmittedPurchaseSuccess] = useState<SubmittedSuccessSummary | null>(null);
 
   // --- Real-time Notifications & Tracking State ---
   const [notifications, setNotifications] = useState<PortalNotificationItem[]>([]);
@@ -1156,15 +1105,6 @@ export default function PublicUserPortalPage() {
         });
       }
 
-      setSubmittedRequestSuccess({
-        totalItems: payloadItems.length,
-        itemList: rawItems.map((r: any, idx: number) => ({
-          name: r?.atkItem?.name || payloadItems[idx]?.itemName || "Barang ATK",
-          quantity: r?.quantity || payloadItems[idx]?.quantity || 1,
-          unit: r?.atkItem?.unit || "pcs",
-        })),
-      });
-
       setRequestForm((prev) => ({
         ...prev,
         items: createInitialItems(),
@@ -1227,15 +1167,6 @@ export default function PublicUserPortalPage() {
           lastStatusesRef.current[id] = "MENUNGGU";
         });
       }
-
-      setSubmittedPurchaseSuccess({
-        totalItems: payloadItems.length,
-        itemList: rawItems.map((r: any, idx: number) => ({
-          name: r?.atkItem?.name || payloadItems[idx]?.itemName || "Barang ATK",
-          quantity: r?.quantity || payloadItems[idx]?.quantity || 1,
-          unit: r?.atkItem?.unit || "pcs",
-        })),
-      });
 
       setPurchaseForm((prev) => ({
         ...prev,
@@ -1650,14 +1581,6 @@ export default function PublicUserPortalPage() {
           {/* TAB 1: FORM PENGAJUAN PERMINTAAN ATK GUDANG */}
           {activeTab === "request" && (
             <div className="space-y-6">
-              {submittedRequestSuccess && (
-                <SuccessAlert
-                  title="Pengajuan Berhasil Terkirim!"
-                  summary={submittedRequestSuccess}
-                  onClose={() => setSubmittedRequestSuccess(null)}
-                />
-              )}
-
               {/* ─── 2-COLUMN LIVE OVERVIEW: JENIS BARANG & KETERSEDIAAN STOK ─── */}
               <InventoryOverviewSection
                 items={catalogItems}
@@ -1746,14 +1669,6 @@ export default function PublicUserPortalPage() {
           {/* TAB 2: FORM PENGAJUAN PEMBELIAN ATK BARU */}
           {activeTab === "purchase" && (
             <div className="space-y-6">
-              {submittedPurchaseSuccess && (
-                <SuccessAlert
-                  title="Pengajuan Pembelian Berhasil Terkirim!"
-                  summary={submittedPurchaseSuccess}
-                  onClose={() => setSubmittedPurchaseSuccess(null)}
-                />
-              )}
-
               {/* ─── 2-COLUMN LIVE OVERVIEW: JENIS BARANG & KETERSEDIAAN STOK ─── */}
               <InventoryOverviewSection
                 items={catalogItems}
