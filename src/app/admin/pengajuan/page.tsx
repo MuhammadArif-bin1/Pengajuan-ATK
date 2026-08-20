@@ -705,7 +705,7 @@ export default function AdminPengajuanPage() {
           isOpen={!!selectedRequest}
           onClose={() => setSelectedRequest(null)}
           title="Review Pengajuan ATK"
-          subtitle={`ID: #${selectedRequest.id.slice(-8)} • Pemohon: ${selectedRequest.user.name}`}
+          subtitle={`Tiket: #${selectedRequest.id.slice(-8).toUpperCase()} • Pemohon: ${selectedRequest.user.name}`}
           size="lg"
           footer={
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between w-full gap-3">
@@ -726,7 +726,7 @@ export default function AdminPengajuanPage() {
                     setSelectedRequest(null);
                     setSingleDeleteTarget(req);
                   }}
-                  className="px-3 py-1.5 rounded-lg text-xs font-semibold text-rose-600 hover:bg-rose-50 border border-rose-200 transition cursor-pointer flex items-center gap-1"
+                  className="px-3 py-1.5 rounded-xl text-xs font-semibold text-rose-600 hover:bg-rose-50 border border-rose-200 transition cursor-pointer flex items-center gap-1.5"
                 >
                   <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -735,151 +735,209 @@ export default function AdminPengajuanPage() {
                 </button>
               </div>
 
-              <div className="flex flex-wrap items-center gap-1.5 justify-end">
-                <span className="text-xs text-slate-400 font-medium mr-1 hidden sm:inline">
-                  Ubah Status:
-                </span>
-
+              <div className="flex flex-wrap items-center gap-2 justify-end">
                 {selectedRequest.status !== "MENUNGGU" && (
-                  <Button
-                    variant="secondary"
-                    size="xs"
-                    isLoading={isProcessing}
-                    onClick={() =>
-                      handleUpdateStatus(selectedRequest.id, "MENUNGGU")
-                    }
+                  <button
+                    type="button"
+                    disabled={isProcessing}
+                    onClick={() => handleUpdateStatus(selectedRequest.id, "MENUNGGU")}
+                    className="px-3 py-1.5 rounded-xl text-xs font-bold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 transition cursor-pointer flex items-center gap-1 disabled:opacity-50"
                   >
-                    🟡 Menunggu
-                  </Button>
-                )}
-
-                {selectedRequest.status !== "DISETUJUI" && (
-                  <Button
-                    variant="success"
-                    size="xs"
-                    isLoading={isProcessing}
-                    onClick={() =>
-                      handleUpdateStatus(selectedRequest.id, "DISETUJUI")
-                    }
-                  >
-                    ✓ Disetujui
-                  </Button>
+                    <span>🟡</span>
+                    <span>Set Menunggu</span>
+                  </button>
                 )}
 
                 {selectedRequest.status !== "DIPROSES" && (
-                  <Button
-                    variant="primary"
-                    size="xs"
-                    isLoading={isProcessing}
-                    onClick={() =>
-                      handleUpdateStatus(selectedRequest.id, "DIPROSES")
-                    }
+                  <button
+                    type="button"
+                    disabled={isProcessing}
+                    onClick={() => handleUpdateStatus(selectedRequest.id, "DIPROSES")}
+                    className="px-3 py-1.5 rounded-xl text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 transition cursor-pointer flex items-center gap-1 disabled:opacity-50"
                   >
-                    ⚙️ Diproses
-                  </Button>
+                    <span>⚙️</span>
+                    <span>Proses</span>
+                  </button>
                 )}
 
                 {selectedRequest.status !== "SELESAI" && (
-                  <Button
-                    variant="success"
-                    size="xs"
-                    isLoading={isProcessing}
-                    onClick={() =>
-                      handleUpdateStatus(selectedRequest.id, "SELESAI")
-                    }
+                  <button
+                    type="button"
+                    disabled={isProcessing}
+                    onClick={() => handleUpdateStatus(selectedRequest.id, "SELESAI")}
+                    className="px-3 py-1.5 rounded-xl text-xs font-bold text-teal-700 bg-teal-50 hover:bg-teal-100 border border-teal-200 transition cursor-pointer flex items-center gap-1 disabled:opacity-50"
                   >
-                    🏁 Selesai
-                  </Button>
+                    <span>🏁</span>
+                    <span>Selesai</span>
+                  </button>
                 )}
 
                 {selectedRequest.status !== "DITOLAK" && (
-                  <Button
-                    variant="danger"
-                    size="xs"
+                  <button
+                    type="button"
+                    disabled={isProcessing}
                     onClick={() => setRejectModalOpen(true)}
+                    className="px-3.5 py-1.5 rounded-xl text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 shadow-2xs transition cursor-pointer flex items-center gap-1 disabled:opacity-50"
                   >
-                    ✕ Tolak
-                  </Button>
+                    <span>✕</span>
+                    <span>Tolak</span>
+                  </button>
+                )}
+
+                {selectedRequest.status !== "DISETUJUI" && (
+                  <button
+                    type="button"
+                    disabled={isProcessing}
+                    onClick={() => handleUpdateStatus(selectedRequest.id, "DISETUJUI")}
+                    className="px-4 py-1.5 rounded-xl text-xs font-extrabold text-white bg-emerald-600 hover:bg-emerald-700 shadow-sm transition cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                    <span>Setujui Permohonan</span>
+                  </button>
                 )}
               </div>
             </div>
           }
         >
           <div className="space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                Status Saat Ini
-              </span>
-              <Badge status={selectedRequest.status} size="md" />
+            {/* ─── STATUS HEADER BAR ─── */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 p-3.5 bg-slate-50/90 rounded-2xl border border-slate-200/80">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Status Permohonan:</span>
+                <Badge status={selectedRequest.status} size="md" />
+              </div>
+              <div className="text-[11px] font-semibold text-slate-500 flex items-center gap-1.5">
+                <svg className="w-3.5 h-3.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                <span>
+                  {new Date(selectedRequest.createdAt).toLocaleDateString("id-ID", {
+                    day: "numeric",
+                    month: "short",
+                    year: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })} WIB
+                </span>
+              </div>
             </div>
 
-            {/* Applicant details */}
-            <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200/60">
-              <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">
-                Data Pemohon
-              </p>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs">
-                <div>
-                  <p className="text-slate-400 font-medium">Nama</p>
-                  <p className="font-semibold text-slate-900">
-                    {selectedRequest.user.name}
-                  </p>
+            {/* ─── 1. DATA PEMOHON CARD ─── */}
+            <div className="p-4 bg-white rounded-2xl border border-slate-200/80 shadow-2xs">
+              <div className="flex items-center gap-2 mb-3 pb-2 border-b border-slate-100">
+                <div className="w-6 h-6 rounded-lg bg-orange-100 text-[#FF5500] flex items-center justify-center text-xs font-bold">
+                  👤
                 </div>
-                <div>
-                  <p className="text-slate-400 font-medium">Departemen</p>
-                  <p className="font-semibold text-slate-900">
-                    {selectedRequest.user.department}
-                  </p>
+                <h4 className="text-xs font-extrabold text-slate-800 uppercase tracking-wider">
+                  Data Pemohon (Karyawan)
+                </h4>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="p-3 bg-slate-50/70 rounded-xl border border-slate-100">
+                  <p className="text-[11px] font-semibold text-slate-400 mb-0.5">Nama Lengkap</p>
+                  <p className="text-xs font-bold text-slate-900">{selectedRequest.user.name}</p>
                 </div>
-                <div>
-                  <p className="text-slate-400 font-medium">Jabatan</p>
-                  <p className="font-semibold text-slate-900">
-                    {selectedRequest.user.position}
-                  </p>
+                <div className="p-3 bg-slate-50/70 rounded-xl border border-slate-100">
+                  <p className="text-[11px] font-semibold text-slate-400 mb-0.5">Departemen / Divisi</p>
+                  <p className="text-xs font-bold text-slate-900">{selectedRequest.user.department}</p>
+                </div>
+                <div className="p-3 bg-slate-50/70 rounded-xl border border-slate-100">
+                  <p className="text-[11px] font-semibold text-slate-400 mb-0.5">Jabatan</p>
+                  <p className="text-xs font-bold text-slate-900">{selectedRequest.user.position}</p>
                 </div>
               </div>
             </div>
 
-            {/* Item details */}
-            <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200/60">
-              <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">
-                Barang yang Diajukan
-              </p>
-              <div className="grid grid-cols-2 gap-3 text-xs">
-                <div>
-                  <p className="text-slate-400 font-medium">Nama Barang</p>
-                  <p className="font-semibold text-slate-900">
-                    {selectedRequest.atkItem.name}
-                  </p>
+            {/* ─── 2. DETAIL BARANG YANG DIAJUKAN CARD ─── */}
+            <div className="p-4 bg-white rounded-2xl border border-slate-200/80 shadow-2xs">
+              <div className="flex items-center justify-between mb-3 pb-2 border-b border-slate-100">
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-6 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold">
+                    📦
+                  </div>
+                  <h4 className="text-xs font-extrabold text-slate-800 uppercase tracking-wider">
+                    Barang yang Diajukan
+                  </h4>
                 </div>
-                <div>
-                  <p className="text-slate-400 font-medium">Jumlah</p>
-                  <p className="font-semibold text-slate-900">
+                {selectedRequest.atkItem.stock !== undefined && (
+                  <span className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-slate-100 text-slate-700">
+                    Sisa Stok: {selectedRequest.atkItem.stock} {selectedRequest.atkItem.unit}
+                  </span>
+                )}
+              </div>
+
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 bg-slate-50/80 rounded-xl border border-slate-200/60">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-orange-50 border border-orange-200 flex items-center justify-center text-lg shrink-0">
+                    📝
+                  </div>
+                  <div>
+                    <p className="text-sm font-extrabold text-slate-900">{selectedRequest.atkItem.name}</p>
+                    <p className="text-[11px] font-medium text-slate-500">Satuan: {selectedRequest.atkItem.unit || "Unit"}</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 self-start sm:self-center">
+                  <span className="text-xs text-slate-500 font-semibold">Jumlah Permohonan:</span>
+                  <span className="px-3 py-1 bg-white text-slate-900 font-extrabold text-xs rounded-lg border border-slate-200 shadow-2xs">
                     {selectedRequest.quantity} {selectedRequest.atkItem.unit}
-                  </p>
+                  </span>
                 </div>
               </div>
             </div>
 
-            {/* Reason */}
-            <div>
-              <p className="text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
-                Alasan / Keperluan
-              </p>
-              <p className="text-xs text-slate-800 bg-slate-50 p-3 rounded-lg border border-slate-200/60 leading-relaxed whitespace-pre-line">
-                {selectedRequest.reason || "Tidak ada alasan spesifik"}
-              </p>
+            {/* ─── 3. ALASAN & KEPERLUAN CARD ─── */}
+            <div className="p-4 bg-white rounded-2xl border border-slate-200/80 shadow-2xs">
+              <div className="flex items-center gap-2 mb-2 pb-2 border-b border-slate-100">
+                <div className="w-6 h-6 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center text-xs font-bold">
+                  💬
+                </div>
+                <h4 className="text-xs font-extrabold text-slate-800 uppercase tracking-wider">
+                  Alasan & Keperluan Pengguna
+                </h4>
+              </div>
+
+              <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 text-xs text-slate-800 leading-relaxed font-medium">
+                {selectedRequest.reason && selectedRequest.reason.trim() ? (
+                  <p className="whitespace-pre-line">{selectedRequest.reason}</p>
+                ) : (
+                  <p className="text-slate-400 italic">Tidak ada catatan atau alasan spesifik.</p>
+                )}
+              </div>
             </div>
 
-            {/* Admin note if any */}
-            {selectedRequest.adminNote && (
-              <div>
-                <p className="text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
-                  Catatan Admin
-                </p>
-                <p className="text-xs text-slate-600 bg-amber-50 p-3 rounded-lg border border-amber-200/60 leading-relaxed">
-                  {selectedRequest.adminNote}
-                </p>
+            {/* ─── 4. CATATAN / REVIEW ADMIN (JIKA ADA) ─── */}
+            {(selectedRequest.adminNote || selectedRequest.processedAt) && (
+              <div className="p-4 bg-amber-50/60 rounded-2xl border border-amber-200/70 shadow-2xs">
+                <div className="flex items-center justify-between mb-2 pb-2 border-b border-amber-200/50">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm">🛡️</span>
+                    <h4 className="text-xs font-extrabold text-amber-900 uppercase tracking-wider">
+                      Informasi Pemrosesan Administrator
+                    </h4>
+                  </div>
+                  {selectedRequest.processedAt && (
+                    <span className="text-[10px] font-semibold text-amber-700">
+                      {new Date(selectedRequest.processedAt).toLocaleDateString("id-ID", {
+                        day: "numeric",
+                        month: "short",
+                        year: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </span>
+                  )}
+                </div>
+
+                {selectedRequest.adminNote && (
+                  <div className="p-3 bg-white/80 rounded-xl border border-amber-200/80 text-xs text-amber-950 font-medium">
+                    <p className="text-[10px] font-bold text-amber-600 uppercase mb-0.5">Catatan Administrator:</p>
+                    <p className="whitespace-pre-line">{selectedRequest.adminNote}</p>
+                  </div>
+                )}
               </div>
             )}
           </div>
