@@ -130,7 +130,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               />
               <div>
                 <h1 className="font-bold text-white text-base leading-tight tracking-wide">
-                  Hasamitra
+                  HasamitraJabar
                 </h1>
                 <p className="text-[10px] text-white/80 font-medium uppercase tracking-wider mt-0.5">
                   {userName || "PORTAL ADMIN"}

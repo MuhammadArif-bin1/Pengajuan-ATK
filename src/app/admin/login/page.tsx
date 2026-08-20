@@ -105,7 +105,7 @@ export default function AdminLoginPage() {
           <div className="inline-flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-white p-1.5 shadow-xl border border-white/40">
             <img
               src="/Image/logo/logo-bulat.png"
-              alt="Logo Hasamitra"
+              alt="Logo HasamitraJabar"
               className="w-full h-full object-contain rounded-xl"
             />
           </div>

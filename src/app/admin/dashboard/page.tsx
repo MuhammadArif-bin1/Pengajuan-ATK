@@ -133,7 +133,7 @@ export default function AdminDashboardPage() {
       <div className="bg-white border border-gray-200/70 rounded-2xl p-6 sm:p-7 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-xl sm:text-2xl font-bold text-gray-900 tracking-tight">
-            Selamat Datang di Portal Admin Hasamitra
+            Selamat Datang di Portal Admin HasamitraJabar
           </h1>
           <p className="text-xs sm:text-sm text-gray-400 font-medium mt-1">
             {todayFormatted}

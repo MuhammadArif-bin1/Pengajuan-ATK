@@ -106,7 +106,7 @@ export function exportReportToCsv(params: {
   // HEADER UTAMA PERUSAHAAN & LAPORAN
   // ══════════════════════════════════════════════════════════════════
   lines.push([escapeCsv("LAPORAN REKAPITULASI PENGAJUAN ALAT TULIS KANTOR (ATK)")].join(","));
-  lines.push([escapeCsv("PT HASAMITRA BERSAMA - SISTEM INFORMASI PENGELOLAAN ATK")].join(","));
+  lines.push([escapeCsv("PT HASAMITRAJABAR - SISTEM INFORMASI PENGELOLAAN ATK")].join(","));
   lines.push("");
 
   // Metadata / Parameter Filter
@@ -230,7 +230,7 @@ export function exportReportToCsv(params: {
   });
 
   lines.push("");
-  lines.push([escapeCsv("Dokumen ini digenerate secara otomatis oleh Sistem Informasi Pengajuan ATK PT Hasamitra Bersama.")].join(","));
+  lines.push([escapeCsv("Dokumen ini digenerate secara otomatis oleh Sistem Informasi Pengajuan ATK PT HasamitraJabar.")].join(","));
 
   // UTF-8 BOM (\uFEFF) ensures Excel and spreadsheet software correctly display UTF-8 without corrupted characters
   const csvContent = "\uFEFF" + lines.join("\r\n");
@@ -239,7 +239,7 @@ export function exportReportToCsv(params: {
   const url = URL.createObjectURL(blob);
 
   const dateStamp = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}_${String(now.getHours()).padStart(2, "0")}${String(now.getMinutes()).padStart(2, "0")}`;
-  const fileName = `Laporan_ATK_Hasamitra_${dateStamp}.csv`;
+  const fileName = `Laporan_ATK_HasamitraJabar_${dateStamp}.csv`;
 
   const link = document.createElement("a");
   link.href = url;
