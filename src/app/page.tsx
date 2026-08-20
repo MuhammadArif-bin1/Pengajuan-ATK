@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import Link from "next/link";
 import { useToast } from "@/components/ui/Toast";
 import { playNotificationSound } from "@/lib/notificationSound";
@@ -23,6 +23,15 @@ interface FormState {
 interface SubmittedSuccessSummary {
   totalItems: number;
   itemList: Array<{ name: string; quantity: number; unit?: string }>;
+}
+
+export interface AtkCatalogItem {
+  id: string;
+  name: string;
+  description?: string | null;
+  stock: number;
+  unit: string;
+  isActive: boolean;
 }
 
 export interface PortalNotificationItem {
@@ -399,11 +408,343 @@ function SubmitButton({
   );
 }
 
+// --- 2-COLUMN LIVE INVENTORY OVERVIEW SECTION ---
+function InventoryOverviewSection({
+  items,
+  loading,
+  onSelectItem,
+  onRequestPurchase,
+}: {
+  items: AtkCatalogItem[];
+  loading: boolean;
+  onSelectItem: (item: AtkCatalogItem) => void;
+  onRequestPurchase: (itemName: string) => void;
+}) {
+  const [searchCatalog, setSearchCatalog] = useState("");
+  const [searchStock, setSearchStock] = useState("");
+  const [stockFilter, setStockFilter] = useState<"all" | "ready" | "low" | "empty">("all");
+
+  // Calculations for stock card
+  const readyCount = useMemo(() => items.filter((i) => i.stock > 5).length, [items]);
+  const lowCount = useMemo(() => items.filter((i) => i.stock > 0 && i.stock <= 5).length, [items]);
+  const emptyCount = useMemo(() => items.filter((i) => i.stock === 0).length, [items]);
+  const totalUnits = useMemo(() => items.reduce((acc, curr) => acc + (curr.stock || 0), 0), [items]);
+
+  // Filtered Catalog Items (Left Card)
+  const filteredCatalog = useMemo(() => {
+    if (!searchCatalog.trim()) return items;
+    const q = searchCatalog.toLowerCase();
+    return items.filter(
+      (i) =>
+        i.name.toLowerCase().includes(q) ||
+        (i.description && i.description.toLowerCase().includes(q))
+    );
+  }, [items, searchCatalog]);
+
+  // Filtered Stock Items (Right Card)
+  const filteredStock = useMemo(() => {
+    return items.filter((i) => {
+      const matchSearch =
+        !searchStock.trim() || i.name.toLowerCase().includes(searchStock.toLowerCase());
+
+      let matchFilter = true;
+      if (stockFilter === "ready") matchFilter = i.stock > 5;
+      else if (stockFilter === "low") matchFilter = i.stock > 0 && i.stock <= 5;
+      else if (stockFilter === "empty") matchFilter = i.stock === 0;
+
+      return matchSearch && matchFilter;
+    });
+  }, [items, searchStock, stockFilter]);
+
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+      {/* ─── COLUMN 1: JENIS BARANG (KATALOG ATK) ─── */}
+      <div className="bg-white rounded-2xl border border-slate-200/80 shadow-2xs overflow-hidden flex flex-col transition-all duration-200 hover:shadow-xs">
+        {/* Card Header */}
+        <div className="p-4 sm:p-5 border-b border-slate-100 bg-gradient-to-br from-white via-orange-50/20 to-transparent">
+          <div className="flex items-center justify-between gap-3 mb-1.5">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-xl bg-orange-500 text-white flex items-center justify-center shadow-xs">
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                </svg>
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-slate-900 tracking-tight">
+                  Jenis Barang ATK
+                </h3>
+                <p className="text-[11px] text-slate-500">
+                  Daftar katalog alat tulis kantor yang terdaftar di sistem
+                </p>
+              </div>
+            </div>
+
+            <span className="px-2.5 py-1 rounded-full text-[11px] font-extrabold bg-orange-100 text-[#FF5500] border border-orange-200/60 shrink-0">
+              {items.length} Jenis
+            </span>
+          </div>
+
+          {/* Search Box */}
+          <div className="mt-3 relative">
+            <input
+              type="text"
+              placeholder="Cari jenis barang ATK..."
+              value={searchCatalog}
+              onChange={(e) => setSearchCatalog(e.target.value)}
+              className="w-full pl-9 pr-3.5 py-2 text-xs text-slate-800 rounded-xl border border-slate-200 bg-slate-50/70 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#FF5500]/25 focus:border-[#FF5500] transition"
+            />
+            <svg
+              className="w-4 h-4 text-slate-400 absolute left-3 top-2.5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2}
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            {searchCatalog && (
+              <button
+                type="button"
+                onClick={() => setSearchCatalog("")}
+                className="absolute right-2.5 top-2.5 text-xs text-slate-400 hover:text-slate-600 font-bold"
+              >
+                ✕
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Catalog Items List */}
+        <div className="p-4 sm:p-5 flex-1 max-h-72 overflow-y-auto divide-y divide-slate-100">
+          {loading ? (
+            <div className="py-8 text-center text-xs text-slate-400">
+              <svg className="animate-spin h-5 w-5 mx-auto mb-2 text-[#FF5500]" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+              </svg>
+              <span>Memuat data katalog...</span>
+            </div>
+          ) : items.length === 0 ? (
+            <div className="py-8 px-4 text-center text-xs text-slate-400">
+              <p className="text-2xl mb-1">📦</p>
+              <p className="font-bold text-slate-700">Katalog Barang Belum Diinput</p>
+              <p className="text-[11px] text-slate-400 mt-1 max-w-xs mx-auto">
+                Admin dapat menambahkan daftar jenis barang master secara manual melalui menu <b>Manajemen Stok ATK</b> di Portal Admin.
+              </p>
+            </div>
+          ) : filteredCatalog.length === 0 ? (
+            <div className="py-8 text-center text-xs text-slate-400">
+              <p className="text-xl mb-1">🔍</p>
+              <p className="font-semibold text-slate-600">Tidak ada jenis barang cocok</p>
+            </div>
+          ) : (
+            filteredCatalog.map((item) => (
+              <div
+                key={item.id}
+                className="py-2.5 first:pt-0 last:pb-0 flex items-center justify-between gap-3 group"
+              >
+                <div className="min-w-0">
+                  <p className="text-xs font-bold text-slate-800 group-hover:text-[#FF5500] transition-colors truncate">
+                    {item.name}
+                  </p>
+                  <p className="text-[10px] text-slate-400 mt-0.5">
+                    Satuan standar: <span className="font-medium text-slate-600 uppercase">{item.unit || "pcs"}</span>
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => onSelectItem(item)}
+                  className="px-2.5 py-1 text-[11px] font-bold text-[#FF5500] bg-orange-50 hover:bg-[#FF5500] hover:text-white border border-orange-200/80 rounded-lg transition-all cursor-pointer shadow-2xs shrink-0 inline-flex items-center gap-1"
+                  title="Klik untuk memasukkan ke formulir di bawah"
+                >
+                  <span>+ Pilih</span>
+                </button>
+              </div>
+            ))
+          )}
+        </div>
+
+        {/* Card Footer */}
+        <div className="px-4 py-2.5 bg-slate-50/80 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
+          <span>💡 Klik <b>+ Pilih</b> untuk mengisi ke formulir</span>
+          <span className="font-semibold text-slate-700">{filteredCatalog.length} item tampil</span>
+        </div>
+      </div>
+
+      {/* ─── COLUMN 2: KETERSEDIAAN STOK (MONITORING STOK GUDANG) ─── */}
+      <div className="bg-white rounded-2xl border border-slate-200/80 shadow-2xs overflow-hidden flex flex-col transition-all duration-200 hover:shadow-xs">
+        {/* Card Header */}
+        <div className="p-4 sm:p-5 border-b border-slate-100 bg-gradient-to-br from-white via-emerald-50/20 to-transparent">
+          <div className="flex items-center justify-between gap-3 mb-1.5">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-xl bg-emerald-600 text-white flex items-center justify-center shadow-xs">
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                </svg>
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-slate-900 tracking-tight">
+                  Ketersediaan Stok
+                </h3>
+                <p className="text-[11px] text-slate-500">
+                  Informasi ketersediaan unit fisik di gudang logistik
+                </p>
+              </div>
+            </div>
+
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/80 shadow-2xs shrink-0">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              Live Update
+            </span>
+          </div>
+
+          {/* Quick Metrics Bar */}
+          <div className="grid grid-cols-3 gap-2 mt-3 text-center">
+            <button
+              type="button"
+              onClick={() => setStockFilter(stockFilter === "ready" ? "all" : "ready")}
+              className={`p-2 rounded-xl border text-xs transition cursor-pointer ${
+                stockFilter === "ready"
+                  ? "bg-emerald-100/70 border-emerald-400 text-emerald-950 font-bold"
+                  : "bg-emerald-50/60 border-emerald-100 text-emerald-800 hover:bg-emerald-100/40"
+              }`}
+            >
+              <span className="block text-sm font-extrabold">{readyCount}</span>
+              <span className="text-[10px] font-semibold">Tersedia</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setStockFilter(stockFilter === "low" ? "all" : "low")}
+              className={`p-2 rounded-xl border text-xs transition cursor-pointer ${
+                stockFilter === "low"
+                  ? "bg-amber-100/70 border-amber-400 text-amber-950 font-bold"
+                  : "bg-amber-50/60 border-amber-100 text-amber-800 hover:bg-amber-100/40"
+              }`}
+            >
+              <span className="block text-sm font-extrabold">{lowCount}</span>
+              <span className="text-[10px] font-semibold">Menipis</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setStockFilter(stockFilter === "empty" ? "all" : "empty")}
+              className={`p-2 rounded-xl border text-xs transition cursor-pointer ${
+                stockFilter === "empty"
+                  ? "bg-rose-100/70 border-rose-400 text-rose-950 font-bold"
+                  : "bg-rose-50/60 border-rose-100 text-rose-800 hover:bg-rose-100/40"
+              }`}
+            >
+              <span className="block text-sm font-extrabold">{emptyCount}</span>
+              <span className="text-[10px] font-semibold">Kosong</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Stock Items List */}
+        <div className="p-4 sm:p-5 flex-1 max-h-72 overflow-y-auto divide-y divide-slate-100">
+          {loading ? (
+            <div className="py-8 text-center text-xs text-slate-400">
+              <svg className="animate-spin h-5 w-5 mx-auto mb-2 text-emerald-600" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth={4} />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+              </svg>
+              <span>Memuat data stok...</span>
+            </div>
+          ) : items.length === 0 ? (
+            <div className="py-8 px-4 text-center text-xs text-slate-400">
+              <p className="text-2xl mb-1">📊</p>
+              <p className="font-bold text-slate-700">Data Stok Belum Tersedia</p>
+              <p className="text-[11px] text-slate-400 mt-1 max-w-xs mx-auto">
+                Informasi unit fisik gudang akan tampil otomatis setelah Admin mengisi data barang di Portal Admin.
+              </p>
+            </div>
+          ) : filteredStock.length === 0 ? (
+            <div className="py-8 text-center text-xs text-slate-400">
+              <p className="text-xl mb-1">🔍</p>
+              <p className="font-semibold text-slate-600">Tidak ada barang sesuai filter</p>
+            </div>
+          ) : (
+            filteredStock.map((item) => (
+              <div
+                key={item.id}
+                className="py-2.5 first:pt-0 last:pb-0 flex items-center justify-between gap-3"
+              >
+                <div className="min-w-0">
+                  <p className="text-xs font-bold text-slate-800 truncate">
+                    {item.name}
+                  </p>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    {item.stock > 5 && (
+                      <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                        Tersedia di Gudang
+                      </span>
+                    )}
+                    {item.stock > 0 && item.stock <= 5 && (
+                      <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-700">
+                        <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                        Stok Tersisa Sedikit
+                      </span>
+                    )}
+                    {item.stock === 0 && (
+                      <span className="inline-flex items-center gap-1 text-[10px] font-bold text-rose-600">
+                        <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+                        Stok Habis
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 shrink-0">
+                  <span
+                    className={`px-2.5 py-1 rounded-lg text-xs font-extrabold ${
+                      item.stock > 5
+                        ? "bg-emerald-50 text-emerald-800 border border-emerald-200/80"
+                        : item.stock > 0
+                        ? "bg-amber-50 text-amber-800 border border-amber-200/80"
+                        : "bg-rose-50 text-rose-800 border border-rose-200/80"
+                    }`}
+                  >
+                    {item.stock} {item.unit || "pcs"}
+                  </span>
+
+                  {item.stock === 0 && (
+                    <button
+                      type="button"
+                      onClick={() => onRequestPurchase(item.name)}
+                      className="px-2 py-1 text-[10px] font-bold text-rose-600 hover:text-white bg-rose-50 hover:bg-rose-600 border border-rose-200 rounded-md transition cursor-pointer"
+                      title="Buka Formulir Pengajuan Pembelian untuk barang ini"
+                    >
+                      Beli Baru
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+
+        {/* Card Footer */}
+        <div className="px-4 py-2.5 bg-slate-50/80 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
+          <span>Total Unit Fisik: <b className="text-slate-800">{totalUnits} Unit</b></span>
+          <span className="font-semibold text-slate-700">{filteredStock.length} item</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function PublicUserPortalPage() {
   const toast = useToast();
 
   const [activeTab, setActiveTab] = useState<"request" | "purchase" | "history">("request");
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  // Catalog items for the live overview feature
+  const [catalogItems, setCatalogItems] = useState<AtkCatalogItem[]>([]);
+  const [catalogLoading, setCatalogLoading] = useState(true);
 
   // Form 1: Permintaan ATK dari Gudang
   const [requestForm, setRequestForm] = useState<FormState>(INITIAL_FORM);
@@ -421,6 +762,7 @@ export default function PublicUserPortalPage() {
   const [notifications, setNotifications] = useState<PortalNotificationItem[]>([]);
   const [unreadIds, setUnreadIds] = useState<Set<string>>(new Set());
   const [notifDropdownOpen, setNotifDropdownOpen] = useState(false);
+  const [notifFilter, setNotifFilter] = useState<"ALL" | "MENUNGGU" | "DISETUJUI" | "DIPROSES" | "DITOLAK">("ALL");
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [isRinging, setIsRinging] = useState(false);
   const [historySearch, setHistorySearch] = useState("");
@@ -430,7 +772,31 @@ export default function PublicUserPortalPage() {
   const lastStatusesRef = useRef<Record<string, string>>({});
   const isInitialFetchRef = useRef(true);
 
-  // Load saved IDs & preferences from localStorage on mount
+  const filteredDropdownNotifs = useMemo(() => {
+    if (notifFilter === "ALL") return notifications;
+    return notifications.filter((n) => n.status === notifFilter);
+  }, [notifications, notifFilter]);
+
+  // Fetch Master Catalog ATK items
+  const fetchCatalogItems = useCallback(async () => {
+    try {
+      const res = await fetch("/api/atk?activeOnly=true&_t=" + Date.now(), { cache: "no-store" });
+      if (res.ok) {
+        const data = await res.json();
+        setCatalogItems(data.data || []);
+      }
+    } catch (e) {
+      console.warn("Fetch catalog error:", e);
+    } finally {
+      setCatalogLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchCatalogItems();
+  }, [fetchCatalogItems]);
+
+  // Load saved preferences & read states from localStorage on mount
   useEffect(() => {
     try {
       const storedSound = localStorage.getItem("portal_sound_enabled");
@@ -476,21 +842,9 @@ export default function PublicUserPortalPage() {
   // Fetch Portal Notifications & Statuses
   const fetchPortalNotifications = useCallback(async () => {
     try {
-      // Get my submitted request IDs from localStorage
-      let savedIds: string[] = [];
-      try {
-        const stored = localStorage.getItem("hasamitra_my_requests");
-        if (stored) savedIds = JSON.parse(stored);
-      } catch {}
-
-      const params = new URLSearchParams();
-      if (savedIds.length > 0) {
-        params.set("ids", savedIds.join(","));
-      } else {
-        params.set("limit", "20");
-      }
-
-      const res = await fetch(`/api/requests/portal-notifications?${params.toString()}`);
+      const res = await fetch(`/api/requests/portal-notifications?limit=50&_t=${Date.now()}`, {
+        cache: "no-store",
+      });
       if (!res.ok) return;
       const data = await res.json();
       if (!data.success || !Array.isArray(data.data)) return;
@@ -498,31 +852,61 @@ export default function PublicUserPortalPage() {
       const items: PortalNotificationItem[] = data.data;
       setNotifications(items);
 
-      // Check for real-time status changes
+      // On initial fetch, only populate unread for Admin Decisions (DISETUJUI, DITOLAK, DIPROSES, SELESAI)
+      if (isInitialFetchRef.current) {
+        let storedRead: string[] = [];
+        try {
+          const stored = localStorage.getItem("portal_read_notif_ids");
+          if (stored) storedRead = JSON.parse(stored);
+        } catch {}
+        const readSet = new Set(storedRead);
+        const initialUnreads = items
+          .filter((it) => it.status !== "MENUNGGU" && !readSet.has(it.id))
+          .map((it) => it.id);
+        if (initialUnreads.length > 0) {
+          setUnreadIds((prev) => new Set([...prev, ...initialUnreads]));
+        }
+      }
+
+      // Check for real-time status changes from Admin decisions
       if (!isInitialFetchRef.current) {
         let hasNewStatusChange = false;
 
         items.forEach((item) => {
           const prevStatus = lastStatusesRef.current[item.id];
-          if (prevStatus && prevStatus !== item.status) {
-            // Status changed!
-            hasNewStatusChange = true;
-            setUnreadIds((prev) => new Set([...prev, item.id]));
+          if (!prevStatus) {
+            // New request entry submitted -> Just record its initial status (MENUNGGU), DO NOT alert
+            return;
+          }
 
+          if (prevStatus !== item.status) {
+            // Status was changed by Admin!
             if (item.status === "DISETUJUI") {
+              hasNewStatusChange = true;
+              setUnreadIds((prev) => new Set([...prev, item.id]));
               toast.success(
-                `🎉 Pengajuan Disetujui! Barang "${item.itemName}" (${item.quantity} ${item.unit}) telah disetujui Admin.`
+                `🎉 Pengajuan Disetujui! Barang "${item.itemName}" (${item.quantity} ${item.unit}) telah Disetujui oleh Admin.`
               );
             } else if (item.status === "DITOLAK") {
+              hasNewStatusChange = true;
+              setUnreadIds((prev) => new Set([...prev, item.id]));
               toast.error(
-                `❌ Pengajuan Ditolak: Barang "${item.itemName}" ditolak Admin. ${
-                  item.adminNote ? `Catatan: ${item.adminNote}` : ""
+                `❌ Pengajuan Ditolak: Barang "${item.itemName}" Ditolak oleh Admin.${
+                  item.adminNote ? ` Alasan: ${item.adminNote}` : ""
                 }`
               );
-            } else if (item.status === "SELESAI") {
-              toast.info(`🏁 Pengajuan Selesai: Barang "${item.itemName}" telah siap diambil.`);
             } else if (item.status === "DIPROSES") {
-              toast.info(`⚙️ Pengajuan Diproses: Barang "${item.itemName}" sedang diproses Admin.`);
+              hasNewStatusChange = true;
+              setUnreadIds((prev) => new Set([...prev, item.id]));
+              toast.info(
+                `⚙️ Pengajuan Diproses: Barang "${item.itemName}" (${item.quantity} ${item.unit}) sedang diproses / disiapkan.`
+              );
+            } else if (item.status === "SELESAI") {
+              hasNewStatusChange = true;
+              setUnreadIds((prev) => new Set([...prev, item.id]));
+              toast.success(
+                `🏁 Pengajuan Selesai: Barang "${item.itemName}" (${item.quantity} ${item.unit}) telah selesai dan siap diambil!`
+              );
             }
           }
         });
@@ -552,21 +936,27 @@ export default function PublicUserPortalPage() {
     }
   }, [toast, soundEnabled]);
 
-  // Polling every 5 seconds & on window focus
+  // Polling every 2 seconds & on window focus for high real-time reactivity
   useEffect(() => {
     fetchPortalNotifications();
-    const interval = setInterval(fetchPortalNotifications, 5000);
+    const interval = setInterval(fetchPortalNotifications, 2000);
     const handleFocus = () => fetchPortalNotifications();
     window.addEventListener("focus", handleFocus);
+    document.addEventListener("visibilitychange", handleFocus);
 
     return () => {
       clearInterval(interval);
       window.removeEventListener("focus", handleFocus);
+      document.removeEventListener("visibilitychange", handleFocus);
     };
   }, [fetchPortalNotifications]);
 
   const markAllNotificationsRead = () => {
     setUnreadIds(new Set());
+    try {
+      const allIds = notifications.map((n) => n.id);
+      localStorage.setItem("portal_read_notif_ids", JSON.stringify(allIds));
+    } catch {}
   };
 
   const markNotificationRead = (id: string) => {
@@ -575,6 +965,13 @@ export default function PublicUserPortalPage() {
       next.delete(id);
       return next;
     });
+    try {
+      const stored = localStorage.getItem("portal_read_notif_ids");
+      const existing: string[] = stored ? JSON.parse(stored) : [];
+      if (!existing.includes(id)) {
+        localStorage.setItem("portal_read_notif_ids", JSON.stringify([...existing, id]));
+      }
+    } catch {}
   };
 
   // Helper to save new request IDs into localStorage
@@ -588,6 +985,77 @@ export default function PublicUserPortalPage() {
     } catch (e) {
       console.warn("Tracking save error:", e);
     }
+  };
+
+  // Select Item from Catalog (Fills into form)
+  const handleSelectFromCatalog = (item: AtkCatalogItem) => {
+    if (activeTab === "purchase") {
+      // Fill into purchase form
+      setPurchaseForm((prev) => {
+        const lastRow = prev.items[prev.items.length - 1];
+        if (!lastRow || lastRow.itemName.trim()) {
+          // Add new row
+          return {
+            ...prev,
+            items: [
+              ...prev.items,
+              {
+                id: `item-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+                itemName: item.name,
+                quantity: "1",
+              },
+            ],
+          };
+        } else {
+          // Update last empty row
+          return {
+            ...prev,
+            items: prev.items.map((it, i) =>
+              i === prev.items.length - 1 ? { ...it, itemName: item.name } : it
+            ),
+          };
+        }
+      });
+      toast.info(`"${item.name}" dimasukkan ke Formulir Pengajuan Pembelian.`);
+    } else {
+      // Fill into request form (Tab 1)
+      setRequestForm((prev) => {
+        const lastRow = prev.items[prev.items.length - 1];
+        if (!lastRow || lastRow.itemName.trim()) {
+          // Add new row
+          return {
+            ...prev,
+            items: [
+              ...prev.items,
+              {
+                id: `item-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+                itemName: item.name,
+                quantity: "1",
+              },
+            ],
+          };
+        } else {
+          // Update last empty row
+          return {
+            ...prev,
+            items: prev.items.map((it, i) =>
+              i === prev.items.length - 1 ? { ...it, itemName: item.name } : it
+            ),
+          };
+        }
+      });
+      toast.info(`"${item.name}" dimasukkan ke Formulir Pengajuan ATK.`);
+    }
+  };
+
+  // Quick Purchase action from Stock Card for 0-stock items
+  const handleQuickPurchaseAction = (itemName: string) => {
+    setActiveTab("purchase");
+    setPurchaseForm((prev) => ({
+      ...prev,
+      items: [{ id: "item-1", itemName, quantity: "1" }],
+    }));
+    toast.info(`Beralih ke Form Pengajuan Pembelian untuk "${itemName}".`);
   };
 
   // Item List Helpers for Form 1
@@ -685,6 +1153,9 @@ export default function PublicUserPortalPage() {
       const createdIds = rawItems.map((r: any) => r?.id).filter(Boolean);
       if (createdIds.length > 0) {
         trackSubmittedRequestIds(createdIds);
+        createdIds.forEach((id: string) => {
+          lastStatusesRef.current[id] = "MENUNGGU";
+        });
       }
 
       setSubmittedRequestSuccess({
@@ -754,6 +1225,9 @@ export default function PublicUserPortalPage() {
       const createdIds = rawItems.map((r: any) => r?.id).filter(Boolean);
       if (createdIds.length > 0) {
         trackSubmittedRequestIds(createdIds);
+        createdIds.forEach((id: string) => {
+          lastStatusesRef.current[id] = "MENUNGGU";
+        });
       }
 
       setSubmittedPurchaseSuccess({
@@ -1035,60 +1509,148 @@ export default function PublicUserPortalPage() {
                     </div>
                   </div>
 
+                  {/* Dropdown Filter Tabs */}
+                  <div className="flex items-center gap-1 p-2 bg-slate-50 border-b border-slate-200/80 overflow-x-auto text-[10px] font-bold">
+                    <button
+                      type="button"
+                      onClick={() => setNotifFilter("ALL")}
+                      className={`px-2.5 py-1 rounded-lg transition cursor-pointer shrink-0 ${
+                        notifFilter === "ALL"
+                          ? "bg-slate-800 text-white shadow-2xs"
+                          : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-100"
+                      }`}
+                    >
+                      Semua ({notifications.length})
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setNotifFilter("MENUNGGU")}
+                      className={`px-2 py-1 rounded-lg transition cursor-pointer shrink-0 ${
+                        notifFilter === "MENUNGGU"
+                          ? "bg-amber-500 text-white shadow-2xs font-extrabold"
+                          : "bg-white text-amber-700 border border-amber-200 hover:bg-amber-50"
+                      }`}
+                    >
+                      🟡 Menunggu ({notifications.filter((n) => n.status === "MENUNGGU").length})
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setNotifFilter("DISETUJUI")}
+                      className={`px-2 py-1 rounded-lg transition cursor-pointer shrink-0 ${
+                        notifFilter === "DISETUJUI"
+                          ? "bg-emerald-600 text-white shadow-2xs font-extrabold"
+                          : "bg-white text-emerald-700 border border-emerald-200 hover:bg-emerald-50"
+                      }`}
+                    >
+                      🟢 Disetujui ({notifications.filter((n) => n.status === "DISETUJUI").length})
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setNotifFilter("DIPROSES")}
+                      className={`px-2 py-1 rounded-lg transition cursor-pointer shrink-0 ${
+                        notifFilter === "DIPROSES"
+                          ? "bg-blue-600 text-white shadow-2xs font-extrabold"
+                          : "bg-white text-blue-700 border border-blue-200 hover:bg-blue-50"
+                      }`}
+                    >
+                      🔵 Diproses ({notifications.filter((n) => n.status === "DIPROSES").length})
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setNotifFilter("DITOLAK")}
+                      className={`px-2 py-1 rounded-lg transition cursor-pointer shrink-0 ${
+                        notifFilter === "DITOLAK"
+                          ? "bg-rose-600 text-white shadow-2xs font-extrabold"
+                          : "bg-white text-rose-700 border border-rose-200 hover:bg-rose-50"
+                      }`}
+                    >
+                      🔴 Ditolak ({notifications.filter((n) => n.status === "DITOLAK").length})
+                    </button>
+                  </div>
+
                   {/* Dropdown List */}
                   <div className="max-h-80 overflow-y-auto divide-y divide-slate-100">
-                    {notifications.length === 0 ? (
+                    {filteredDropdownNotifs.length === 0 ? (
                       <div className="p-6 text-center text-slate-400 text-xs">
                         <p className="text-2xl mb-1">📭</p>
-                        <p className="font-semibold text-slate-600">Belum ada notifikasi</p>
+                        <p className="font-semibold text-slate-600">Tidak ada notifikasi pada status ini</p>
                         <p className="text-[11px] text-slate-400 mt-0.5">
-                          Status pengajuan yang Anda kirim akan muncul di sini.
+                          Status pengajuan yang Anda kirim akan otomatis muncul di sini.
                         </p>
                       </div>
                     ) : (
-                      notifications.slice(0, 10).map((item) => {
+                      filteredDropdownNotifs.slice(0, 15).map((item) => {
                         const isUnread = unreadIds.has(item.id);
                         return (
                           <div
                             key={item.id}
                             onClick={() => markNotificationRead(item.id)}
                             className={`p-3.5 text-xs transition cursor-pointer hover:bg-slate-50 ${
-                              isUnread ? "bg-orange-50/40" : "bg-white"
+                              isUnread ? "bg-orange-50/50" : "bg-white"
                             }`}
                           >
                             <div className="flex items-start justify-between gap-2 mb-1">
                               <div className="flex items-center gap-1.5 font-bold text-slate-900">
                                 {isUnread && (
-                                  <span className="w-2 h-2 rounded-full bg-[#FF5500] shrink-0" />
+                                  <span className="w-2 h-2 rounded-full bg-[#FF5500] shrink-0 animate-ping" />
                                 )}
-                                <span>{item.itemName}</span>
-                                <span className="text-slate-400 font-normal">
+                                <span className="text-slate-900 font-extrabold">{item.itemName}</span>
+                                <span className="text-slate-400 font-semibold text-[11px]">
                                   ({item.quantity} {item.unit})
                                 </span>
                               </div>
                               <StatusBadge status={item.status} />
                             </div>
 
-                            <div className="text-[11px] text-slate-500 space-y-1">
-                              <p>
-                                Pemohon: <b>{item.userName}</b> • {item.department}
+                            <div className="text-[11px] text-slate-500 space-y-1.5 mt-1">
+                              {/* Descriptive status label */}
+                              {item.status === "MENUNGGU" && (
+                                <p className="text-[11px] text-amber-700 font-semibold flex items-center gap-1">
+                                  <span>🟡</span> Menunggu review dan persetujuan Admin
+                                </p>
+                              )}
+                              {item.status === "DISETUJUI" && (
+                                <p className="text-[11px] text-emerald-700 font-semibold flex items-center gap-1">
+                                  <span>🎉</span> Telah disetujui Administrator
+                                </p>
+                              )}
+                              {item.status === "DIPROSES" && (
+                                <p className="text-[11px] text-blue-700 font-semibold flex items-center gap-1">
+                                  <span>⚙️</span> Sedang diproses / disiapkan tim logistik
+                                </p>
+                              )}
+                              {item.status === "DITOLAK" && (
+                                <p className="text-[11px] text-rose-700 font-semibold flex items-center gap-1">
+                                  <span>❌</span> Permohonan ditolak oleh Administrator
+                                </p>
+                              )}
+                              {item.status === "SELESAI" && (
+                                <p className="text-[11px] text-emerald-800 font-semibold flex items-center gap-1">
+                                  <span>🏁</span> Selesai diproses & barang siap diambil
+                                </p>
+                              )}
+
+                              <p className="text-[10px] text-slate-400">
+                                Pemohon: <b className="text-slate-600">{item.userName}</b> • {item.department}
                               </p>
 
-                              {/* Admin Notes if Approved/Rejected */}
+                              {/* Admin Notes if provided */}
                               {item.adminNote && (
                                 <div
                                   className={`p-2 rounded-lg text-[11px] font-medium leading-relaxed ${
                                     item.status === "DITOLAK"
                                       ? "bg-rose-50 text-rose-800 border border-rose-200"
-                                      : "bg-emerald-50 text-emerald-800 border border-emerald-200"
+                                      : item.status === "DISETUJUI"
+                                      ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
+                                      : "bg-blue-50 text-blue-800 border border-blue-200"
                                   }`}
                                 >
-                                  <b>Catatan Admin:</b> {item.adminNote}
+                                  <b>{item.status === "DITOLAK" ? "Alasan Penolakan:" : "Catatan Admin:"}</b> {item.adminNote}
                                 </div>
                               )}
 
                               <div className="flex items-center justify-between text-[10px] text-slate-400 pt-0.5">
-                                <span>{item.isPurchase ? "Pengadaan Baru" : "Permintaan Gudang"}</span>
+                                <span className="font-medium text-slate-500">{item.isPurchase ? "Pengadaan Baru" : "Permintaan Gudang"}</span>
                                 <span>{getRelativeTime(item.updatedAt || item.createdAt)}</span>
                               </div>
                             </div>
@@ -1153,6 +1715,15 @@ export default function PublicUserPortalPage() {
                 />
               )}
 
+              {/* ─── 2-COLUMN LIVE OVERVIEW: JENIS BARANG & KETERSEDIAAN STOK ─── */}
+              <InventoryOverviewSection
+                items={catalogItems}
+                loading={catalogLoading}
+                onSelectItem={handleSelectFromCatalog}
+                onRequestPurchase={handleQuickPurchaseAction}
+              />
+
+              {/* ─── FORMULIR PENGAJUAN ATK ─── */}
               <div className="bg-white border border-gray-200/70 rounded-2xl shadow-2xs overflow-hidden">
                 <div className="px-6 py-5 border-b border-gray-100">
                   <h2 className="text-lg font-bold text-gray-900">Formulir Pengajuan ATK</h2>
@@ -1222,6 +1793,15 @@ export default function PublicUserPortalPage() {
                 />
               )}
 
+              {/* ─── 2-COLUMN LIVE OVERVIEW: JENIS BARANG & KETERSEDIAAN STOK ─── */}
+              <InventoryOverviewSection
+                items={catalogItems}
+                loading={catalogLoading}
+                onSelectItem={handleSelectFromCatalog}
+                onRequestPurchase={handleQuickPurchaseAction}
+              />
+
+              {/* ─── FORMULIR PENGAJUAN PEMBELIAN ATK ─── */}
               <div className="bg-white border border-gray-200/70 rounded-2xl shadow-2xs overflow-hidden">
                 <div className="px-6 py-5 border-b border-gray-100">
                   <h2 className="text-lg font-bold text-gray-900">Formulir Pengajuan Pembelian ATK</h2>

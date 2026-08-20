@@ -95,6 +95,16 @@ export async function toggleAtkItemStatus(id: string) {
   });
 }
 
+export async function deleteAtkItem(id: string) {
+  return prisma.atkItem.delete({
+    where: { id },
+  });
+}
+
+export async function deleteAllAtkItems() {
+  return prisma.atkItem.deleteMany({});
+}
+
 // ===========================================
 // Statistics
 // ===========================================

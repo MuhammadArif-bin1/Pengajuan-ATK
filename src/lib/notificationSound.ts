@@ -12,6 +12,9 @@ export function playNotificationSound() {
     if (!AudioContextClass) return;
 
     const ctx = new AudioContextClass();
+    if (ctx.state === "suspended") {
+      ctx.resume().catch(() => {});
+    }
 
     const playTone = (freq: number, startTime: number, duration: number) => {
       const osc = ctx.createOscillator();

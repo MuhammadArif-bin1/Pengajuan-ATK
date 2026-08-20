@@ -7,21 +7,23 @@ import {
   getAllAtkItems,
   getActiveAtkItems,
   createAtkItem,
+  deleteAllAtkItems,
 } from "@/services/atk.service";
 import { createAtkItemSchema, formatZodError } from "@/lib/validation";
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await getSession();
-    if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
     const { searchParams } = new URL(request.url);
     const activeOnly = searchParams.get("activeOnly");
 
-    // For user dropdown list
-    if (activeOnly === "true" || session.role === "USER") {
+    // For public portal / dropdown list
+    if (activeOnly === "true") {
+      const items = await getActiveAtkItems();
+      return NextResponse.json({ data: items });
+    }
+
+    const session = await getSession();
+    if (!session || session.role === "USER") {
       const items = await getActiveAtkItems();
       return NextResponse.json({ data: items });
     }
@@ -91,3 +93,30 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const session = await getSession();
+    if (!session || session.role !== "ADMIN") {
+      return NextResponse.json(
+        { error: "Forbidden: Hanya Admin yang dapat mengosongkan barang" },
+        { status: 403 }
+      );
+    }
+
+    const result = await deleteAllAtkItems();
+
+    return NextResponse.json({
+      success: true,
+      message: `Semua data barang ATK (${result.count} item) berhasil dikosongkan`,
+      deletedCount: result.count,
+    });
+  } catch (error) {
+    console.error("DELETE /api/atk error:", error);
+    return NextResponse.json(
+      { error: "Gagal mengosongkan data barang ATK" },
+      { status: 500 }
+    );
+  }
+}
+

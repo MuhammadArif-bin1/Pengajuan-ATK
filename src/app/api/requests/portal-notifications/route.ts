@@ -1,23 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
+export const dynamic = "force-dynamic";
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const idsParam = searchParams.get("ids");
     const search = searchParams.get("search");
-    const limit = parseInt(searchParams.get("limit") || "30", 10);
+    const limit = parseInt(searchParams.get("limit") || "50", 10);
 
     const where: Record<string, unknown> = {};
 
+    let idList: string[] = [];
     if (idsParam) {
-      const idList = idsParam
+      idList = idsParam
         .split(",")
         .map((s) => s.trim())
         .filter(Boolean);
-      if (idList.length > 0) {
-        where.id = { in: idList };
-      }
     }
 
     if (search && search.trim()) {
@@ -82,6 +82,7 @@ export async function GET(request: NextRequest) {
         createdAt: req.createdAt.toISOString(),
         updatedAt: req.updatedAt.toISOString(),
         isPurchase,
+        isMyRequest: idList.length > 0 ? idList.includes(req.id) : true,
       };
     });
 

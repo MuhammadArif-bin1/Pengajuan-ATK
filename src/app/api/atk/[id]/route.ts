@@ -3,7 +3,7 @@
 // ===========================================
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/session";
-import { getAtkItemById, updateAtkItem } from "@/services/atk.service";
+import { getAtkItemById, updateAtkItem, deleteAtkItem } from "@/services/atk.service";
 import { updateAtkItemSchema, formatZodError } from "@/lib/validation";
 
 export async function GET(
@@ -83,3 +83,41 @@ export async function PUT(
     );
   }
 }
+
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const session = await getSession();
+    if (!session || session.role !== "ADMIN") {
+      return NextResponse.json(
+        { error: "Forbidden: Hanya Admin yang dapat menghapus barang" },
+        { status: 403 }
+      );
+    }
+
+    const { id } = await params;
+    const existing = await getAtkItemById(id);
+    if (!existing) {
+      return NextResponse.json(
+        { error: "Barang ATK tidak ditemukan" },
+        { status: 404 }
+      );
+    }
+
+    await deleteAtkItem(id);
+
+    return NextResponse.json({
+      success: true,
+      message: "Barang ATK berhasil dihapus",
+    });
+  } catch (error) {
+    console.error("DELETE /api/atk/[id] error:", error);
+    return NextResponse.json(
+      { error: "Gagal menghapus barang ATK" },
+      { status: 500 }
+    );
+  }
+}
+
