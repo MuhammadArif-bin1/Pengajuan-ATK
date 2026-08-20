@@ -898,6 +898,25 @@ export default function PublicUserPortalPage() {
     };
   }, [fetchPortalNotifications, fetchCatalogItems]);
 
+  const [isRefreshingStatus, setIsRefreshingStatus] = useState(false);
+
+  const handleManualRefresh = async () => {
+    setIsRefreshingStatus(true);
+    try {
+      await Promise.all([
+        fetchPortalNotifications(),
+        fetchCatalogItems(),
+      ]);
+      toast.success("Status & Riwayat Pengajuan berhasil diperbarui!");
+    } catch {
+      toast.error("Gagal menyegarkan status");
+    } finally {
+      setTimeout(() => {
+        setIsRefreshingStatus(false);
+      }, 500);
+    }
+  };
+
   const markAllNotificationsRead = () => {
     setUnreadIds(new Set());
     try {
@@ -1768,13 +1787,24 @@ export default function PublicUserPortalPage() {
 
                   <button
                     type="button"
-                    onClick={fetchPortalNotifications}
-                    className="inline-flex items-center gap-1.5 text-xs font-bold text-[#FF5500] hover:text-[#e04b00] bg-orange-50/70 hover:bg-orange-100/70 px-3.5 py-2 rounded-xl transition cursor-pointer self-start sm:self-auto"
+                    disabled={isRefreshingStatus}
+                    onClick={handleManualRefresh}
+                    className="inline-flex items-center gap-1.5 text-xs font-bold text-[#FF5500] hover:text-[#e04b00] bg-orange-50/80 hover:bg-orange-100/80 px-3.5 py-2 rounded-xl transition cursor-pointer self-start sm:self-auto border border-orange-200/60 shadow-2xs disabled:opacity-60"
                   >
-                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    <svg
+                      className={`w-3.5 h-3.5 ${isRefreshingStatus ? "animate-spin text-[#FF5500]" : ""}`}
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth={2.5}
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                      />
                     </svg>
-                    <span>Segarkan Status</span>
+                    <span>{isRefreshingStatus ? "Menyegarkan..." : "Segarkan Status"}</span>
                   </button>
                 </div>
 
