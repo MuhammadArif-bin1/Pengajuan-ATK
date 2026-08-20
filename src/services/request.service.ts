@@ -290,104 +290,11 @@ export async function updateRequestStatus(
     throw new Error("Pengajuan tidak ditemukan");
   }
 
-  const prevStatus = request.status;
-
   // Require admin note for rejection if provided or fallback
   const finalNote = status === "DITOLAK"
     ? (adminNote || "Pengajuan ditolak oleh Administrator.")
     : (adminNote !== undefined ? adminNote : request.adminNote);
 
-  // Case 1: Moving to DISETUJUI from status where stock was not yet deducted
-  if (status === "DISETUJUI" && prevStatus !== "DISETUJUI" && prevStatus !== "DIPROSES" && prevStatus !== "SELESAI") {
-    return prisma.$transaction(async (tx: any) => {
-      const item = await tx.atkItem.findUnique({
-        where: { id: request.atkItemId },
-      });
-
-      if (!item) {
-        throw new Error("Barang ATK tidak ditemukan");
-      }
-
-      if (item.stock < request.quantity) {
-        throw new Error(
-          `Stok tidak mencukupi. Stok tersedia: ${item.stock} ${item.unit}, diminta: ${request.quantity} ${item.unit}`
-        );
-      }
-
-      // Reduce stock
-      await tx.atkItem.update({
-        where: { id: request.atkItemId },
-        data: { stock: { decrement: request.quantity } },
-      });
-
-      return tx.atkRequest.update({
-        where: { id },
-        data: {
-          status,
-          adminNote: finalNote,
-          processedBy: adminId,
-          processedAt: new Date(),
-        },
-        include: {
-          user: {
-            select: {
-              id: true,
-              name: true,
-              email: true,
-              department: true,
-              position: true,
-            },
-          },
-          atkItem: {
-            select: { id: true, name: true, unit: true },
-          },
-          processor: {
-            select: { id: true, name: true },
-          },
-        },
-      });
-    });
-  }
-
-  // Case 2: Moving from an approved/in-progress status to DITOLAK or MENUNGGU -> restore stock
-  if ((status === "DITOLAK" || status === "MENUNGGU") && (prevStatus === "DISETUJUI" || prevStatus === "DIPROSES" || prevStatus === "SELESAI")) {
-    return prisma.$transaction(async (tx: any) => {
-      // Restore stock
-      await tx.atkItem.update({
-        where: { id: request.atkItemId },
-        data: { stock: { increment: request.quantity } },
-      });
-
-      return tx.atkRequest.update({
-        where: { id },
-        data: {
-          status,
-          adminNote: finalNote,
-          processedBy: adminId,
-          processedAt: new Date(),
-        },
-        include: {
-          user: {
-            select: {
-              id: true,
-              name: true,
-              email: true,
-              department: true,
-              position: true,
-            },
-          },
-          atkItem: {
-            select: { id: true, name: true, unit: true },
-          },
-          processor: {
-            select: { id: true, name: true },
-          },
-        },
-      });
-    });
-  }
-
-  // Case 3: Other status transitions (e.g. DISETUJUI -> DIPROSES -> SELESAI, or MENUNGGU -> MENUNGGU)
   return prisma.atkRequest.update({
     where: { id },
     data: {

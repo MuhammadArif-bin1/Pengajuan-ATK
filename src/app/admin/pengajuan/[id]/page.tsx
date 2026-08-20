@@ -188,7 +188,7 @@ export default function DetailPengajuanAdminPage() {
                     isLoading={isProcessing}
                     onClick={() => handleUpdateStatus("DISETUJUI")}
                   >
-                    ✓ Setujui (Potong Stok)
+                    ✓ Setujui Pengajuan
                   </Button>
                 )}
 

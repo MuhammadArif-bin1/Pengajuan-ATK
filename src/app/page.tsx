@@ -126,7 +126,6 @@ function ApplicantFields({
           </label>
           <input
             type="text"
-            placeholder="Contoh: Fadli Santoso"
             value={formData.userName}
             onChange={(e) => onChange("userName", e.target.value)}
             className={`w-full rounded-xl border px-3.5 py-2.5 text-xs text-gray-900 font-medium bg-white focus:outline-none focus:ring-2 focus:ring-[#FF5500]/30 focus:border-[#FF5500] transition ${
@@ -144,7 +143,6 @@ function ApplicantFields({
           </label>
           <input
             type="text"
-            placeholder="Contoh: Operasional"
             value={formData.department}
             onChange={(e) => onChange("department", e.target.value)}
             className={`w-full rounded-xl border px-3.5 py-2.5 text-xs text-gray-900 font-medium bg-white focus:outline-none focus:ring-2 focus:ring-[#FF5500]/30 focus:border-[#FF5500] transition ${
@@ -162,7 +160,6 @@ function ApplicantFields({
           </label>
           <input
             type="text"
-            placeholder="Contoh: Staff"
             value={formData.position}
             onChange={(e) => onChange("position", e.target.value)}
             className={`w-full rounded-xl border px-3.5 py-2.5 text-xs text-gray-900 font-medium bg-white focus:outline-none focus:ring-2 focus:ring-[#FF5500]/30 focus:border-[#FF5500] transition ${

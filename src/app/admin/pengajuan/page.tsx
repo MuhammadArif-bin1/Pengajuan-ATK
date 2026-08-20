@@ -25,6 +25,10 @@ export default function AdminPengajuanPage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [departmentFilter, setDepartmentFilter] = useState("");
+  const [dateMode, setDateMode] = useState<"all" | "today" | "date" | "month" | "year" | "range">("all");
+  const [specificDate, setSpecificDate] = useState("");
+  const [specificMonth, setSpecificMonth] = useState("");
+  const [specificYear, setSpecificYear] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [page, setPage] = useState(1);
@@ -271,6 +275,10 @@ export default function AdminPengajuanPage() {
     setSearch("");
     setStatusFilter("");
     setDepartmentFilter("");
+    setDateMode("all");
+    setSpecificDate("");
+    setSpecificMonth("");
+    setSpecificYear("");
     setStartDate("");
     setEndDate("");
     setPage(1);
@@ -436,7 +444,7 @@ export default function AdminPengajuanPage() {
 
         {/* Filters Card */}
         <Card title="Filter & Pencarian Pengajuan">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             <div>
               <Input
                 label="Cari Data"
@@ -492,37 +500,146 @@ export default function AdminPengajuanPage() {
             </div>
 
             <div>
-              <Input
-                label="Mulai Tanggal"
-                type="date"
-                value={startDate}
+              <Select
+                label="Filter Waktu / Tanggal"
+                value={dateMode}
                 onChange={(e) => {
-                  setStartDate(e.target.value);
+                  const mode = e.target.value as "all" | "today" | "date" | "month" | "year" | "range";
+                  setDateMode(mode);
                   setPage(1);
+                  if (mode === "all") {
+                    setStartDate("");
+                    setEndDate("");
+                    setSpecificDate("");
+                    setSpecificMonth("");
+                    setSpecificYear("");
+                  } else if (mode === "today") {
+                    const today = new Date().toISOString().split("T")[0];
+                    setStartDate(today);
+                    setEndDate(today);
+                  }
                 }}
-              />
-            </div>
-
-            <div>
-              <Input
-                label="Sampai Tanggal"
-                type="date"
-                value={endDate}
-                onChange={(e) => {
-                  setEndDate(e.target.value);
-                  setPage(1);
-                }}
+                options={[
+                  { value: "all", label: "Semua Waktu (Default)" },
+                  { value: "today", label: "Hari Ini" },
+                  { value: "date", label: "Per Tanggal Tertentu" },
+                  { value: "month", label: "Per Bulan" },
+                  { value: "year", label: "Per Tahun" },
+                  { value: "range", label: "Rentang Tanggal Khusus" },
+                ]}
               />
             </div>
           </div>
 
-          {(search || statusFilter || departmentFilter || startDate || endDate) && (
+          {/* Conditional Sub-row for Date Picker Selection */}
+          {dateMode !== "all" && dateMode !== "today" && (
+            <div className="mt-3 pt-3 border-t border-slate-100 flex flex-wrap items-center gap-3 animate-in fade-in duration-150">
+              {dateMode === "date" && (
+                <div className="w-full sm:w-64">
+                  <Input
+                    label="Pilih Tanggal Pengajuan"
+                    type="date"
+                    value={specificDate}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setSpecificDate(val);
+                      setStartDate(val);
+                      setEndDate(val);
+                      setPage(1);
+                    }}
+                  />
+                </div>
+              )}
+
+              {dateMode === "month" && (
+                <div className="w-full sm:w-64">
+                  <Input
+                    label="Pilih Bulan & Tahun"
+                    type="month"
+                    value={specificMonth}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setSpecificMonth(val);
+                      if (val) {
+                        const [y, m] = val.split("-").map(Number);
+                        const lastDay = new Date(y, m, 0).getDate();
+                        setStartDate(`${val}-01`);
+                        setEndDate(`${val}-${String(lastDay).padStart(2, "0")}`);
+                      } else {
+                        setStartDate("");
+                        setEndDate("");
+                      }
+                      setPage(1);
+                    }}
+                  />
+                </div>
+              )}
+
+              {dateMode === "year" && (
+                <div className="w-full sm:w-64">
+                  <Select
+                    label="Pilih Tahun Pengajuan"
+                    value={specificYear}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setSpecificYear(val);
+                      if (val) {
+                        setStartDate(`${val}-01-01`);
+                        setEndDate(`${val}-12-31`);
+                      } else {
+                        setStartDate("");
+                        setEndDate("");
+                      }
+                      setPage(1);
+                    }}
+                    options={[
+                      { value: "", label: "-- Pilih Tahun --" },
+                      { value: "2024", label: "Tahun 2024" },
+                      { value: "2025", label: "Tahun 2025" },
+                      { value: "2026", label: "Tahun 2026" },
+                      { value: "2027", label: "Tahun 2027" },
+                      { value: "2028", label: "Tahun 2028" },
+                    ]}
+                  />
+                </div>
+              )}
+
+              {dateMode === "range" && (
+                <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
+                  <div className="w-full sm:w-56">
+                    <Input
+                      label="Mulai Tanggal"
+                      type="date"
+                      value={startDate}
+                      onChange={(e) => {
+                        setStartDate(e.target.value);
+                        setPage(1);
+                      }}
+                    />
+                  </div>
+                  <div className="w-full sm:w-56">
+                    <Input
+                      label="Sampai Tanggal"
+                      type="date"
+                      value={endDate}
+                      onChange={(e) => {
+                        setEndDate(e.target.value);
+                        setPage(1);
+                      }}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {(search || statusFilter || departmentFilter || dateMode !== "all" || startDate || endDate) && (
             <div className="mt-3 pt-3 border-t border-slate-100 flex justify-end">
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={handleResetFilters}
-                className="text-xs text-slate-500"
+                className="text-xs text-slate-500 hover:text-slate-800"
               >
                 Reset Semua Filter
               </Button>
@@ -728,7 +845,7 @@ export default function AdminPengajuanPage() {
               <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">
                 Barang yang Diajukan
               </p>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs">
+              <div className="grid grid-cols-2 gap-3 text-xs">
                 <div>
                   <p className="text-slate-400 font-medium">Nama Barang</p>
                   <p className="font-semibold text-slate-900">
@@ -739,12 +856,6 @@ export default function AdminPengajuanPage() {
                   <p className="text-slate-400 font-medium">Jumlah</p>
                   <p className="font-semibold text-slate-900">
                     {selectedRequest.quantity} {selectedRequest.atkItem.unit}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-slate-400 font-medium">Stok Tersedia</p>
-                  <p className="font-semibold text-slate-900">
-                    {selectedRequest.atkItem.stock !== undefined ? `${selectedRequest.atkItem.stock} ${selectedRequest.atkItem.unit}` : "-"}
                   </p>
                 </div>
               </div>
