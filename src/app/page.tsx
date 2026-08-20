@@ -185,7 +185,6 @@ function ItemRowsSection({
   onItemChange,
   onAddItem,
   onRemoveItem,
-  placeholderName,
 }: {
   sectionTitle: string;
   items: FormItemRow[];
@@ -193,7 +192,6 @@ function ItemRowsSection({
   onItemChange: (id: string, field: "itemName" | "quantity", value: string) => void;
   onAddItem: () => void;
   onRemoveItem: (id: string) => void;
-  placeholderName: string;
 }) {
   return (
     <div>
@@ -221,7 +219,7 @@ function ItemRowsSection({
                   <span className="w-5 h-5 rounded-full bg-[#FF5500]/10 text-[#FF5500] inline-flex items-center justify-center text-[10px] font-extrabold">
                     {index + 1}
                   </span>
-                  Barang #{index + 1}
+                  Barang {index + 1}
                 </span>
 
                 {items.length > 1 && (
@@ -247,7 +245,6 @@ function ItemRowsSection({
                   </label>
                   <input
                     type="text"
-                    placeholder={placeholderName}
                     value={row.itemName}
                     onChange={(e) => onItemChange(row.id, "itemName", e.target.value)}
                     className={`w-full rounded-xl border px-3.5 py-2.5 text-xs text-gray-900 font-medium bg-white focus:outline-none focus:ring-2 focus:ring-[#FF5500]/30 focus:border-[#FF5500] transition ${
@@ -266,7 +263,6 @@ function ItemRowsSection({
                     type="text"
                     inputMode="numeric"
                     pattern="[0-9]*"
-                    placeholder="Contoh: 2"
                     value={row.quantity}
                     onChange={(e) => {
                       const onlyNums = e.target.value.replace(/\D/g, "");
@@ -294,7 +290,7 @@ function ItemRowsSection({
           <svg className="w-4 h-4 group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
           </svg>
-          <span>+ Tambah Barang Lainnya (misal: Buku & Pulpen)</span>
+          <span>Tambah Barang Lainnya</span>
         </button>
       </div>
     </div>
@@ -742,7 +738,6 @@ export default function PublicUserPortalPage() {
                     onItemChange={handleRequestItemChange}
                     onAddItem={handleAddRequestItem}
                     onRemoveItem={handleRemoveRequestItem}
-                    placeholderName="Contoh: Buku Tulis, Pulpen Hitam, Kertas A4..."
                   />
 
                   {/* Section 3: Alasan & Catatan */}
@@ -812,7 +807,6 @@ export default function PublicUserPortalPage() {
                     onItemChange={handlePurchaseItemChange}
                     onAddItem={handleAddPurchaseItem}
                     onRemoveItem={handleRemovePurchaseItem}
-                    placeholderName="Contoh: Spidol Whiteboard, Tinta Printer, Flashdisk..."
                   />
 
                   {/* Section 3: Alasan & Catatan Pembelian */}
