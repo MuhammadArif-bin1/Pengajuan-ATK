@@ -238,9 +238,17 @@ export const NotificationDropdown: React.FC = () => {
           )}
         </button>
 
+        {/* Mobile Backdrop Overlay */}
+        {isOpen && (
+          <div
+            className="fixed inset-0 z-40 bg-black/25 backdrop-blur-2xs sm:hidden"
+            onClick={() => setIsOpen(false)}
+          />
+        )}
+
         {/* ─── DROPDOWN PANEL ─── */}
         {isOpen && (
-          <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-white rounded-2xl shadow-2xl border border-gray-200/90 z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150">
+          <div className="fixed inset-x-3.5 top-16 sm:absolute sm:inset-x-auto sm:right-0 sm:top-full sm:mt-2 w-auto sm:w-96 max-w-full sm:max-w-md bg-white rounded-2xl shadow-2xl border border-gray-200/90 z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150">
             {/* Header */}
             <div className="px-4 py-3.5 bg-slate-900 text-white flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -430,9 +438,9 @@ export const NotificationDropdown: React.FC = () => {
         )}
       </div>
 
-      {/* ─── FLOATING LIVE ALERT TOAST (Top Right) ─── */}
+      {/* ─── FLOATING LIVE ALERT TOAST (Top Right / Mobile Responsive) ─── */}
       {livePopup && (
-        <div className="fixed top-20 right-6 z-50 max-w-sm w-full bg-white rounded-2xl shadow-2xl border-2 border-[#FF5500] p-4 animate-in slide-in-from-top-4 fade-in duration-300">
+        <div className="fixed top-20 inset-x-3.5 sm:inset-x-auto sm:right-6 z-50 max-w-sm w-auto sm:w-full bg-white rounded-2xl shadow-2xl border-2 border-[#FF5500] p-4 animate-in slide-in-from-top-4 fade-in duration-300">
           <div className="flex items-start justify-between gap-3">
             <div className="flex items-start gap-3 min-w-0">
               <div className="w-9 h-9 rounded-xl bg-orange-100 text-[#FF5500] flex items-center justify-center shrink-0 font-bold text-lg animate-bounce">

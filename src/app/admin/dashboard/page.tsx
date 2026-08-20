@@ -301,98 +301,194 @@ export default function AdminDashboardPage() {
         )}
       </div>
 
-      {/* ─── DETAIL & AKSI MODAL ─── */}
+      {/* ─── DETAIL & AKSI MODAL (Executive & Mobile-Optimized) ─── */}
       {selectedRequest && (
         <Modal
           isOpen={true}
           onClose={() => setSelectedRequest(null)}
-          title="Kelola Status Pengajuan ATK"
-          size="md"
-        >
-          <div className="space-y-4 text-xs sm:text-sm">
-            <div className="bg-gray-50 p-4 rounded-xl space-y-2 border border-gray-200/80">
-              <div className="flex justify-between">
-                <span className="text-gray-500">Nama Pemohon:</span>
-                <span className="font-bold text-gray-900">{selectedRequest.user.name}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-500">Departemen / Jabatan:</span>
-                <span className="font-semibold text-gray-800">
-                  {selectedRequest.user.department} • {selectedRequest.user.position}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-500">Barang Diajukan:</span>
-                <span className="font-bold text-[#FF5500]">{selectedRequest.atkItem.name}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-500">Jumlah:</span>
-                <span className="font-bold text-gray-900">
-                  {selectedRequest.quantity} {selectedRequest.atkItem.unit}
-                </span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-gray-500">Status Saat Ini:</span>
-                {statusBadge(selectedRequest.status)}
-              </div>
-            </div>
-
-            <div>
-              <span className="text-gray-500 text-xs block mb-1">Keperluan Pengajuan:</span>
-              <p className="p-3 bg-white border border-gray-200 rounded-xl text-gray-700 text-xs leading-relaxed">
-                {selectedRequest.reason}
-              </p>
-            </div>
-
-            {/* Quick Status Action Buttons */}
-            <div className="pt-2">
-              <p className="text-xs font-bold text-gray-700 mb-2">Ubah Status Pengajuan:</p>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                <button
-                  type="button"
-                  disabled={isProcessing || selectedRequest.status === "DISETUJUI"}
-                  onClick={() => handleUpdateStatus(selectedRequest.id, "DISETUJUI")}
-                  className="px-3 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs disabled:opacity-40 transition-colors cursor-pointer"
-                >
-                  Setujui
-                </button>
-                <button
-                  type="button"
-                  disabled={isProcessing || selectedRequest.status === "DIPROSES"}
-                  onClick={() => handleUpdateStatus(selectedRequest.id, "DIPROSES")}
-                  className="px-3 py-2 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold text-xs disabled:opacity-40 transition-colors cursor-pointer"
-                >
-                  Proses
-                </button>
-                <button
-                  type="button"
-                  disabled={isProcessing || selectedRequest.status === "SELESAI"}
-                  onClick={() => handleUpdateStatus(selectedRequest.id, "SELESAI")}
-                  className="px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs disabled:opacity-40 transition-colors cursor-pointer"
-                >
-                  Selesai
-                </button>
-                <button
-                  type="button"
-                  disabled={isProcessing || selectedRequest.status === "DITOLAK"}
-                  onClick={() => {
-                    setRejectModalOpen(true);
-                  }}
-                  className="px-3 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs disabled:opacity-40 transition-colors cursor-pointer"
-                >
-                  Tolak
-                </button>
-              </div>
-            </div>
-
-            <div className="pt-2 flex justify-end">
+          title="Review Pengajuan ATK"
+          subtitle={`Tiket: #${selectedRequest.id.slice(-8).toUpperCase()} • Pemohon: ${selectedRequest.user.name}`}
+          size="lg"
+          footer={
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between w-full gap-2.5 sm:gap-3">
               <button
                 type="button"
                 onClick={() => setSelectedRequest(null)}
-                className="px-4 py-2 rounded-xl border border-gray-300 text-gray-700 font-semibold text-xs hover:bg-gray-50 transition-colors cursor-pointer"
+                className="px-4 py-2 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 text-xs font-semibold transition cursor-pointer"
               >
                 Tutup
               </button>
+
+              <div className="flex flex-wrap items-center gap-2 justify-end">
+                {selectedRequest.status !== "MENUNGGU" && (
+                  <button
+                    type="button"
+                    disabled={isProcessing}
+                    onClick={() => handleUpdateStatus(selectedRequest.id, "MENUNGGU")}
+                    className="px-3 py-1.5 rounded-xl text-xs font-bold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 transition cursor-pointer flex items-center gap-1 disabled:opacity-50"
+                  >
+                    <span>🟡</span>
+                    <span>Set Menunggu</span>
+                  </button>
+                )}
+
+                {selectedRequest.status !== "DIPROSES" && (
+                  <button
+                    type="button"
+                    disabled={isProcessing}
+                    onClick={() => handleUpdateStatus(selectedRequest.id, "DIPROSES")}
+                    className="px-3 py-1.5 rounded-xl text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 transition cursor-pointer flex items-center gap-1 disabled:opacity-50"
+                  >
+                    <span>⚙️</span>
+                    <span>Proses</span>
+                  </button>
+                )}
+
+                {selectedRequest.status !== "SELESAI" && (
+                  <button
+                    type="button"
+                    disabled={isProcessing}
+                    onClick={() => handleUpdateStatus(selectedRequest.id, "SELESAI")}
+                    className="px-3 py-1.5 rounded-xl text-xs font-bold text-teal-700 bg-teal-50 hover:bg-teal-100 border border-teal-200 transition cursor-pointer flex items-center gap-1 disabled:opacity-50"
+                  >
+                    <span>🏁</span>
+                    <span>Selesai</span>
+                  </button>
+                )}
+
+                {selectedRequest.status !== "DITOLAK" && (
+                  <button
+                    type="button"
+                    disabled={isProcessing}
+                    onClick={() => setRejectModalOpen(true)}
+                    className="px-3.5 py-1.5 rounded-xl text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 shadow-2xs transition cursor-pointer flex items-center gap-1 disabled:opacity-50"
+                  >
+                    <span>✕</span>
+                    <span>Tolak</span>
+                  </button>
+                )}
+
+                {selectedRequest.status !== "DISETUJUI" && (
+                  <button
+                    type="button"
+                    disabled={isProcessing}
+                    onClick={() => handleUpdateStatus(selectedRequest.id, "DISETUJUI")}
+                    className="px-4 py-1.5 rounded-xl text-xs font-extrabold text-white bg-emerald-600 hover:bg-emerald-700 shadow-sm transition cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                    <span>Setujui Permohonan</span>
+                  </button>
+                )}
+              </div>
+            </div>
+          }
+        >
+          <div className="space-y-3.5 sm:space-y-4">
+            {/* ─── STATUS HEADER BAR ─── */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 p-3.5 bg-slate-50/90 rounded-2xl border border-slate-200/80">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Status Permohonan:</span>
+                {statusBadge(selectedRequest.status)}
+              </div>
+              <div className="text-[11px] font-semibold text-slate-500 flex items-center gap-1.5">
+                <svg className="w-3.5 h-3.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                <span>
+                  {new Date(selectedRequest.createdAt).toLocaleDateString("id-ID", {
+                    day: "numeric",
+                    month: "short",
+                    year: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })} WIB
+                </span>
+              </div>
+            </div>
+
+            {/* ─── 1. DATA PEMOHON CARD ─── */}
+            <div className="p-3.5 sm:p-4 bg-white rounded-2xl border border-slate-200/80 shadow-2xs">
+              <div className="flex items-center gap-2 mb-2.5 sm:mb-3 pb-2 border-b border-slate-100">
+                <div className="w-6 h-6 rounded-lg bg-orange-100 text-[#FF5500] flex items-center justify-center text-xs font-bold">
+                  👤
+                </div>
+                <h4 className="text-xs font-extrabold text-slate-800 uppercase tracking-wider">
+                  Data Pemohon (Karyawan)
+                </h4>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-3">
+                <div className="p-2.5 sm:p-3 bg-slate-50/70 rounded-xl border border-slate-100">
+                  <p className="text-[11px] font-semibold text-slate-400 mb-0.5">Nama Lengkap</p>
+                  <p className="text-xs font-bold text-slate-900">{selectedRequest.user.name}</p>
+                </div>
+                <div className="p-2.5 sm:p-3 bg-slate-50/70 rounded-xl border border-slate-100">
+                  <p className="text-[11px] font-semibold text-slate-400 mb-0.5">Departemen / Divisi</p>
+                  <p className="text-xs font-bold text-slate-900">{selectedRequest.user.department}</p>
+                </div>
+                <div className="p-2.5 sm:p-3 bg-slate-50/70 rounded-xl border border-slate-100">
+                  <p className="text-[11px] font-semibold text-slate-400 mb-0.5">Jabatan</p>
+                  <p className="text-xs font-bold text-slate-900">{selectedRequest.user.position}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* ─── 2. DETAIL BARANG YANG DIAJUKAN CARD ─── */}
+            <div className="p-3.5 sm:p-4 bg-white rounded-2xl border border-slate-200/80 shadow-2xs">
+              <div className="flex items-center justify-between mb-2.5 sm:mb-3 pb-2 border-b border-slate-100">
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-6 rounded-lg bg-orange-100 text-[#FF5500] flex items-center justify-center text-xs font-bold">
+                    📦
+                  </div>
+                  <h4 className="text-xs font-extrabold text-slate-800 uppercase tracking-wider">
+                    Detail Barang Yang Diajukan
+                  </h4>
+                </div>
+                <span className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-orange-100 text-[#FF5500]">
+                  Permintaan Gudang
+                </span>
+              </div>
+
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 bg-orange-50/40 rounded-xl border border-orange-200/60">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-white border border-orange-200 flex items-center justify-center text-lg shrink-0">
+                    📋
+                  </div>
+                  <div>
+                    <p className="text-sm font-extrabold text-slate-900">{selectedRequest.atkItem.name}</p>
+                    <p className="text-[11px] font-medium text-slate-500">Satuan: {selectedRequest.atkItem.unit || "pcs"}</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 self-start sm:self-center">
+                  <span className="text-xs text-slate-500 font-semibold">Jumlah Permintaan:</span>
+                  <span className="px-3 py-1 bg-white text-[#FF5500] font-extrabold text-xs rounded-lg border border-orange-200 shadow-2xs">
+                    {selectedRequest.quantity} {selectedRequest.atkItem.unit || "pcs"}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* ─── 3. ALASAN & KEPERLUAN CARD ─── */}
+            <div className="p-3.5 sm:p-4 bg-white rounded-2xl border border-slate-200/80 shadow-2xs">
+              <div className="flex items-center gap-2 mb-2 pb-2 border-b border-slate-100">
+                <div className="w-6 h-6 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center text-xs font-bold">
+                  💬
+                </div>
+                <h4 className="text-xs font-extrabold text-slate-800 uppercase tracking-wider">
+                  Alasan / Keperluan Pengguna
+                </h4>
+              </div>
+
+              <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 text-xs text-slate-800 leading-relaxed font-medium">
+                {selectedRequest.reason ? (
+                  <p className="whitespace-pre-line">{selectedRequest.reason}</p>
+                ) : (
+                  <p className="text-slate-400 italic">Tidak ada catatan / alasan spesifik.</p>
+                )}
+              </div>
             </div>
           </div>
         </Modal>

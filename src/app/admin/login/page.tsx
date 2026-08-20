@@ -91,18 +91,18 @@ export default function AdminLoginPage() {
 
   return (
     <div
-      className="min-h-screen flex flex-col justify-center items-center py-12 px-4 sm:px-6 lg:px-8 relative font-sans bg-cover bg-center bg-no-repeat"
+      className="min-h-[100dvh] flex flex-col justify-center items-center py-6 px-4 sm:py-12 sm:px-6 lg:px-8 relative font-sans bg-cover bg-center sm:bg-[center_top] bg-no-repeat overflow-x-hidden"
       style={{
         backgroundImage: "url('/Image/profil/gambar%20background%20hasamitra.png')",
       }}
     >
-      {/* Dark & Subtle Backdrop Blur Overlay */}
-      <div className="absolute inset-0 bg-slate-950/45 backdrop-blur-[2px]" />
+      {/* Responsive & Subtle Backdrop Blur Gradient Overlay */}
+      <div className="absolute inset-0 bg-gradient-to-b from-slate-950/65 via-slate-950/50 to-slate-950/75 backdrop-blur-[2px]" />
 
-      <div className="w-full max-w-md relative z-10 space-y-6">
+      <div className="w-full max-w-md relative z-10 space-y-5 sm:space-y-6">
         {/* Brand Header */}
         <div className="text-center">
-          <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-white p-1.5 shadow-xl border border-white/40">
+          <div className="inline-flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-white p-1.5 shadow-xl border border-white/40">
             <img
               src="/Image/logo/logo-bulat.png"
               alt="Logo Hasamitra"
@@ -110,20 +110,20 @@ export default function AdminLoginPage() {
             />
           </div>
 
-          <h1 className="mt-4 text-2xl sm:text-3xl font-black tracking-tight text-white drop-shadow-md">
+          <h1 className="mt-3 sm:mt-4 text-xl sm:text-3xl font-black tracking-tight text-white drop-shadow-md">
             Halaman Admin
           </h1>
-          <p className="mt-1 text-xs sm:text-sm text-slate-200 font-medium drop-shadow-sm">
+          <p className="mt-1 text-xs sm:text-sm text-slate-200 font-medium drop-shadow-sm px-2">
             Masuk untuk mengelola persetujuan, inventaris, dan laporan ATK
           </p>
         </div>
 
         {/* Login Card */}
-        <div className="bg-white/95 backdrop-blur-md py-8 px-6 sm:px-10 shadow-2xl rounded-2xl border border-white/60">
+        <div className="bg-white/95 backdrop-blur-md py-6 px-4 sm:py-8 sm:px-10 shadow-2xl rounded-2xl sm:rounded-3xl border border-white/60">
           {error && (
-            <div className="mb-5 p-3.5 bg-rose-50 border border-rose-200 rounded-xl text-xs sm:text-sm text-rose-700 font-medium flex items-start gap-2.5 animate-in fade-in duration-150">
+            <div className="mb-4 sm:mb-5 p-3 sm:p-3.5 bg-rose-50 border border-rose-200 rounded-xl text-xs sm:text-sm text-rose-700 font-medium flex items-start gap-2.5 animate-in fade-in duration-150">
               <svg
-                className="w-5 h-5 text-rose-500 shrink-0 mt-0.5"
+                className="w-4 h-4 sm:w-5 sm:h-5 text-rose-500 shrink-0 mt-0.5"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -139,9 +139,9 @@ export default function AdminLoginPage() {
             </div>
           )}
 
-          <form className="space-y-4" onSubmit={handleSubmit}>
+          <form className="space-y-3.5 sm:space-y-4" onSubmit={handleSubmit}>
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1.5">
+              <label className="block text-xs font-bold text-slate-700 mb-1 sm:mb-1.5">
                 Email Administrator
               </label>
               <input
@@ -155,7 +155,7 @@ export default function AdminLoginPage() {
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1.5">
+              <label className="block text-xs font-bold text-slate-700 mb-1 sm:mb-1.5">
                 Kata Sandi
               </label>
               <div className="relative">
@@ -188,14 +188,14 @@ export default function AdminLoginPage() {
               </div>
             </div>
 
-            {/* ─── MATH CAPTCHA SECURITY BOX ─── */}
-            <div className="p-3.5 bg-orange-50/70 border border-orange-200/80 rounded-xl space-y-2.5">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-1.5 text-xs font-bold text-orange-950">
-                  <svg className="w-4 h-4 text-[#FF5500]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            {/* ─── MATH CAPTCHA SECURITY BOX (Mobile-Friendly) ─── */}
+            <div className="p-3 sm:p-3.5 bg-orange-50/70 border border-orange-200/80 rounded-xl space-y-2">
+              <div className="flex items-center justify-between gap-1">
+                <div className="flex items-center gap-1.5 text-[11px] sm:text-xs font-bold text-orange-950">
+                  <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#FF5500] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                   </svg>
-                  <span>Keamanan Audit (Captcha Matematika)</span>
+                  <span className="truncate">Keamanan Audit (Captcha)</span>
                 </div>
 
                 <button
@@ -203,7 +203,7 @@ export default function AdminLoginPage() {
                   onClick={fetchCaptcha}
                   disabled={loadingCaptcha}
                   title="Ganti Soal Matematika"
-                  className="inline-flex items-center gap-1 text-[11px] font-bold text-[#FF5500] hover:text-[#E04B00] hover:underline cursor-pointer disabled:opacity-50"
+                  className="inline-flex items-center gap-1 text-[11px] font-bold text-[#FF5500] hover:text-[#E04B00] hover:underline cursor-pointer disabled:opacity-50 shrink-0"
                 >
                   <svg className={`w-3.5 h-3.5 ${loadingCaptcha ? "animate-spin" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -212,8 +212,8 @@ export default function AdminLoginPage() {
                 </button>
               </div>
 
-              <div className="flex items-center gap-3">
-                <div className="px-4 py-2 bg-white border border-orange-300 rounded-lg text-slate-900 font-extrabold text-sm tracking-wider select-none shrink-0 shadow-2xs">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className="px-3 sm:px-4 py-2 bg-white border border-orange-300 rounded-lg text-slate-900 font-extrabold text-xs sm:text-sm tracking-wider select-none shrink-0 shadow-2xs text-center min-w-[90px] sm:min-w-[110px]">
                   {loadingCaptcha ? "..." : captchaQuestion || "12 + 8 = ?"}
                 </div>
 
@@ -222,17 +222,17 @@ export default function AdminLoginPage() {
                   required
                   value={captchaAnswer}
                   onChange={(e) => setCaptchaAnswer(e.target.value)}
-                  placeholder="Hasil hitungan..."
-                  className="w-full px-3.5 py-2 bg-white border border-orange-200 rounded-lg text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#FF5500]/30 focus:border-[#FF5500] text-xs sm:text-sm font-semibold transition"
+                  placeholder="Hasil..."
+                  className="w-full flex-1 min-w-0 px-3 sm:px-3.5 py-2 bg-white border border-orange-200 rounded-lg text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#FF5500]/30 focus:border-[#FF5500] text-xs sm:text-sm font-semibold transition"
                 />
               </div>
             </div>
 
-            <div className="pt-2">
+            <div className="pt-1.5 sm:pt-2">
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-3 px-4 rounded-xl bg-[#FF5500] hover:bg-[#E04B00] active:scale-[0.99] text-white text-xs sm:text-sm font-bold transition shadow-md hover:shadow-lg cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2"
+                className="w-full py-2.5 sm:py-3 px-4 rounded-xl bg-[#FF5500] hover:bg-[#E04B00] active:scale-[0.99] text-white text-xs sm:text-sm font-bold transition shadow-md hover:shadow-lg cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 {loading ? (
                   <>
@@ -250,7 +250,7 @@ export default function AdminLoginPage() {
           </form>
 
           {/* Link Back to Employee Portal */}
-          <div className="mt-6 pt-4 border-t border-slate-100 text-center">
+          <div className="mt-5 sm:mt-6 pt-3.5 sm:pt-4 border-t border-slate-100 text-center">
             <Link
               href="/"
               className="text-xs font-medium text-slate-500 hover:text-[#FF5500] transition inline-flex items-center justify-center gap-1.5"

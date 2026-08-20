@@ -879,7 +879,7 @@ export default function PublicUserPortalPage() {
     }
   }, [toast, soundEnabled]);
 
-  // Polling every 2 seconds & on window focus for real-time inventory and notification reactivity
+  // Polling every 2 seconds & on window/mobile lifecycle events (focus, visibilitychange, pageshow, online)
   useEffect(() => {
     const refreshData = () => {
       fetchPortalNotifications();
@@ -888,12 +888,17 @@ export default function PublicUserPortalPage() {
 
     refreshData();
     const interval = setInterval(refreshData, 2000);
+
     window.addEventListener("focus", refreshData);
+    window.addEventListener("pageshow", refreshData);
+    window.addEventListener("online", refreshData);
     document.addEventListener("visibilitychange", refreshData);
 
     return () => {
       clearInterval(interval);
       window.removeEventListener("focus", refreshData);
+      window.removeEventListener("pageshow", refreshData);
+      window.removeEventListener("online", refreshData);
       document.removeEventListener("visibilitychange", refreshData);
     };
   }, [fetchPortalNotifications, fetchCatalogItems]);
@@ -1420,9 +1425,17 @@ export default function PublicUserPortalPage() {
                 )}
               </button>
 
+              {/* Mobile Backdrop for Notification Popover */}
+              {notifDropdownOpen && (
+                <div
+                  className="fixed inset-0 z-40 bg-black/25 backdrop-blur-2xs sm:hidden"
+                  onClick={() => setNotifDropdownOpen(false)}
+                />
+              )}
+
               {/* Popover Dropdown */}
               {notifDropdownOpen && (
-                <div className="absolute right-0 mt-2 w-80 sm:w-96 rounded-2xl bg-white border border-slate-200 shadow-xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150">
+                <div className="fixed inset-x-3.5 top-16 sm:absolute sm:inset-x-auto sm:right-0 sm:top-full sm:mt-2 w-auto sm:w-96 max-w-full sm:max-w-md rounded-2xl bg-white border border-slate-200 shadow-2xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150">
                   {/* Dropdown Header */}
                   <div className="px-4 py-3.5 bg-gradient-to-r from-slate-900 to-slate-800 text-white flex items-center justify-between">
                     <div className="flex items-center gap-2">
@@ -1923,8 +1936,8 @@ export default function PublicUserPortalPage() {
         </main>
       </div>
 
-      {/* --- FLOATING TELEGRAM LOGO BUTTON --- */}
-      <aside aria-label="Telegram" className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-2">
+      {/* --- FLOATING TELEGRAM LOGO BUTTON (Mobile-Friendly) --- */}
+      <aside aria-label="Telegram" className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-40 flex flex-col items-end gap-1.5 sm:gap-2">
         <a
           href="https://t.me/DennyXIX"
           target="_blank"
