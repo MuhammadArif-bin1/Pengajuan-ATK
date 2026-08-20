@@ -291,35 +291,56 @@ export async function updateRequestStatus(
   }
 
   // Require admin note for rejection if provided or fallback
-  const finalNote = status === "DITOLAK"
-    ? (adminNote || "Pengajuan ditolak oleh Administrator.")
-    : (adminNote !== undefined ? adminNote : request.adminNote);
+  const finalNote =
+    status === "DITOLAK"
+      ? adminNote || "Pengajuan ditolak oleh Administrator."
+      : adminNote !== undefined
+      ? adminNote
+      : request.adminNote;
 
-  return prisma.atkRequest.update({
-    where: { id },
-    data: {
-      status,
-      adminNote: finalNote,
-      processedBy: adminId,
-      processedAt: new Date(),
-    },
-    include: {
-      user: {
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          department: true,
-          position: true,
+  return prisma.$transaction(async (tx) => {
+    // If transitioning to DISETUJUI: deduct stock from warehouse
+    if (status === "DISETUJUI" && request.status !== "DISETUJUI") {
+      const newStock = Math.max(0, request.atkItem.stock - request.quantity);
+      await tx.atkItem.update({
+        where: { id: request.atkItemId },
+        data: { stock: newStock },
+      });
+    }
+    // If transitioning from DISETUJUI to DITOLAK or MENUNGGU: restore stock back
+    else if (request.status === "DISETUJUI" && (status === "DITOLAK" || status === "MENUNGGU")) {
+      await tx.atkItem.update({
+        where: { id: request.atkItemId },
+        data: { stock: request.atkItem.stock + request.quantity },
+      });
+    }
+
+    return tx.atkRequest.update({
+      where: { id },
+      data: {
+        status,
+        adminNote: finalNote,
+        processedBy: adminId,
+        processedAt: new Date(),
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            department: true,
+            position: true,
+          },
+        },
+        atkItem: {
+          select: { id: true, name: true, unit: true, stock: true },
+        },
+        processor: {
+          select: { id: true, name: true },
         },
       },
-      atkItem: {
-        select: { id: true, name: true, unit: true },
-      },
-      processor: {
-        select: { id: true, name: true },
-      },
-    },
+    });
   });
 }
 

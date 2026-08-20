@@ -762,7 +762,6 @@ export default function PublicUserPortalPage() {
   const [notifications, setNotifications] = useState<PortalNotificationItem[]>([]);
   const [unreadIds, setUnreadIds] = useState<Set<string>>(new Set());
   const [notifDropdownOpen, setNotifDropdownOpen] = useState(false);
-  const [notifFilter, setNotifFilter] = useState<"ALL" | "MENUNGGU" | "DISETUJUI" | "DIPROSES" | "DITOLAK">("ALL");
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [isRinging, setIsRinging] = useState(false);
   const [historySearch, setHistorySearch] = useState("");
@@ -771,11 +770,6 @@ export default function PublicUserPortalPage() {
   const notifDropdownRef = useRef<HTMLDivElement>(null);
   const lastStatusesRef = useRef<Record<string, string>>({});
   const isInitialFetchRef = useRef(true);
-
-  const filteredDropdownNotifs = useMemo(() => {
-    if (notifFilter === "ALL") return notifications;
-    return notifications.filter((n) => n.status === notifFilter);
-  }, [notifications, notifFilter]);
 
   // Fetch Master Catalog ATK items
   const fetchCatalogItems = useCallback(async () => {
@@ -936,20 +930,24 @@ export default function PublicUserPortalPage() {
     }
   }, [toast, soundEnabled]);
 
-  // Polling every 2 seconds & on window focus for high real-time reactivity
+  // Polling every 2 seconds & on window focus for real-time inventory and notification reactivity
   useEffect(() => {
-    fetchPortalNotifications();
-    const interval = setInterval(fetchPortalNotifications, 2000);
-    const handleFocus = () => fetchPortalNotifications();
-    window.addEventListener("focus", handleFocus);
-    document.addEventListener("visibilitychange", handleFocus);
+    const refreshData = () => {
+      fetchPortalNotifications();
+      fetchCatalogItems();
+    };
+
+    refreshData();
+    const interval = setInterval(refreshData, 2000);
+    window.addEventListener("focus", refreshData);
+    document.addEventListener("visibilitychange", refreshData);
 
     return () => {
       clearInterval(interval);
-      window.removeEventListener("focus", handleFocus);
-      document.removeEventListener("visibilitychange", handleFocus);
+      window.removeEventListener("focus", refreshData);
+      document.removeEventListener("visibilitychange", refreshData);
     };
-  }, [fetchPortalNotifications]);
+  }, [fetchPortalNotifications, fetchCatalogItems]);
 
   const markAllNotificationsRead = () => {
     setUnreadIds(new Set());
@@ -1437,7 +1435,11 @@ export default function PublicUserPortalPage() {
             <div className="relative" ref={notifDropdownRef}>
               <button
                 type="button"
-                onClick={() => setNotifDropdownOpen((prev) => !prev)}
+                onClick={() => {
+                  setNotifDropdownOpen((prev) => !prev);
+                  fetchPortalNotifications();
+                  fetchCatalogItems();
+                }}
                 className={`relative inline-flex items-center justify-center w-9 h-9 rounded-xl border transition-all duration-150 cursor-pointer ${
                   notifDropdownOpen
                     ? "bg-orange-50 border-[#FF5500] text-[#FF5500]"
@@ -1509,77 +1511,18 @@ export default function PublicUserPortalPage() {
                     </div>
                   </div>
 
-                  {/* Dropdown Filter Tabs */}
-                  <div className="flex items-center gap-1 p-2 bg-slate-50 border-b border-slate-200/80 overflow-x-auto text-[10px] font-bold">
-                    <button
-                      type="button"
-                      onClick={() => setNotifFilter("ALL")}
-                      className={`px-2.5 py-1 rounded-lg transition cursor-pointer shrink-0 ${
-                        notifFilter === "ALL"
-                          ? "bg-slate-800 text-white shadow-2xs"
-                          : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-100"
-                      }`}
-                    >
-                      Semua ({notifications.length})
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setNotifFilter("MENUNGGU")}
-                      className={`px-2 py-1 rounded-lg transition cursor-pointer shrink-0 ${
-                        notifFilter === "MENUNGGU"
-                          ? "bg-amber-500 text-white shadow-2xs font-extrabold"
-                          : "bg-white text-amber-700 border border-amber-200 hover:bg-amber-50"
-                      }`}
-                    >
-                      🟡 Menunggu ({notifications.filter((n) => n.status === "MENUNGGU").length})
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setNotifFilter("DISETUJUI")}
-                      className={`px-2 py-1 rounded-lg transition cursor-pointer shrink-0 ${
-                        notifFilter === "DISETUJUI"
-                          ? "bg-emerald-600 text-white shadow-2xs font-extrabold"
-                          : "bg-white text-emerald-700 border border-emerald-200 hover:bg-emerald-50"
-                      }`}
-                    >
-                      🟢 Disetujui ({notifications.filter((n) => n.status === "DISETUJUI").length})
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setNotifFilter("DIPROSES")}
-                      className={`px-2 py-1 rounded-lg transition cursor-pointer shrink-0 ${
-                        notifFilter === "DIPROSES"
-                          ? "bg-blue-600 text-white shadow-2xs font-extrabold"
-                          : "bg-white text-blue-700 border border-blue-200 hover:bg-blue-50"
-                      }`}
-                    >
-                      🔵 Diproses ({notifications.filter((n) => n.status === "DIPROSES").length})
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setNotifFilter("DITOLAK")}
-                      className={`px-2 py-1 rounded-lg transition cursor-pointer shrink-0 ${
-                        notifFilter === "DITOLAK"
-                          ? "bg-rose-600 text-white shadow-2xs font-extrabold"
-                          : "bg-white text-rose-700 border border-rose-200 hover:bg-rose-50"
-                      }`}
-                    >
-                      🔴 Ditolak ({notifications.filter((n) => n.status === "DITOLAK").length})
-                    </button>
-                  </div>
-
                   {/* Dropdown List */}
                   <div className="max-h-80 overflow-y-auto divide-y divide-slate-100">
-                    {filteredDropdownNotifs.length === 0 ? (
+                    {notifications.length === 0 ? (
                       <div className="p-6 text-center text-slate-400 text-xs">
                         <p className="text-2xl mb-1">📭</p>
-                        <p className="font-semibold text-slate-600">Tidak ada notifikasi pada status ini</p>
+                        <p className="font-semibold text-slate-600">Belum ada notifikasi keputusan</p>
                         <p className="text-[11px] text-slate-400 mt-0.5">
-                          Status pengajuan yang Anda kirim akan otomatis muncul di sini.
+                          Status pengajuan yang telah diproses Admin akan muncul di sini.
                         </p>
                       </div>
                     ) : (
-                      filteredDropdownNotifs.slice(0, 15).map((item) => {
+                      notifications.slice(0, 15).map((item) => {
                         const isUnread = unreadIds.has(item.id);
                         return (
                           <div
