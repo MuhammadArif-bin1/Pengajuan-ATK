@@ -94,3 +94,55 @@ export function verifyMathCaptcha(token: string, userAnswer: string | number): {
     return { valid: false, reason: "Terjadi kesalahan saat memvalidasi captcha" };
   }
 }
+
+/**
+ * Verify Google reCAPTCHA v2 token with Google's siteverify API
+ */
+export async function verifyGoogleRecaptcha(
+  token: string
+): Promise<{ valid: boolean; reason?: string }> {
+  try {
+    if (!token || !token.trim()) {
+      return { valid: false, reason: "Verifikasi captcha wajib dicentang" };
+    }
+
+    const secretKey =
+      process.env.RECAPTCHA_SECRET_KEY ||
+      "6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe"; // Default Google test key
+
+    const params = new URLSearchParams();
+    params.append("secret", secretKey);
+    params.append("response", token);
+
+    const response = await fetch("https://www.google.com/recaptcha/api/siteverify", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: params.toString(),
+    });
+
+    if (!response.ok) {
+      return { valid: false, reason: "Gagal menghubungi server verifikasi captcha Google" };
+    }
+
+    const data = await response.json();
+
+    if (data.success) {
+      return { valid: true };
+    }
+
+    const errorCodes = data["error-codes"] || [];
+    let reason = "Verifikasi captcha tidak valid. Silakan coba lagi.";
+    if (errorCodes.includes("timeout-or-duplicate")) {
+      reason = "Captcha sudah kedaluwarsa atau pernah digunakan. Silakan centang ulang.";
+    } else if (errorCodes.includes("invalid-input-secret")) {
+      reason = "Secret key reCAPTCHA tidak valid pada file .env";
+    }
+
+    return { valid: false, reason };
+  } catch (error) {
+    console.error("Google reCAPTCHA verification error:", error);
+    return { valid: false, reason: "Terjadi kesalahan saat memverifikasi captcha dengan Google" };
+  }
+}

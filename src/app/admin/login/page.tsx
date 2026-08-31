@@ -1,50 +1,29 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { ReCaptcha, ReCaptchaRef } from "@/components/ui/ReCaptcha";
 
 export default function AdminLoginPage() {
   const router = useRouter();
+  const recaptchaRef = useRef<ReCaptchaRef>(null);
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // Math Captcha State
-  const [captchaQuestion, setCaptchaQuestion] = useState("");
-  const [captchaToken, setCaptchaToken] = useState("");
-  const [captchaAnswer, setCaptchaAnswer] = useState("");
-  const [loadingCaptcha, setLoadingCaptcha] = useState(false);
-
-  const fetchCaptcha = async () => {
-    try {
-      setLoadingCaptcha(true);
-      const res = await fetch("/api/auth/captcha?t=" + Date.now());
-      if (res.ok) {
-        const data = await res.json();
-        setCaptchaQuestion(data.question);
-        setCaptchaToken(data.token);
-        setCaptchaAnswer("");
-      }
-    } catch (err) {
-      console.error("Gagal memuat captcha:", err);
-    } finally {
-      setLoadingCaptcha(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchCaptcha();
-  }, []);
+  // Google reCAPTCHA Token State
+  const [recaptchaToken, setRecaptchaToken] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
 
-    if (!captchaAnswer.trim()) {
-      setError("Silakan jawab perhitungan matematika pada captcha keamanan.");
+    if (!recaptchaToken) {
+      setError("Silakan centang verifikasi 'Saya bukan robot' pada reCAPTCHA terlebih dahulu.");
       return;
     }
 
@@ -57,8 +36,7 @@ export default function AdminLoginPage() {
         body: JSON.stringify({
           email,
           password,
-          captchaToken,
-          captchaAnswer: captchaAnswer.trim(),
+          recaptchaToken,
         }),
       });
 
@@ -71,8 +49,9 @@ export default function AdminLoginPage() {
       }
 
       if (!res.ok) {
-        // Refresh captcha on any error
-        fetchCaptcha();
+        // Reset reCAPTCHA on error
+        recaptchaRef.current?.reset();
+        setRecaptchaToken("");
         throw new Error(data.error || "Gagal masuk ke sistem");
       }
 
@@ -188,44 +167,21 @@ export default function AdminLoginPage() {
               </div>
             </div>
 
-            {/* ─── MATH CAPTCHA SECURITY BOX (Mobile-Friendly) ─── */}
-            <div className="p-3 sm:p-3.5 bg-orange-50/70 border border-orange-200/80 rounded-xl space-y-2">
-              <div className="flex items-center justify-between gap-1">
-                <div className="flex items-center gap-1.5 text-[11px] sm:text-xs font-bold text-orange-950">
-                  <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#FF5500] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                  </svg>
-                  <span className="truncate">Keamanan Audit (Captcha)</span>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={fetchCaptcha}
-                  disabled={loadingCaptcha}
-                  title="Ganti Soal Matematika"
-                  className="inline-flex items-center gap-1 text-[11px] font-bold text-[#FF5500] hover:text-[#E04B00] hover:underline cursor-pointer disabled:opacity-50 shrink-0"
-                >
-                  <svg className={`w-3.5 h-3.5 ${loadingCaptcha ? "animate-spin" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                  </svg>
-                  <span>Ganti Soal</span>
-                </button>
-              </div>
-
-              <div className="flex items-center gap-2 sm:gap-3">
-                <div className="px-3 sm:px-4 py-2 bg-white border border-orange-300 rounded-lg text-slate-900 font-extrabold text-xs sm:text-sm tracking-wider select-none shrink-0 shadow-2xs text-center min-w-[90px] sm:min-w-[110px]">
-                  {loadingCaptcha ? "..." : captchaQuestion || "12 + 8 = ?"}
-                </div>
-
-                <input
-                  type="number"
-                  required
-                  value={captchaAnswer}
-                  onChange={(e) => setCaptchaAnswer(e.target.value)}
-                  placeholder="Hasil..."
-                  className="w-full flex-1 min-w-0 px-3 sm:px-3.5 py-2 bg-white border border-orange-200 rounded-lg text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#FF5500]/30 focus:border-[#FF5500] text-xs sm:text-sm font-semibold transition"
-                />
-              </div>
+            {/* ─── GOOGLE RECAPTCHA V2 (Checkbox) ─── */}
+            <div className="flex justify-center py-1">
+              <ReCaptcha
+                ref={recaptchaRef}
+                onVerify={(token) => {
+                  setRecaptchaToken(token);
+                  if (error) setError("");
+                }}
+                onExpire={() => {
+                  setRecaptchaToken("");
+                }}
+                onError={() => {
+                  setRecaptchaToken("");
+                }}
+              />
             </div>
 
             <div className="pt-1.5 sm:pt-2">
