@@ -17,8 +17,8 @@ interface ReCaptchaProps {
 declare global {
   interface Window {
     grecaptcha?: {
-      ready: (cb: () => void) => void;
-      render: (
+      ready?: (cb: () => void) => void;
+      render?: (
         container: HTMLElement | string,
         parameters: {
           sitekey: string;
@@ -29,8 +29,8 @@ declare global {
           size?: "normal" | "compact";
         }
       ) => number;
-      reset: (widgetId?: number) => void;
-      getResponse: (widgetId?: number) => string;
+      reset?: (widgetId?: number) => void;
+      getResponse?: (widgetId?: number) => string;
     };
     onRecaptchaLoaded?: () => void;
   }
@@ -43,7 +43,11 @@ export const ReCaptcha = forwardRef<ReCaptchaRef, ReCaptchaProps>(
 
     useImperativeHandle(ref, () => ({
       reset: () => {
-        if (typeof window !== "undefined" && window.grecaptcha && widgetIdRef.current !== null) {
+        if (
+          typeof window !== "undefined" &&
+          typeof window.grecaptcha?.reset === "function" &&
+          widgetIdRef.current !== null
+        ) {
           try {
             window.grecaptcha.reset(widgetIdRef.current);
           } catch (e) {
@@ -52,7 +56,11 @@ export const ReCaptcha = forwardRef<ReCaptchaRef, ReCaptchaProps>(
         }
       },
       getResponse: () => {
-        if (typeof window !== "undefined" && window.grecaptcha && widgetIdRef.current !== null) {
+        if (
+          typeof window !== "undefined" &&
+          typeof window.grecaptcha?.getResponse === "function" &&
+          widgetIdRef.current !== null
+        ) {
           return window.grecaptcha.getResponse(widgetIdRef.current) || "";
         }
         return "";
@@ -66,7 +74,12 @@ export const ReCaptcha = forwardRef<ReCaptchaRef, ReCaptchaProps>(
         "6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI";
 
       const renderRecaptcha = () => {
-        if (containerRef.current && window.grecaptcha && widgetIdRef.current === null) {
+        if (
+          containerRef.current &&
+          typeof window !== "undefined" &&
+          typeof window.grecaptcha?.render === "function" &&
+          widgetIdRef.current === null
+        ) {
           try {
             containerRef.current.innerHTML = "";
             const id = window.grecaptcha.render(containerRef.current, {
@@ -90,9 +103,12 @@ export const ReCaptcha = forwardRef<ReCaptchaRef, ReCaptchaProps>(
       };
 
       const scriptId = "google-recaptcha-script";
-      const existingScript = document.getElementById(scriptId) as HTMLScriptElement | null;
+      const existingScript =
+        typeof document !== "undefined"
+          ? (document.getElementById(scriptId) as HTMLScriptElement | null)
+          : null;
 
-      if (!existingScript) {
+      if (!existingScript && typeof document !== "undefined") {
         const script = document.createElement("script");
         script.id = scriptId;
         script.src =
@@ -104,12 +120,15 @@ export const ReCaptcha = forwardRef<ReCaptchaRef, ReCaptchaProps>(
         window.onRecaptchaLoaded = () => {
           renderRecaptcha();
         };
-      } else if (window.grecaptcha && window.grecaptcha.render) {
+      } else if (
+        typeof window !== "undefined" &&
+        typeof window.grecaptcha?.render === "function"
+      ) {
         renderRecaptcha();
-      } else {
+      } else if (typeof window !== "undefined") {
         const prevOnload = window.onRecaptchaLoaded;
         window.onRecaptchaLoaded = () => {
-          if (prevOnload) prevOnload();
+          if (typeof prevOnload === "function") prevOnload();
           renderRecaptcha();
         };
       }
