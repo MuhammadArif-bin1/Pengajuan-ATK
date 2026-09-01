@@ -95,8 +95,43 @@ export function verifyMathCaptcha(token: string, userAnswer: string | number): {
   }
 }
 
+// Google's default test keys
+const GOOGLE_TEST_SECRET_KEY = "6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe";
+const BUILTIN_TOKEN_PREFIX = "captcha_";
+const BUILTIN_TOKEN_MAX_AGE_MS = 3 * 60 * 1000; // 3 minutes
+
 /**
- * Verify Google reCAPTCHA v2 token with Google's siteverify API
+ * Verify a built-in captcha token (generated client-side by the clean widget).
+ * Validates the token format and freshness based on the embedded timestamp.
+ */
+function verifyBuiltInCaptchaToken(token: string): { valid: boolean; reason?: string } {
+  if (!token.startsWith(BUILTIN_TOKEN_PREFIX)) {
+    return { valid: false, reason: "Token captcha tidak valid" };
+  }
+
+  const parts = token.split("_");
+  // Expected format: captcha_<base36-timestamp>_<hex-random>
+  if (parts.length < 3) {
+    return { valid: false, reason: "Format token captcha tidak valid" };
+  }
+
+  const tsBase36 = parts[1];
+  const timestamp = parseInt(tsBase36, 36);
+  if (isNaN(timestamp)) {
+    return { valid: false, reason: "Token captcha tidak valid" };
+  }
+
+  const age = Date.now() - timestamp;
+  if (age < 0 || age > BUILTIN_TOKEN_MAX_AGE_MS) {
+    return { valid: false, reason: "Captcha sudah kedaluwarsa. Silakan centang ulang." };
+  }
+
+  return { valid: true };
+}
+
+/**
+ * Verify reCAPTCHA token — supports both the built-in clean widget
+ * and Google reCAPTCHA v2 when a production secret key is configured.
  */
 export async function verifyGoogleRecaptcha(
   token: string
@@ -106,9 +141,14 @@ export async function verifyGoogleRecaptcha(
       return { valid: false, reason: "Verifikasi captcha wajib dicentang" };
     }
 
+    // Built-in widget tokens start with "captcha_"
+    if (token.startsWith(BUILTIN_TOKEN_PREFIX)) {
+      return verifyBuiltInCaptchaToken(token);
+    }
+
+    // Otherwise verify with Google's API
     const secretKey =
-      process.env.RECAPTCHA_SECRET_KEY ||
-      "6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe"; // Default Google test key
+      process.env.RECAPTCHA_SECRET_KEY || GOOGLE_TEST_SECRET_KEY;
 
     const params = new URLSearchParams();
     params.append("secret", secretKey);
@@ -142,7 +182,7 @@ export async function verifyGoogleRecaptcha(
 
     return { valid: false, reason };
   } catch (error) {
-    console.error("Google reCAPTCHA verification error:", error);
-    return { valid: false, reason: "Terjadi kesalahan saat memverifikasi captcha dengan Google" };
+    console.error("reCAPTCHA verification error:", error);
+    return { valid: false, reason: "Terjadi kesalahan saat memverifikasi captcha" };
   }
 }
