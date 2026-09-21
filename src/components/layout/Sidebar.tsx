@@ -5,24 +5,34 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 
 export interface NavItem {
+  id?: string;
   label: string;
   href: string;
   icon: React.ReactNode;
   badge?: string | number;
+  onClick?: () => void;
 }
 
 export interface SidebarProps {
-  role: "ADMIN" | "USER";
+  role?: "ADMIN" | "USER" | "PUBLIC";
   isOpen?: boolean;
   onClose?: () => void;
   userName?: string;
+  activeTab?: string;
+  onSelectTab?: (tab: string) => void;
+  purchaseBadgeCount?: number;
+  onFastTrackClick?: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
-  role,
+  role = "PUBLIC",
   isOpen = false,
   onClose,
   userName = "ADMIN LOGISTIK",
+  activeTab = "dashboard",
+  onSelectTab,
+  purchaseBadgeCount = 2,
+  onFastTrackClick,
 }) => {
   const pathname = usePathname();
   const router = useRouter();
@@ -89,121 +99,234 @@ export const Sidebar: React.FC<SidebarProps> = ({
     },
   ];
 
-  const userNavItems: NavItem[] = [
+  const publicNavTabs = [
     {
-      label: "Form Pengajuan",
+      id: "dashboard",
+      label: "Dashboard Pengajuan",
       href: "/",
       icon: (
-        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+        <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+          <rect x="3" y="3" width="7.5" height="7.5" rx="2" />
+          <rect x="13.5" y="3" width="7.5" height="7.5" rx="2" />
+          <rect x="3" y="13.5" width="7.5" height="7.5" rx="2" />
+          <rect x="13.5" y="13.5" width="7.5" height="7.5" rx="2" />
+        </svg>
+      ),
+    },
+    {
+      id: "purchase",
+      label: "Pengajuan Pembelian",
+      href: "/user/pengajuan-pembelian",
+      badge: purchaseBadgeCount,
+      icon: (
+        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+        </svg>
+      ),
+    },
+    {
+      id: "history",
+      label: "Riwayat",
+      href: "/#riwayat",
+      icon: (
+        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
       ),
     },
   ];
-
-  const items = role === "ADMIN" ? adminNavItems : userNavItems;
 
   return (
     <>
       {/* Mobile backdrop */}
       {isOpen && (
         <div
-          className="fixed inset-0 z-40 bg-black/50 backdrop-blur-xs lg:hidden"
+          className="fixed inset-0 z-40 bg-slate-900/40 backdrop-blur-xs lg:hidden"
           onClick={onClose}
         />
       )}
 
-      {/* Sidebar container - Vibrant Orange #FF5500 */}
+      {/* Sidebar container - Clean White Theme with Figma Style */}
       <aside
-        className={`fixed top-0 bottom-0 left-0 z-40 w-64 bg-[#FF5500] text-white flex flex-col justify-between transition-transform duration-200 ease-in-out lg:translate-x-0 ${
+        className={`fixed top-0 bottom-0 left-0 z-40 w-64 bg-white border-r border-slate-200/80 flex flex-col justify-between transition-transform duration-200 ease-in-out lg:translate-x-0 ${
           isOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        <div>
-          {/* Brand Header */}
-          <div className="px-6 py-6 border-b border-white/10 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <img
-                src="/Image/logo/logo-bulat.png"
-                alt="Hasamitra Logo"
-                className="w-10 h-10 rounded-full object-cover bg-white shadow-sm"
-              />
-              <div>
-                <h1 className="font-bold text-white text-base leading-tight tracking-wide">
-                  HasamitraJabar
-                </h1>
-                <p className="text-[10px] text-white/80 font-medium uppercase tracking-wider mt-0.5">
-                  {userName || "PORTAL ADMIN"}
-                </p>
-              </div>
+        <div className="flex flex-col h-full justify-between">
+          <div>
+            {/* Brand Header */}
+            <div className="px-5 py-5 border-b border-slate-100 flex items-center justify-between">
+              <Link href="/" className="flex items-center gap-2.5">
+                <img
+                  src="/Image/logo/logo-bulat.png"
+                  alt="Hasamitra Logo"
+                  className="w-11 h-11 rounded-full object-contain shrink-0"
+                />
+                <div className="flex flex-col">
+                  <div className="flex items-baseline gap-1">
+                    <span className="font-extrabold text-[#027A48] text-xl tracking-tight leading-none">
+                      hasamitra
+                    </span>
+                    <span className="font-bold text-[#027A48] text-[11px] italic leading-none">
+                      Jabar
+                    </span>
+                  </div>
+                  <span className="text-[9.5px] text-slate-500 font-medium tracking-tight mt-1 leading-none">
+                    bank perekonomian rakyat
+                  </span>
+                </div>
+              </Link>
+
+              {onClose && (
+                <button
+                  onClick={onClose}
+                  className="lg:hidden p-1.5 text-slate-400 hover:text-slate-700 rounded-lg hover:bg-slate-100 transition"
+                  aria-label="Tutup Menu"
+                >
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              )}
             </div>
 
-            {onClose && (
-              <button
-                onClick={onClose}
-                className="lg:hidden p-1.5 text-white/80 hover:text-white rounded-lg hover:bg-white/10"
-              >
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            )}
+            {/* Navigation Links */}
+            <nav className="p-3.5 space-y-1.5 mt-2">
+              {role === "ADMIN" ? (
+                <>
+                  <p className="px-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">
+                    MENU ADMINISTRATOR
+                  </p>
+                  {adminNavItems.map((item) => {
+                    const isActive =
+                      pathname === item.href ||
+                      (item.href !== "/admin/dashboard" && pathname.startsWith(item.href));
+
+                    return (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        onClick={onClose}
+                        className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all duration-150 ${
+                          isActive
+                            ? "bg-orange-50 text-[#FF7A00] font-bold shadow-2xs"
+                            : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                        }`}
+                      >
+                        <span className={isActive ? "text-[#FF7A00]" : "text-slate-400"}>
+                          {item.icon}
+                        </span>
+                        <span>{item.label}</span>
+                      </Link>
+                    );
+                  })}
+                </>
+              ) : (
+                <>
+                  {publicNavTabs.map((tab) => {
+                    const normalizedPath = decodeURIComponent(pathname);
+                    const isTabActive =
+                      (tab.href === "/" && pathname === "/") ||
+                      (tab.href !== "/" && normalizedPath.startsWith(tab.href)) ||
+                      activeTab === tab.id;
+
+                    return (
+                      <Link
+                        key={tab.id}
+                        href={tab.href}
+                        onClick={() => {
+                          if (onSelectTab) onSelectTab(tab.id);
+                          if (onClose) onClose();
+                        }}
+                        className={`w-full flex items-center justify-between px-3.5 py-3 rounded-xl text-xs font-semibold transition-all duration-150 cursor-pointer ${
+                          isTabActive
+                            ? "text-[#ff8f00] font-bold"
+                            : "text-slate-500 hover:text-slate-900 hover:bg-slate-50"
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <span className={isTabActive ? "text-[#ff8f00]" : "text-slate-400"}>
+                            {tab.icon}
+                          </span>
+                          <span className="text-[13px]">{tab.label}</span>
+                        </div>
+
+                        {tab.badge !== undefined && tab.badge > 0 && (
+                          <span className="h-5 min-w-[20px] px-1.5 rounded-full bg-[#ef4444]/15 text-[#dc2626] flex items-center justify-center text-[10.5px] font-black">
+                            {tab.badge}
+                          </span>
+                        )}
+                      </Link>
+                    );
+                  })}
+                </>
+              )}
+            </nav>
           </div>
 
-          {/* Navigation Links */}
-          <nav className="p-4 space-y-2">
-            <p className="px-3 text-[10px] font-bold text-white/70 uppercase tracking-widest mb-3">
-              MENU UTAMA
-            </p>
-            {items.map((item) => {
-              const isActive =
-                pathname === item.href ||
-                (item.href !== "/admin/dashboard" && pathname.startsWith(item.href));
-
-              return (
+          {/* Bottom Action Section (Fast Track & Admin) */}
+          <div className="p-4 space-y-3 border-t border-slate-150/80">
+            {role === "ADMIN" ? (
+              <div className="space-y-2">
                 <Link
-                  key={item.href}
-                  href={item.href}
-                  onClick={onClose}
-                  className={`flex items-center gap-3.5 px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-150 ${
-                    isActive
-                      ? "bg-white text-[#FF5500] shadow-md font-bold"
-                      : "text-white/90 hover:bg-white/15 hover:text-white"
-                  }`}
+                  href="/"
+                  className="flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-slate-600 hover:text-slate-900 rounded-xl hover:bg-slate-100 transition"
                 >
-                  <span className={isActive ? "text-[#FF5500]" : "text-white"}>
-                    {item.icon}
-                  </span>
-                  <span>{item.label}</span>
+                  <svg className="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                  </svg>
+                  <span>Portal Karyawan</span>
                 </Link>
-              );
-            })}
-          </nav>
-        </div>
 
-        {/* Bottom Section */}
-        <div className="p-4 space-y-2 border-t border-white/10">
-          <Link
-            href="/"
-            target="_blank"
-            className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-medium text-white/90 hover:text-white hover:bg-white/10 transition-colors"
-          >
-            <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-            </svg>
-            <span>Buka Website Utama</span>
-          </Link>
+                <button
+                  onClick={handleLogout}
+                  disabled={isLoggingOut}
+                  className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-xs font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 transition-colors cursor-pointer"
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                  </svg>
+                  <span>{isLoggingOut ? "Keluar..." : "Keluar Sesi Admin"}</span>
+                </button>
+              </div>
+            ) : (
+              <>
+                {/* Fast Track Button - Figma Exact #37aee2 */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (onFastTrackClick) onFastTrackClick();
+                  }}
+                  className="w-full h-14 bg-[#37aee2] hover:bg-[#289ecf] text-white rounded-[19px] flex items-center px-4 gap-3.5 shadow-sm transition-all duration-150 cursor-pointer active:scale-[0.98] group"
+                >
+                  <div className="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center shrink-0 group-hover:rotate-6 transition-transform">
+                    <svg className="w-5 h-5 text-white -rotate-45 translate-x-0.5" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
+                    </svg>
+                  </div>
+                  <span className="font-black text-lg text-white tracking-wide">
+                    Fast Track
+                  </span>
+                </button>
 
-          <button
-            onClick={handleLogout}
-            disabled={isLoggingOut}
-            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-bold text-white bg-black/20 hover:bg-black/30 transition-colors cursor-pointer"
-          >
-            <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-            </svg>
-            <span>{isLoggingOut ? "Keluar..." : "Keluar Sesi Admin"}</span>
-          </button>
+                {/* Admin Button - Figma Exact #ff8f00 */}
+                <Link
+                  href="/admin/login"
+                  className="w-full h-14 bg-[#ff8f00] hover:bg-[#e68100] text-white rounded-[19px] flex items-center px-4 gap-3.5 shadow-sm transition-all duration-150 cursor-pointer active:scale-[0.98] group"
+                >
+                  <div className="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center shrink-0 group-hover:rotate-45 transition-transform duration-300">
+                    <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                  </div>
+                  <span className="font-black text-lg text-white tracking-wide">
+                    Admin
+                  </span>
+                </Link>
+              </>
+            )}
+          </div>
         </div>
       </aside>
     </>

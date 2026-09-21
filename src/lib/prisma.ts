@@ -10,10 +10,16 @@ const globalForPrisma = globalThis as unknown as {
   pgPool: Pool | undefined;
 };
 
-function createPrismaClient(): PrismaClient {
+function getPrismaClient(): PrismaClient {
+  if (globalForPrisma.prisma) {
+    return globalForPrisma.prisma;
+  }
+
   const connectionString = process.env.DATABASE_URL;
   if (!connectionString) {
-    throw new Error("DATABASE_URL is not defined in environment variables");
+    throw new Error(
+      "DATABASE_URL is not defined in environment variables. Please configure your .env file."
+    );
   }
 
   const pool = globalForPrisma.pgPool ?? new Pool({ connectionString });
@@ -22,11 +28,22 @@ function createPrismaClient(): PrismaClient {
   }
 
   const adapter = new PrismaPg(pool);
-  return new PrismaClient({ adapter });
+  const client = new PrismaClient({ adapter });
+
+  if (process.env.NODE_ENV !== "production") {
+    globalForPrisma.prisma = client;
+  }
+
+  return client;
 }
 
-export const prisma = globalForPrisma.prisma ?? createPrismaClient();
-
-if (process.env.NODE_ENV !== "production") {
-  globalForPrisma.prisma = prisma;
-}
+export const prisma = new Proxy({} as PrismaClient, {
+  get(_target, prop, receiver) {
+    const client = getPrismaClient();
+    const value = Reflect.get(client, prop, receiver);
+    if (typeof value === "function") {
+      return value.bind(client);
+    }
+    return value;
+  },
+});
