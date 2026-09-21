@@ -6,7 +6,6 @@ import Link from "next/link";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
-import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 import { Textarea } from "@/components/ui/Textarea";
 import { PageLoader } from "@/components/ui/Loading";
@@ -90,7 +89,7 @@ export default function DetailPengajuanAdminPage() {
   if (!request) {
     return (
       <AdminLayout>
-        <div className="p-8 text-center text-slate-500">
+        <div className="p-8 text-center text-[#606c80] text-xs font-medium">
           Pengajuan tidak ditemukan.
         </div>
       </AdminLayout>
@@ -101,22 +100,22 @@ export default function DetailPengajuanAdminPage() {
     <AdminLayout>
       <div className="max-w-4xl mx-auto space-y-6">
         {/* Navigation & Header */}
-        <div>
-          <Link
-            href="/admin/pengajuan"
-            className="text-xs font-semibold text-indigo-600 hover:text-indigo-700 flex items-center gap-1 mb-2"
-          >
-            ← Kembali ke Daftar Pengajuan
-          </Link>
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-              <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
-                Detail Pengajuan #{request.id.slice(-8)}
-              </h1>
-              <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
-                Diajukan pada {new Date(request.createdAt).toLocaleString("id-ID")}
-              </p>
-            </div>
+        <div className="bg-white rounded-[10px] border border-[#ebeef2] shadow-[0px_1px_3px_0px_rgba(96,108,128,0.05)] p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <Link
+              href="/admin/pengajuan"
+              className="text-xs font-bold text-[#ff8f00] hover:text-[#e07d00] flex items-center gap-1.5 mb-2 transition"
+            >
+              ← Kembali ke Daftar Pengajuan
+            </Link>
+            <h1 className="text-xl sm:text-[22px] font-black text-[#323c4d] tracking-tight">
+              Detail Pengajuan #{request.id.slice(-8).toUpperCase()}
+            </h1>
+            <p className="text-xs sm:text-sm text-[#606c80] font-semibold mt-0.5">
+              Diajukan pada {new Date(request.createdAt).toLocaleString("id-ID")}
+            </p>
+          </div>
+          <div>
             <Badge status={request.status} size="md" />
           </div>
         </div>
@@ -127,40 +126,40 @@ export default function DetailPengajuanAdminPage() {
           <div className="md:col-span-2 space-y-6">
             <Card title="Barang & Kebutuhan yang Diminta">
               <div className="space-y-4">
-                <div className="p-4 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-between">
+                <div className="p-4 rounded-[8px] bg-slate-50/70 border border-[#ebeef2] flex items-center justify-between">
                   <div>
-                    <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
+                    <span className="text-[11px] font-bold text-[#606c80] uppercase tracking-wider block">
                       Nama Barang ATK
                     </span>
-                    <span className="text-base font-bold text-slate-900 mt-0.5 block">
+                    <span className="text-base font-black text-[#323c4d] mt-0.5 block">
                       {request.atkItem.name}
                     </span>
                   </div>
                   <div className="text-right">
-                    <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
+                    <span className="text-[11px] font-bold text-[#606c80] uppercase tracking-wider block">
                       Jumlah Diminta
                     </span>
-                    <span className="text-base font-bold text-indigo-600 mt-0.5 block">
+                    <span className="text-base font-black text-[#ff8f00] mt-0.5 block">
                       {request.quantity} {request.atkItem.unit}
                     </span>
                   </div>
                 </div>
 
                 <div>
-                  <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider block mb-1.5">
+                  <span className="text-xs font-bold text-[#606c80] uppercase tracking-wider block mb-1.5">
                     Alasan / Keperluan Karyawan
                   </span>
-                  <div className="p-4 rounded-xl bg-white border border-slate-200 text-xs text-slate-700 leading-relaxed shadow-xs">
-                    {request.reason}
+                  <div className="p-4 rounded-[8px] bg-white border border-[#ebeef2] text-xs text-[#323c4d] font-medium leading-relaxed shadow-2xs">
+                    {request.reason || <span className="text-[#606c80] italic">Tidak ada catatan spesifik.</span>}
                   </div>
                 </div>
 
                 {request.adminNote && (
                   <div>
-                    <span className="text-xs font-semibold text-amber-800 uppercase tracking-wider block mb-1.5">
+                    <span className="text-xs font-bold text-amber-800 uppercase tracking-wider block mb-1.5">
                       Catatan / Alasan Penolakan Admin
                     </span>
-                    <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-900 leading-relaxed">
+                    <div className="p-4 rounded-[8px] bg-amber-50/70 border border-amber-200/80 text-xs text-amber-950 font-medium leading-relaxed">
                       {request.adminNote}
                     </div>
                   </div>
@@ -171,57 +170,65 @@ export default function DetailPengajuanAdminPage() {
             <Card title="Ubah Status Pengajuan">
               <div className="flex flex-wrap items-center gap-2">
                 {request.status !== "MENUNGGU" && (
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    isLoading={isProcessing}
+                  <button
+                    type="button"
+                    disabled={isProcessing}
                     onClick={() => handleUpdateStatus("MENUNGGU")}
+                    className="px-3 py-1.5 rounded-[8px] text-xs font-bold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 transition cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
                   >
-                    🟡 Set Menunggu
-                  </Button>
-                )}
-
-                {request.status !== "DISETUJUI" && (
-                  <Button
-                    variant="success"
-                    size="sm"
-                    isLoading={isProcessing}
-                    onClick={() => handleUpdateStatus("DISETUJUI")}
-                  >
-                    ✓ Setujui Pengajuan
-                  </Button>
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                    <span>Set Menunggu</span>
+                  </button>
                 )}
 
                 {request.status !== "DIPROSES" && (
-                  <Button
-                    variant="primary"
-                    size="sm"
-                    isLoading={isProcessing}
+                  <button
+                    type="button"
+                    disabled={isProcessing}
                     onClick={() => handleUpdateStatus("DIPROSES")}
+                    className="px-3 py-1.5 rounded-[8px] text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 transition cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
                   >
-                    ⚙️ Mulai Proses
-                  </Button>
+                    <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                    <span>Mulai Proses</span>
+                  </button>
                 )}
 
                 {request.status !== "SELESAI" && (
-                  <Button
-                    variant="success"
-                    size="sm"
-                    isLoading={isProcessing}
+                  <button
+                    type="button"
+                    disabled={isProcessing}
                     onClick={() => handleUpdateStatus("SELESAI")}
+                    className="px-3 py-1.5 rounded-[8px] text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 transition cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
                   >
-                    🏁 Tandai Selesai
-                  </Button>
+                    <span className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
+                    <span>Tandai Selesai</span>
+                  </button>
                 )}
 
                 {request.status !== "DITOLAK" && (
-                  <Button
-                    variant="danger"
-                    size="sm"
+                  <button
+                    type="button"
+                    disabled={isProcessing}
                     onClick={() => setRejectModalOpen(true)}
+                    className="px-3.5 py-1.5 rounded-[8px] text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 shadow-2xs transition cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
                   >
-                    ✕ Tolak Pengajuan
-                  </Button>
+                    <span>✕</span>
+                    <span>Tolak Pengajuan</span>
+                  </button>
+                )}
+
+                {request.status !== "DISETUJUI" && (
+                  <button
+                    type="button"
+                    disabled={isProcessing}
+                    onClick={() => handleUpdateStatus("DISETUJUI")}
+                    className="px-4 py-1.5 rounded-[8px] text-xs font-bold text-white bg-[#01923f] hover:bg-[#017a35] shadow-xs transition cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                    <span>Setujui Pengajuan</span>
+                  </button>
                 )}
               </div>
             </Card>
@@ -232,27 +239,27 @@ export default function DetailPengajuanAdminPage() {
             <Card title="Informasi Pemohon">
               <div className="space-y-3.5 text-xs">
                 <div>
-                  <span className="text-slate-400 font-medium block">Nama Lengkap</span>
-                  <span className="font-semibold text-slate-900 mt-0.5 block">
+                  <span className="text-[11px] font-semibold text-[#606c80] uppercase tracking-wider block">Nama Lengkap</span>
+                  <span className="font-bold text-[#323c4d] mt-0.5 block">
                     {request.user.name}
                   </span>
                 </div>
                 <div>
-                  <span className="text-slate-400 font-medium block">Departemen</span>
-                  <span className="font-semibold text-slate-900 mt-0.5 block">
+                  <span className="text-[11px] font-semibold text-[#606c80] uppercase tracking-wider block">Departemen</span>
+                  <span className="font-bold text-[#323c4d] mt-0.5 block">
                     {request.user.department}
                   </span>
                 </div>
                 <div>
-                  <span className="text-slate-400 font-medium block">Jabatan</span>
-                  <span className="font-semibold text-slate-900 mt-0.5 block">
-                    {request.user.position}
+                  <span className="text-[11px] font-semibold text-[#606c80] uppercase tracking-wider block">Jabatan</span>
+                  <span className="font-bold text-[#323c4d] mt-0.5 block">
+                    {request.user.position || "-"}
                   </span>
                 </div>
                 <div>
-                  <span className="text-slate-400 font-medium block">Email</span>
-                  <span className="font-semibold text-slate-900 mt-0.5 block">
-                    {request.user.email}
+                  <span className="text-[11px] font-semibold text-[#606c80] uppercase tracking-wider block">Email</span>
+                  <span className="font-bold text-[#323c4d] mt-0.5 block">
+                    {request.user.email || "-"}
                   </span>
                 </div>
               </div>
@@ -261,21 +268,21 @@ export default function DetailPengajuanAdminPage() {
             <Card title="Riwayat Audit">
               <div className="space-y-3 text-xs">
                 <div>
-                  <span className="text-slate-400 font-medium block">Tanggal Pengajuan</span>
-                  <span className="text-slate-700 mt-0.5 block font-mono">
+                  <span className="text-[11px] font-semibold text-[#606c80] uppercase tracking-wider block">Tanggal Pengajuan</span>
+                  <span className="text-[#323c4d] font-semibold mt-0.5 block">
                     {new Date(request.createdAt).toLocaleString("id-ID")}
                   </span>
                 </div>
                 <div>
-                  <span className="text-slate-400 font-medium block">Terakhir Diproses</span>
-                  <span className="text-slate-700 mt-0.5 block font-mono">
+                  <span className="text-[11px] font-semibold text-[#606c80] uppercase tracking-wider block">Terakhir Diproses</span>
+                  <span className="text-[#323c4d] font-semibold mt-0.5 block">
                     {new Date(request.updatedAt).toLocaleString("id-ID")}
                   </span>
                 </div>
                 {request.processor && (
                   <div>
-                    <span className="text-slate-400 font-medium block">Diproses Oleh</span>
-                    <span className="font-semibold text-slate-900 mt-0.5 block">
+                    <span className="text-[11px] font-semibold text-[#606c80] uppercase tracking-wider block">Diproses Oleh</span>
+                    <span className="font-bold text-[#323c4d] mt-0.5 block">
                       {request.processor.name}
                     </span>
                   </div>
@@ -295,18 +302,17 @@ export default function DetailPengajuanAdminPage() {
           subtitle={`Pemohon: ${request.user.name}`}
           size="sm"
           footer={
-            <>
-              <Button
-                variant="secondary"
-                size="sm"
+            <div className="flex items-center justify-end gap-2 w-full">
+              <button
+                type="button"
                 onClick={() => setRejectModalOpen(false)}
+                className="px-4 py-2 rounded-[8px] border border-[#ebeef2] text-[#323c4d] hover:bg-slate-50 text-xs font-bold transition cursor-pointer"
               >
                 Batal
-              </Button>
-              <Button
-                variant="danger"
-                size="sm"
-                isLoading={isProcessing}
+              </button>
+              <button
+                type="button"
+                disabled={isProcessing}
                 onClick={() => {
                   if (!rejectNote.trim()) {
                     toast.error("Alasan penolakan wajib diisi!");
@@ -314,14 +320,15 @@ export default function DetailPengajuanAdminPage() {
                   }
                   handleUpdateStatus("DITOLAK", rejectNote.trim());
                 }}
+                className="px-4 py-2 rounded-[8px] bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition shadow-2xs cursor-pointer disabled:opacity-50"
               >
                 Konfirmasi Tolak
-              </Button>
-            </>
+              </button>
+            </div>
           }
         >
           <div className="space-y-3">
-            <p className="text-xs text-slate-600">
+            <p className="text-xs text-[#606c80] font-medium leading-relaxed">
               Mohon berikan alasan penolakan yang jelas agar karyawan mengetahui alasan penolakan ini.
             </p>
             <Textarea

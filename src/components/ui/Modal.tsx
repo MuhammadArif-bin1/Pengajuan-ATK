@@ -10,6 +10,7 @@ export interface ModalProps {
   children: React.ReactNode;
   footer?: React.ReactNode;
   size?: "sm" | "md" | "lg" | "xl";
+  className?: string;
 }
 
 export const Modal: React.FC<ModalProps> = ({
@@ -20,6 +21,7 @@ export const Modal: React.FC<ModalProps> = ({
   children,
   footer,
   size = "md",
+  className = "",
 }) => {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -51,20 +53,20 @@ export const Modal: React.FC<ModalProps> = ({
       {/* Modal dialog */}
       <div className="flex min-h-full items-center justify-center p-4 text-center sm:p-0">
         <div
-          className={`relative transform overflow-hidden rounded-2xl bg-white text-left shadow-2xl transition-all sm:my-8 w-full ${sizeClasses[size]} border border-slate-200/80 animate-in fade-in zoom-in-95 duration-150`}
+          className={`relative transform overflow-hidden rounded-[10px] bg-white text-left shadow-xl transition-all sm:my-8 w-full ${sizeClasses[size]} border border-[#ebeef2] animate-in fade-in zoom-in-95 duration-150 ${className}`}
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
-          <div className="px-6 pt-5 pb-4 border-b border-slate-100 flex items-start justify-between">
+          <div className="px-6 pt-5 pb-4 border-b border-[#ebeef2] flex items-start justify-between">
             <div>
-              <h3 className="text-lg font-semibold text-slate-900">{title}</h3>
+              <h3 className="text-lg font-bold text-[#323c4d]">{title}</h3>
               {subtitle && (
-                <p className="text-xs text-slate-500 mt-0.5">{subtitle}</p>
+                <p className="text-xs text-[#606c80] mt-0.5 font-medium">{subtitle}</p>
               )}
             </div>
             <button
               type="button"
-              className="text-slate-400 hover:text-slate-600 rounded-lg p-1.5 hover:bg-slate-100 transition-colors focus:outline-none cursor-pointer"
+              className="text-[#606c80] hover:text-[#323c4d] rounded-[8px] p-1.5 hover:bg-slate-100 transition-colors focus:outline-none cursor-pointer"
               onClick={onClose}
             >
               <svg
@@ -90,7 +92,7 @@ export const Modal: React.FC<ModalProps> = ({
 
           {/* Footer */}
           {footer && (
-            <div className="px-6 py-4 bg-slate-50/80 border-t border-slate-100 flex items-center justify-end gap-3 rounded-b-2xl">
+            <div className="px-6 py-4 bg-slate-50/70 border-t border-[#ebeef2] flex items-center justify-end gap-3 rounded-b-[10px]">
               {footer}
             </div>
           )}

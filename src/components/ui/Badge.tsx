@@ -24,7 +24,7 @@ export const Badge: React.FC<BadgeProps> = ({
   };
 
   // Determine badge styling based on request status or variant
-  let badgeClasses = "inline-flex items-center font-semibold rounded-full ";
+  let badgeClasses = "inline-flex items-center font-bold rounded-[6px] ";
 
   if (status === "MENUNGGU") {
     badgeClasses += "bg-amber-50 text-amber-700 border border-amber-200/80";

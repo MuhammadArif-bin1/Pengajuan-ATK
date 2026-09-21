@@ -36,11 +36,11 @@ export function Table<T>({
 }: TableProps<T>) {
   return (
     <div
-      className={`bg-white rounded-xl border border-slate-200/80 shadow-xs overflow-hidden ${className}`}
+      className={`bg-white rounded-[10px] border border-[#ebeef2] shadow-[0px_1px_3px_0px_rgba(96,108,128,0.05)] overflow-hidden ${className}`}
     >
       <div className="overflow-x-auto">
         <table className="w-full text-left text-sm text-slate-700">
-          <thead className="bg-slate-50 text-xs font-semibold text-slate-600 uppercase tracking-wider border-b border-slate-200">
+          <thead className="bg-slate-50/70 text-[11px] font-bold text-[#606c80] uppercase tracking-wider border-b border-[#ebeef2]">
             <tr>
               {columns.map((col, idx) => (
                 <th
@@ -52,7 +52,7 @@ export function Table<T>({
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-[#ebeef2]">
             {isLoading ? (
               <tr>
                 <td colSpan={columns.length} className="px-4 py-12 text-center">
@@ -119,12 +119,12 @@ export function Table<T>({
 
       {/* Pagination Bar */}
       {totalPages > 1 && onPageChange && (
-        <div className="px-5 py-3 border-t border-slate-100 bg-slate-50/50 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-600">
+        <div className="px-5 py-3 border-t border-[#ebeef2] bg-slate-50/50 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-[#606c80]">
           <div>
             {total !== undefined ? (
               <span>
-                Menampilkan halaman <strong className="font-semibold text-slate-900">{page}</strong> dari{" "}
-                <strong className="font-semibold text-slate-900">{totalPages}</strong> (Total {total} data)
+                Menampilkan halaman <strong className="font-bold text-[#323c4d]">{page}</strong> dari{" "}
+                <strong className="font-bold text-[#323c4d]">{totalPages}</strong> (Total {total} data)
               </span>
             ) : (
               <span>
@@ -136,17 +136,17 @@ export function Table<T>({
             <button
               onClick={() => onPageChange(page - 1)}
               disabled={page <= 1}
-              className="px-2.5 py-1.5 rounded-md border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors"
+              className="px-3 py-1.5 rounded-[8px] border border-[#ebeef2] bg-white hover:bg-slate-50 text-[#323c4d] font-bold disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors shadow-2xs"
             >
               Sebelumnya
             </button>
-            <span className="px-2 font-medium">
+            <span className="px-2 font-bold text-[#323c4d]">
               {page} / {totalPages}
             </span>
             <button
               onClick={() => onPageChange(page + 1)}
               disabled={page >= totalPages}
-              className="px-2.5 py-1.5 rounded-md border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors"
+              className="px-3 py-1.5 rounded-[8px] border border-[#ebeef2] bg-white hover:bg-slate-50 text-[#323c4d] font-bold disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors shadow-2xs"
             >
               Selanjutnya
             </button>

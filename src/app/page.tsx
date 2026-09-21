@@ -230,9 +230,7 @@ export default function DashboardPengajuanPage() {
         activeTab={activeTab}
         onSelectTab={(tab) => {
           setActiveTab(tab);
-          if (tab === "purchase") {
-            toast.info("Fitur Pengajuan Pembelian akan segera dibuka.");
-          } else if (tab === "history") {
+          if (tab === "history") {
             toast.info("Riwayat pengajuan dapat dilihat langsung pada antrian terarsip.");
           }
         }}

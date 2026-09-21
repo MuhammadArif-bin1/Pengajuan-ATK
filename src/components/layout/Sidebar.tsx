@@ -53,46 +53,55 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   const adminNavItems: NavItem[] = [
     {
+      id: "admin-dashboard",
       label: "Dashboard",
       href: "/admin/dashboard",
       icon: (
-        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+        <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+          <rect x="3" y="3" width="7.5" height="7.5" rx="2" />
+          <rect x="13.5" y="3" width="7.5" height="7.5" rx="2" />
+          <rect x="3" y="13.5" width="7.5" height="7.5" rx="2" />
+          <rect x="13.5" y="13.5" width="7.5" height="7.5" rx="2" />
         </svg>
       ),
     },
     {
+      id: "admin-pengajuan",
       label: "Pengajuan ATK",
       href: "/admin/pengajuan",
       icon: (
-        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
         </svg>
       ),
     },
     {
-      label: "Daftar Pengajuan Pembelian ATK",
+      id: "admin-barang",
+      label: "Pengajuan Pembelian",
       href: "/admin/barang",
+      badge: purchaseBadgeCount,
       icon: (
-        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
         </svg>
       ),
     },
     {
+      id: "admin-stok",
       label: "Manajemen Stok ATK",
       href: "/admin/stok",
       icon: (
-        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
         </svg>
       ),
     },
     {
+      id: "admin-laporan",
       label: "Laporan ATK",
       href: "/admin/laporan",
       icon: (
-        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
         </svg>
       ),
@@ -148,14 +157,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
       {/* Sidebar container - Clean White Theme with Figma Style */}
       <aside
-        className={`fixed top-0 bottom-0 left-0 z-40 w-64 bg-white border-r border-slate-200/80 flex flex-col justify-between transition-transform duration-200 ease-in-out lg:translate-x-0 ${
+        className={`fixed top-0 bottom-0 left-0 z-40 w-64 bg-white border-r border-[#ebeef2] flex flex-col justify-between transition-transform duration-200 ease-in-out lg:translate-x-0 print:hidden ${
           isOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
         <div className="flex flex-col h-full justify-between">
           <div>
             {/* Brand Header */}
-            <div className="px-5 py-5 border-b border-slate-100 flex items-center justify-between">
+            <div className="px-5 py-5 border-b border-[#ebeef2] flex items-center justify-between">
               <Link href="/" className="flex items-center gap-2.5">
                 <img
                   src="/Image/logo/logo-bulat.png"
@@ -171,7 +180,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       Jabar
                     </span>
                   </div>
-                  <span className="text-[9.5px] text-slate-500 font-medium tracking-tight mt-1 leading-none">
+                  <span className="text-[9.5px] text-[#606c80] font-medium tracking-tight mt-1 leading-none">
                     bank perekonomian rakyat
                   </span>
                 </div>
@@ -180,7 +189,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               {onClose && (
                 <button
                   onClick={onClose}
-                  className="lg:hidden p-1.5 text-slate-400 hover:text-slate-700 rounded-lg hover:bg-slate-100 transition"
+                  className="lg:hidden p-1.5 text-[#606c80] hover:text-[#323c4d] rounded-[8px] hover:bg-slate-100 transition"
                   aria-label="Tutup Menu"
                 >
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -193,102 +202,114 @@ export const Sidebar: React.FC<SidebarProps> = ({
             {/* Navigation Links */}
             <nav className="p-3.5 space-y-1.5 mt-2">
               {role === "ADMIN" ? (
-                <>
-                  <p className="px-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">
-                    MENU ADMINISTRATOR
-                  </p>
-                  {adminNavItems.map((item) => {
-                    const isActive =
-                      pathname === item.href ||
-                      (item.href !== "/admin/dashboard" && pathname.startsWith(item.href));
+                adminNavItems.map((item) => {
+                  const isActive =
+                    pathname === item.href ||
+                    (item.href !== "/admin/dashboard" && pathname.startsWith(item.href));
 
-                    return (
-                      <Link
-                        key={item.href}
-                        href={item.href}
-                        onClick={onClose}
-                        className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all duration-150 ${
-                          isActive
-                            ? "bg-orange-50 text-[#FF7A00] font-bold shadow-2xs"
-                            : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
-                        }`}
-                      >
-                        <span className={isActive ? "text-[#FF7A00]" : "text-slate-400"}>
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      onClick={onClose}
+                      className={`w-full flex items-center justify-between px-3.5 py-3 rounded-[10px] text-xs font-semibold transition-all duration-150 cursor-pointer ${
+                        isActive
+                          ? "text-[#ff8f00] font-bold"
+                          : "text-slate-500 hover:text-slate-900 hover:bg-slate-50"
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className={isActive ? "text-[#ff8f00]" : "text-slate-400"}>
                           {item.icon}
                         </span>
-                        <span>{item.label}</span>
-                      </Link>
-                    );
-                  })}
-                </>
+                        <span className="text-[13px]">{item.label}</span>
+                      </div>
+
+                      {item.badge !== undefined && Number(item.badge) > 0 && (
+                        <span className="h-5 min-w-[20px] px-1.5 rounded-full bg-[#ef4444]/15 text-[#dc2626] flex items-center justify-center text-[10.5px] font-black">
+                          {item.badge}
+                        </span>
+                      )}
+                    </Link>
+                  );
+                })
               ) : (
-                <>
-                  {publicNavTabs.map((tab) => {
-                    const normalizedPath = decodeURIComponent(pathname);
-                    const isTabActive =
-                      (tab.href === "/" && pathname === "/") ||
-                      (tab.href !== "/" && normalizedPath.startsWith(tab.href)) ||
-                      activeTab === tab.id;
+                publicNavTabs.map((tab) => {
+                  const normalizedPath = decodeURIComponent(pathname);
+                  const isTabActive =
+                    (tab.href === "/" && pathname === "/") ||
+                    (tab.href !== "/" && normalizedPath.startsWith(tab.href)) ||
+                    activeTab === tab.id;
 
-                    return (
-                      <Link
-                        key={tab.id}
-                        href={tab.href}
-                        onClick={() => {
-                          if (onSelectTab) onSelectTab(tab.id);
-                          if (onClose) onClose();
-                        }}
-                        className={`w-full flex items-center justify-between px-3.5 py-3 rounded-xl text-xs font-semibold transition-all duration-150 cursor-pointer ${
-                          isTabActive
-                            ? "text-[#ff8f00] font-bold"
-                            : "text-slate-500 hover:text-slate-900 hover:bg-slate-50"
-                        }`}
-                      >
-                        <div className="flex items-center gap-3">
-                          <span className={isTabActive ? "text-[#ff8f00]" : "text-slate-400"}>
-                            {tab.icon}
-                          </span>
-                          <span className="text-[13px]">{tab.label}</span>
-                        </div>
+                  return (
+                    <Link
+                      key={tab.id}
+                      href={tab.href}
+                      onClick={() => {
+                        if (onSelectTab) onSelectTab(tab.id);
+                        if (onClose) onClose();
+                      }}
+                      className={`w-full flex items-center justify-between px-3.5 py-3 rounded-[10px] text-xs font-semibold transition-all duration-150 cursor-pointer ${
+                        isTabActive
+                          ? "text-[#ff8f00] font-bold"
+                          : "text-slate-500 hover:text-slate-900 hover:bg-slate-50"
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className={isTabActive ? "text-[#ff8f00]" : "text-slate-400"}>
+                          {tab.icon}
+                        </span>
+                        <span className="text-[13px]">{tab.label}</span>
+                      </div>
 
-                        {tab.badge !== undefined && tab.badge > 0 && (
-                          <span className="h-5 min-w-[20px] px-1.5 rounded-full bg-[#ef4444]/15 text-[#dc2626] flex items-center justify-center text-[10.5px] font-black">
-                            {tab.badge}
-                          </span>
-                        )}
-                      </Link>
-                    );
-                  })}
-                </>
+                      {tab.badge !== undefined && tab.badge > 0 && (
+                        <span className="h-5 min-w-[20px] px-1.5 rounded-full bg-[#ef4444]/15 text-[#dc2626] flex items-center justify-center text-[10.5px] font-black">
+                          {tab.badge}
+                        </span>
+                      )}
+                    </Link>
+                  );
+                })
               )}
             </nav>
           </div>
 
-          {/* Bottom Action Section (Fast Track & Admin) */}
-          <div className="p-4 space-y-3 border-t border-slate-150/80">
+          {/* Bottom Action Section (Fast Track & Admin / Portal & Logout) */}
+          <div className="p-4 space-y-3 border-t border-[#ebeef2]">
             {role === "ADMIN" ? (
-              <div className="space-y-2">
+              <>
+                {/* Portal Karyawan Button - Matching Figma Fast Track Card Button */}
                 <Link
                   href="/"
-                  className="flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-slate-600 hover:text-slate-900 rounded-xl hover:bg-slate-100 transition"
+                  className="w-full h-14 bg-[#37aee2] hover:bg-[#289ecf] text-white rounded-[10px] flex items-center px-4 gap-3.5 shadow-sm transition-all duration-150 cursor-pointer active:scale-[0.98] group"
                 >
-                  <svg className="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                  </svg>
-                  <span>Portal Karyawan</span>
+                  <div className="w-9 h-9 rounded-[8px] bg-white/20 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                    <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                    </svg>
+                  </div>
+                  <span className="font-black text-lg text-white tracking-wide">
+                    Portal Karyawan
+                  </span>
                 </Link>
 
+                {/* Logout Button - Matching Figma Admin Card Button */}
                 <button
+                  type="button"
                   onClick={handleLogout}
                   disabled={isLoggingOut}
-                  className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-xs font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 transition-colors cursor-pointer"
+                  className="w-full h-14 bg-rose-600 hover:bg-rose-700 text-white rounded-[10px] flex items-center px-4 gap-3.5 shadow-sm transition-all duration-150 cursor-pointer active:scale-[0.98] group disabled:opacity-60"
                 >
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                  </svg>
-                  <span>{isLoggingOut ? "Keluar..." : "Keluar Sesi Admin"}</span>
+                  <div className="w-9 h-9 rounded-[8px] bg-white/20 flex items-center justify-center shrink-0 group-hover:rotate-12 transition-transform duration-300">
+                    <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                    </svg>
+                  </div>
+                  <span className="font-black text-lg text-white tracking-wide">
+                    {isLoggingOut ? "Keluar..." : "Keluar Sesi"}
+                  </span>
                 </button>
-              </div>
+              </>
             ) : (
               <>
                 {/* Fast Track Button - Figma Exact #37aee2 */}
@@ -297,9 +318,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   onClick={() => {
                     if (onFastTrackClick) onFastTrackClick();
                   }}
-                  className="w-full h-14 bg-[#37aee2] hover:bg-[#289ecf] text-white rounded-[19px] flex items-center px-4 gap-3.5 shadow-sm transition-all duration-150 cursor-pointer active:scale-[0.98] group"
+                  className="w-full h-14 bg-[#37aee2] hover:bg-[#289ecf] text-white rounded-[10px] flex items-center px-4 gap-3.5 shadow-sm transition-all duration-150 cursor-pointer active:scale-[0.98] group"
                 >
-                  <div className="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center shrink-0 group-hover:rotate-6 transition-transform">
+                  <div className="w-9 h-9 rounded-[8px] bg-white/20 flex items-center justify-center shrink-0 group-hover:rotate-6 transition-transform">
                     <svg className="w-5 h-5 text-white -rotate-45 translate-x-0.5" fill="currentColor" viewBox="0 0 24 24">
                       <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
                     </svg>
@@ -312,9 +333,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 {/* Admin Button - Figma Exact #ff8f00 */}
                 <Link
                   href="/admin/login"
-                  className="w-full h-14 bg-[#ff8f00] hover:bg-[#e68100] text-white rounded-[19px] flex items-center px-4 gap-3.5 shadow-sm transition-all duration-150 cursor-pointer active:scale-[0.98] group"
+                  className="w-full h-14 bg-[#ff8f00] hover:bg-[#e68100] text-white rounded-[10px] flex items-center px-4 gap-3.5 shadow-sm transition-all duration-150 cursor-pointer active:scale-[0.98] group"
                 >
-                  <div className="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center shrink-0 group-hover:rotate-45 transition-transform duration-300">
+                  <div className="w-9 h-9 rounded-[8px] bg-white/20 flex items-center justify-center shrink-0 group-hover:rotate-45 transition-transform duration-300">
                     <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
                       <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />

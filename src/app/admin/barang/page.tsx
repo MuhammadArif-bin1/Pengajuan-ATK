@@ -4,7 +4,6 @@ import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
-import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Table, Column } from "@/components/ui/Table";
@@ -49,10 +48,7 @@ export default function AdminPengajuanPembelianPage() {
   // Delete Modals
   const [singleDeleteTarget, setSingleDeleteTarget] = useState<AtkRequestData | null>(null);
   const [bulkDeleteModalOpen, setBulkDeleteModalOpen] = useState(false);
-  const [deleteAllModalOpen, setDeleteAllModalOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
-
-  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const fetchDepartments = async () => {
     try {
@@ -105,11 +101,13 @@ export default function AdminPengajuanPembelianPage() {
     fetchRequests(true);
   }, [fetchRequests]);
 
-  // Real-time auto refresh polling (every 5 seconds)
+  // Safe background auto-refresh every 15s (only when tab is visible) + on window focus
   useEffect(() => {
     const interval = setInterval(() => {
-      fetchRequests(false);
-    }, 5000);
+      if (document.visibilityState === "visible") {
+        fetchRequests(false);
+      }
+    }, 15000);
 
     const handleFocus = () => {
       fetchRequests(false);
@@ -121,14 +119,6 @@ export default function AdminPengajuanPembelianPage() {
       window.removeEventListener("focus", handleFocus);
     };
   }, [fetchRequests]);
-
-  const handleManualRefresh = async () => {
-    setIsRefreshing(true);
-    await fetchRequests(false);
-    await fetchDepartments();
-    setIsRefreshing(false);
-    toast.success("Data pengajuan pembelian berhasil diperbarui!");
-  };
 
   // Open review modal and sync admin note
   const handleOpenReview = (request: AtkRequestData) => {
@@ -260,33 +250,6 @@ export default function AdminPengajuanPembelianPage() {
     }
   };
 
-  // ─── DELETE ALL ───
-  const handleDeleteAll = async () => {
-    try {
-      setIsDeleting(true);
-      const res = await fetch("/api/requests/bulk-delete", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ all: true }),
-      });
-
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || "Gagal menghapus seluruh pengajuan");
-      }
-
-      toast.success(data.message || "Seluruh data pengajuan berhasil dibersihkan");
-      setSelectedIds([]);
-      setDeleteAllModalOpen(false);
-      setPage(1);
-      fetchRequests();
-    } catch (err: any) {
-      toast.error(err.message || "Terjadi kesalahan saat menghapus data");
-    } finally {
-      setIsDeleting(false);
-    }
-  };
-
   // ─── Checkbox Selection Handlers ───
   const isAllCurrentPageSelected = useMemo(() => {
     if (requests.length === 0) return false;
@@ -340,7 +303,7 @@ export default function AdminPengajuanPembelianPage() {
             type="checkbox"
             checked={isAllCurrentPageSelected}
             onChange={handleToggleSelectAll}
-            className="w-4 h-4 rounded border-gray-300 text-[#FF5500] focus:ring-[#FF5500]/30 cursor-pointer"
+            className="w-4 h-4 rounded-[4px] border-slate-300 text-[#ff8f00] focus:ring-[#ff8f00]/30 cursor-pointer"
             title="Pilih Semua di Halaman Ini"
           />
         </div>
@@ -353,29 +316,29 @@ export default function AdminPengajuanPembelianPage() {
             type="checkbox"
             checked={selectedIds.includes(row.id)}
             onChange={() => handleToggleSelectRow(row.id)}
-            className="w-4 h-4 rounded border-gray-300 text-[#FF5500] focus:ring-[#FF5500]/30 cursor-pointer"
+            className="w-4 h-4 rounded-[4px] border-slate-300 text-[#ff8f00] focus:ring-[#ff8f00]/30 cursor-pointer"
           />
         </div>
       ),
     },
     {
       header: "No",
-      className: "w-12 text-slate-400 text-xs",
+      className: "w-12 text-[#606c80] text-xs font-semibold",
       accessor: (_row, idx) => (page - 1) * 10 + idx + 1,
     },
     {
       header: "Karyawan Pemohon",
       accessor: (row) => (
         <div>
-          <p className="font-semibold text-slate-900">{row.user.name}</p>
-          <p className="text-xs text-slate-400">{row.user.position}</p>
+          <p className="font-bold text-[#323c4d] text-xs">{row.user.name}</p>
+          <p className="text-[11px] text-[#606c80] mt-0.5">{row.user.position}</p>
         </div>
       ),
     },
     {
       header: "Departemen",
       accessor: (row) => (
-        <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-slate-100 text-slate-700">
+        <span className="inline-flex items-center px-2 py-0.5 rounded-[6px] text-xs font-semibold bg-slate-100 text-[#606c80] border border-slate-200/60">
           {row.user.department}
         </span>
       ),
@@ -384,8 +347,8 @@ export default function AdminPengajuanPembelianPage() {
       header: "Nama Barang Pembelian",
       accessor: (row) => (
         <div>
-          <span className="font-bold text-slate-900 text-sm block">{row.atkItem.name}</span>
-          <span className="text-[11px] text-slate-500 line-clamp-1 mt-0.5">
+          <span className="font-bold text-[#323c4d] text-xs block">{row.atkItem.name}</span>
+          <span className="text-[11px] text-[#606c80] line-clamp-1 mt-0.5">
             {getCleanReason(row.reason)}
           </span>
         </div>
@@ -394,15 +357,15 @@ export default function AdminPengajuanPembelianPage() {
     {
       header: "Jumlah",
       accessor: (row) => (
-        <span className="font-bold text-[#FF5500] text-sm">
-          {row.quantity} {row.atkItem.unit || "pcs"}
+        <span className="font-bold text-[#323c4d] text-xs">
+          {row.quantity} <span className="text-[11px] font-normal text-[#606c80]">{row.atkItem.unit || "pcs"}</span>
         </span>
       ),
     },
     {
       header: "Tanggal Pengajuan",
       accessor: (row) => (
-        <span className="text-xs text-slate-500">
+        <span className="text-xs text-[#606c80]">
           {new Date(row.createdAt).toLocaleDateString("id-ID", {
             day: "numeric",
             month: "short",
@@ -413,7 +376,7 @@ export default function AdminPengajuanPembelianPage() {
     },
     {
       header: "Status",
-      accessor: (row) => <Badge status={row.status} />,
+      accessor: (row) => <Badge status={row.status} size="sm" />,
     },
     {
       header: "Aksi",
@@ -421,13 +384,13 @@ export default function AdminPengajuanPembelianPage() {
       headerClassName: "text-right",
       accessor: (row) => (
         <div className="flex items-center justify-end gap-1.5" onClick={(e) => e.stopPropagation()}>
-          <Button
-            variant="primary"
-            size="xs"
+          <button
+            type="button"
             onClick={() => handleOpenReview(row)}
+            className="px-2.5 py-1.5 rounded-[8px] bg-slate-100 hover:bg-slate-200 text-[#323c4d] text-xs font-bold transition cursor-pointer border border-[#ebeef2]"
           >
-            Review & Proses
-          </Button>
+            Review & Aksi
+          </button>
 
           {row.status === "MENUNGGU" && (
             <>
@@ -435,7 +398,7 @@ export default function AdminPengajuanPembelianPage() {
                 type="button"
                 onClick={() => handleUpdateStatus(row.id, "DISETUJUI")}
                 title="Setujui Pembelian"
-                className="px-2 py-1 rounded-lg text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 transition cursor-pointer"
+                className="px-2 py-1 rounded-[8px] text-xs font-bold bg-emerald-50 text-[#01923f] border border-emerald-200 hover:bg-emerald-100 transition cursor-pointer"
               >
                 ✓ Setujui
               </button>
@@ -446,7 +409,7 @@ export default function AdminPengajuanPembelianPage() {
                   setRejectModalOpen(true);
                 }}
                 title="Tolak Pembelian"
-                className="px-2 py-1 rounded-lg text-xs font-bold bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100 transition cursor-pointer"
+                className="px-2 py-1 rounded-[8px] text-xs font-bold bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100 transition cursor-pointer"
               >
                 ✕ Tolak
               </button>
@@ -458,7 +421,7 @@ export default function AdminPengajuanPembelianPage() {
             type="button"
             onClick={() => setSingleDeleteTarget(row)}
             title="Hapus Data Pengajuan"
-            className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition cursor-pointer border border-transparent hover:border-rose-200"
+            className="p-1.5 rounded-[8px] text-[#606c80] hover:text-rose-600 hover:bg-rose-50 transition cursor-pointer border border-transparent hover:border-rose-200"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -472,53 +435,6 @@ export default function AdminPengajuanPembelianPage() {
   return (
     <AdminLayout>
       <div className="space-y-6">
-        {/* Page Header with Action Buttons */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-2 border-b border-gray-200/80">
-          <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
-              Daftar Pengajuan Pembelian ATK
-            </h1>
-            <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
-              Kelola, setujui, tolak, dan simpan seluruh data pengajuan pembelian barang alat tulis kantor.
-            </p>
-          </div>
-
-          <div className="flex items-center gap-2.5 self-start sm:self-auto flex-wrap">
-            {/* Refresh Button */}
-            <Button
-              variant="outline"
-              size="sm"
-              isLoading={isRefreshing}
-              onClick={handleManualRefresh}
-              className="text-slate-700 hover:text-[#FF5500] hover:border-orange-300 font-semibold"
-              leftIcon={
-                <svg className={`w-4 h-4 ${isRefreshing ? "animate-spin" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                </svg>
-              }
-            >
-              Refresh
-            </Button>
-
-
-            {/* Delete All */}
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={total === 0}
-              onClick={() => setDeleteAllModalOpen(true)}
-              className="text-rose-600 border-rose-200 hover:bg-rose-50 hover:border-rose-300 font-semibold"
-              leftIcon={
-                <svg className="w-4 h-4 text-rose-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                </svg>
-              }
-            >
-              Hapus Semua
-            </Button>
-          </div>
-        </div>
-
         {/* Filters Card */}
         <Card title="Filter & Pencarian Pengajuan Pembelian">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
@@ -533,7 +449,7 @@ export default function AdminPengajuanPembelianPage() {
                 }}
                 leftIcon={
                   <svg className="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                   </svg>
                 }
               />
@@ -610,7 +526,7 @@ export default function AdminPengajuanPembelianPage() {
 
           {/* Conditional Sub-row for Date Picker Selection */}
           {dateMode !== "all" && dateMode !== "today" && (
-            <div className="mt-3 pt-3 border-t border-slate-100 flex flex-wrap items-center gap-3 animate-in fade-in duration-150">
+            <div className="mt-3 pt-3 border-t border-[#ebeef2] flex flex-wrap items-center gap-3 animate-in fade-in duration-150">
               {dateMode === "date" && (
                 <div className="w-full sm:w-64">
                   <Input
@@ -711,51 +627,47 @@ export default function AdminPengajuanPembelianPage() {
           )}
 
           {(search || statusFilter || departmentFilter || dateMode !== "all" || startDate || endDate) && (
-            <div className="mt-3 pt-3 border-t border-slate-100 flex justify-end">
-              <Button
-                variant="ghost"
-                size="sm"
+            <div className="mt-3 pt-3 border-t border-[#ebeef2] flex justify-end">
+              <button
+                type="button"
                 onClick={handleResetFilters}
-                className="text-xs text-slate-500 hover:text-slate-800"
+                className="text-xs font-bold text-[#606c80] hover:text-[#323c4d] transition cursor-pointer px-2.5 py-1 rounded-[6px] hover:bg-slate-100"
               >
                 Reset Semua Filter
-              </Button>
+              </button>
             </div>
           )}
         </Card>
 
         {/* ─── BULK ACTION TOOLBAR ─── */}
         {selectedIds.length > 0 && (
-          <div className="p-3.5 bg-orange-50 border border-orange-200 rounded-xl flex flex-col sm:flex-row items-center justify-between gap-3 shadow-sm animate-in fade-in duration-150">
-            <div className="flex items-center gap-2 text-xs font-bold text-orange-950">
-              <span className="w-6 h-6 rounded-full bg-[#FF5500] text-white flex items-center justify-center text-xs font-bold">
+          <div className="p-3.5 bg-orange-50/70 border border-orange-200/80 rounded-[10px] flex flex-col sm:flex-row items-center justify-between gap-3 shadow-2xs animate-in fade-in duration-150">
+            <div className="flex items-center gap-2 text-xs font-bold text-[#323c4d]">
+              <span className="w-6 h-6 rounded-[6px] bg-[#ff8f00] text-white flex items-center justify-center text-xs font-bold">
                 {selectedIds.length}
               </span>
               <span>Data pengajuan pembelian terpilih</span>
             </div>
 
             <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
-              <Button
-                variant="ghost"
-                size="xs"
+              <button
+                type="button"
                 onClick={() => setSelectedIds([])}
-                className="text-slate-600 hover:text-slate-900"
+                className="px-3 py-1.5 rounded-[8px] text-xs font-bold text-[#606c80] hover:text-[#323c4d] hover:bg-white/60 transition cursor-pointer"
               >
                 Batalkan Pilihan
-              </Button>
+              </button>
 
-              <Button
-                variant="danger"
-                size="xs"
+              <button
+                type="button"
                 onClick={() => setBulkDeleteModalOpen(true)}
-                leftIcon={
-                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                  </svg>
-                }
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[8px] bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition shadow-2xs cursor-pointer"
               >
-                Hapus ({selectedIds.length}) Terpilih
-              </Button>
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+                <span>Hapus ({selectedIds.length}) Terpilih</span>
+              </button>
             </div>
           </div>
         )}
@@ -787,13 +699,13 @@ export default function AdminPengajuanPembelianPage() {
           footer={
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between w-full gap-3">
               <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
+                <button
+                  type="button"
                   onClick={() => setSelectedRequest(null)}
+                  className="px-4 py-2 rounded-[8px] border border-[#ebeef2] text-[#323c4d] hover:bg-slate-50 text-xs font-bold transition cursor-pointer"
                 >
                   Tutup
-                </Button>
+                </button>
 
                 <button
                   type="button"
@@ -802,7 +714,7 @@ export default function AdminPengajuanPembelianPage() {
                     setSelectedRequest(null);
                     setSingleDeleteTarget(req);
                   }}
-                  className="px-3 py-1.5 rounded-xl text-xs font-semibold text-rose-600 hover:bg-rose-50 border border-rose-200 transition cursor-pointer flex items-center gap-1.5"
+                  className="px-3 py-2 rounded-[8px] text-xs font-bold text-rose-600 hover:bg-rose-50 border border-rose-200 transition cursor-pointer flex items-center gap-1.5"
                 >
                   <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -817,7 +729,7 @@ export default function AdminPengajuanPembelianPage() {
                     type="button"
                     disabled={isProcessing}
                     onClick={() => handleUpdateStatus(selectedRequest.id, "MENUNGGU")}
-                    className="px-3 py-1.5 rounded-xl text-xs font-bold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 transition cursor-pointer flex items-center gap-1 disabled:opacity-50"
+                    className="px-3 py-2 rounded-[8px] text-xs font-bold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 transition cursor-pointer flex items-center gap-1 disabled:opacity-50"
                   >
                     <span>🟡</span>
                     <span>Set Menunggu</span>
@@ -829,7 +741,7 @@ export default function AdminPengajuanPembelianPage() {
                     type="button"
                     disabled={isProcessing}
                     onClick={() => handleUpdateStatus(selectedRequest.id, "DIPROSES")}
-                    className="px-3 py-1.5 rounded-xl text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 transition cursor-pointer flex items-center gap-1 disabled:opacity-50"
+                    className="px-3 py-2 rounded-[8px] text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 transition cursor-pointer flex items-center gap-1 disabled:opacity-50"
                   >
                     <span>⚙️</span>
                     <span>Proses</span>
@@ -841,7 +753,7 @@ export default function AdminPengajuanPembelianPage() {
                     type="button"
                     disabled={isProcessing}
                     onClick={() => handleUpdateStatus(selectedRequest.id, "SELESAI")}
-                    className="px-3 py-1.5 rounded-xl text-xs font-bold text-teal-700 bg-teal-50 hover:bg-teal-100 border border-teal-200 transition cursor-pointer flex items-center gap-1 disabled:opacity-50"
+                    className="px-3 py-2 rounded-[8px] text-xs font-bold text-teal-700 bg-teal-50 hover:bg-teal-100 border border-teal-200 transition cursor-pointer flex items-center gap-1 disabled:opacity-50"
                   >
                     <span>🏁</span>
                     <span>Selesai</span>
@@ -853,7 +765,7 @@ export default function AdminPengajuanPembelianPage() {
                     type="button"
                     disabled={isProcessing}
                     onClick={() => setRejectModalOpen(true)}
-                    className="px-3.5 py-1.5 rounded-xl text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 shadow-2xs transition cursor-pointer flex items-center gap-1 disabled:opacity-50"
+                    className="px-3.5 py-2 rounded-[8px] text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 shadow-2xs transition cursor-pointer flex items-center gap-1 disabled:opacity-50"
                   >
                     <span>✕</span>
                     <span>Tolak</span>
@@ -865,7 +777,7 @@ export default function AdminPengajuanPembelianPage() {
                     type="button"
                     disabled={isProcessing}
                     onClick={() => handleUpdateStatus(selectedRequest.id, "DISETUJUI")}
-                    className="px-4 py-1.5 rounded-xl text-xs font-extrabold text-white bg-emerald-600 hover:bg-emerald-700 shadow-sm transition cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
+                    className="px-4 py-2 rounded-[8px] text-xs font-bold text-white bg-[#01923f] hover:bg-emerald-700 shadow-2xs transition cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
                   >
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
@@ -879,13 +791,13 @@ export default function AdminPengajuanPembelianPage() {
         >
           <div className="space-y-4">
             {/* ─── STATUS HEADER BAR ─── */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 p-3.5 bg-slate-50/90 rounded-2xl border border-slate-200/80">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 p-3.5 bg-slate-50 rounded-[10px] border border-[#ebeef2]">
               <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Status Permohonan:</span>
-                <Badge status={selectedRequest.status} size="md" />
+                <span className="text-xs font-bold text-[#606c80] uppercase tracking-wider">Status Permohonan:</span>
+                <Badge status={selectedRequest.status} size="sm" />
               </div>
-              <div className="text-[11px] font-semibold text-slate-500 flex items-center gap-1.5">
-                <svg className="w-3.5 h-3.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <div className="text-xs font-semibold text-[#606c80] flex items-center gap-1.5">
+                <svg className="w-3.5 h-3.5 text-[#606c80]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
                 <span>
@@ -901,62 +813,62 @@ export default function AdminPengajuanPembelianPage() {
             </div>
 
             {/* ─── 1. DATA PEMOHON CARD ─── */}
-            <div className="p-4 bg-white rounded-2xl border border-slate-200/80 shadow-2xs">
-              <div className="flex items-center gap-2 mb-3 pb-2 border-b border-slate-100">
-                <div className="w-6 h-6 rounded-lg bg-orange-100 text-[#FF5500] flex items-center justify-center text-xs font-bold">
+            <div className="p-4 bg-white rounded-[10px] border border-[#ebeef2] shadow-[0px_1px_3px_0px_rgba(96,108,128,0.05)]">
+              <div className="flex items-center gap-2 mb-3 pb-2 border-b border-[#ebeef2]">
+                <div className="w-6 h-6 rounded-[6px] bg-orange-100 text-[#ff8f00] flex items-center justify-center text-xs font-bold">
                   👤
                 </div>
-                <h4 className="text-xs font-extrabold text-slate-800 uppercase tracking-wider">
+                <h4 className="text-xs font-bold text-[#323c4d] uppercase tracking-wider">
                   Data Pemohon (Karyawan)
                 </h4>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div className="p-3 bg-slate-50/70 rounded-xl border border-slate-100">
-                  <p className="text-[11px] font-semibold text-slate-400 mb-0.5">Nama Lengkap</p>
-                  <p className="text-xs font-bold text-slate-900">{selectedRequest.user.name}</p>
+                <div className="p-3 bg-slate-50/70 rounded-[8px] border border-[#ebeef2]">
+                  <p className="text-[11px] font-semibold text-[#606c80] mb-0.5">Nama Lengkap</p>
+                  <p className="text-xs font-bold text-[#323c4d]">{selectedRequest.user.name}</p>
                 </div>
-                <div className="p-3 bg-slate-50/70 rounded-xl border border-slate-100">
-                  <p className="text-[11px] font-semibold text-slate-400 mb-0.5">Departemen / Divisi</p>
-                  <p className="text-xs font-bold text-slate-900">{selectedRequest.user.department}</p>
+                <div className="p-3 bg-slate-50/70 rounded-[8px] border border-[#ebeef2]">
+                  <p className="text-[11px] font-semibold text-[#606c80] mb-0.5">Departemen / Divisi</p>
+                  <p className="text-xs font-bold text-[#323c4d]">{selectedRequest.user.department}</p>
                 </div>
-                <div className="p-3 bg-slate-50/70 rounded-xl border border-slate-100">
-                  <p className="text-[11px] font-semibold text-slate-400 mb-0.5">Jabatan</p>
-                  <p className="text-xs font-bold text-slate-900">{selectedRequest.user.position}</p>
+                <div className="p-3 bg-slate-50/70 rounded-[8px] border border-[#ebeef2]">
+                  <p className="text-[11px] font-semibold text-[#606c80] mb-0.5">Jabatan</p>
+                  <p className="text-xs font-bold text-[#323c4d]">{selectedRequest.user.position}</p>
                 </div>
               </div>
             </div>
 
             {/* ─── 2. DETAIL BARANG PEMBELIAN CARD ─── */}
-            <div className="p-4 bg-white rounded-2xl border border-slate-200/80 shadow-2xs">
-              <div className="flex items-center justify-between mb-3 pb-2 border-b border-slate-100">
+            <div className="p-4 bg-white rounded-[10px] border border-[#ebeef2] shadow-[0px_1px_3px_0px_rgba(96,108,128,0.05)]">
+              <div className="flex items-center justify-between mb-3 pb-2 border-b border-[#ebeef2]">
                 <div className="flex items-center gap-2">
-                  <div className="w-6 h-6 rounded-lg bg-orange-100 text-[#FF5500] flex items-center justify-center text-xs font-bold">
+                  <div className="w-6 h-6 rounded-[6px] bg-orange-100 text-[#ff8f00] flex items-center justify-center text-xs font-bold">
                     🛒
                   </div>
-                  <h4 className="text-xs font-extrabold text-slate-800 uppercase tracking-wider">
+                  <h4 className="text-xs font-bold text-[#323c4d] uppercase tracking-wider">
                     Barang Pembelian yang Diajukan
                   </h4>
                 </div>
-                <span className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-orange-100 text-[#FF5500]">
+                <span className="text-[11px] font-bold px-2 py-0.5 rounded-[6px] bg-orange-50 text-[#ff8f00] border border-orange-200/50">
                   Pengadaan Barang Baru
                 </span>
               </div>
 
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 bg-orange-50/40 rounded-xl border border-orange-200/60">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 bg-orange-50/30 rounded-[8px] border border-orange-200/60">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-white border border-orange-200 flex items-center justify-center text-lg shrink-0">
+                  <div className="w-10 h-10 rounded-[8px] bg-white border border-orange-200 flex items-center justify-center text-lg shrink-0">
                     📦
                   </div>
                   <div>
-                    <p className="text-sm font-extrabold text-slate-900">{selectedRequest.atkItem.name}</p>
-                    <p className="text-[11px] font-medium text-slate-500">Satuan: {selectedRequest.atkItem.unit || "pcs"}</p>
+                    <p className="text-sm font-bold text-[#323c4d]">{selectedRequest.atkItem.name}</p>
+                    <p className="text-xs font-medium text-[#606c80]">Satuan: {selectedRequest.atkItem.unit || "pcs"}</p>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-2 self-start sm:self-center">
-                  <span className="text-xs text-slate-500 font-semibold">Jumlah Pembelian:</span>
-                  <span className="px-3 py-1 bg-white text-[#FF5500] font-extrabold text-xs rounded-lg border border-orange-200 shadow-2xs">
+                  <span className="text-xs text-[#606c80] font-semibold">Jumlah Pembelian:</span>
+                  <span className="px-3 py-1 bg-white text-[#ff8f00] font-bold text-xs rounded-[6px] border border-orange-200 shadow-2xs">
                     {selectedRequest.quantity} {selectedRequest.atkItem.unit || "pcs"}
                   </span>
                 </div>
@@ -964,45 +876,44 @@ export default function AdminPengajuanPembelianPage() {
             </div>
 
             {/* ─── 3. ALASAN & KEPERLUAN CARD ─── */}
-            <div className="p-4 bg-white rounded-2xl border border-slate-200/80 shadow-2xs">
-              <div className="flex items-center gap-2 mb-2 pb-2 border-b border-slate-100">
-                <div className="w-6 h-6 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center text-xs font-bold">
+            <div className="p-4 bg-white rounded-[10px] border border-[#ebeef2] shadow-[0px_1px_3px_0px_rgba(96,108,128,0.05)]">
+              <div className="flex items-center gap-2 mb-2 pb-2 border-b border-[#ebeef2]">
+                <div className="w-6 h-6 rounded-[6px] bg-amber-100 text-amber-700 flex items-center justify-center text-xs font-bold">
                   💬
                 </div>
-                <h4 className="text-xs font-extrabold text-slate-800 uppercase tracking-wider">
+                <h4 className="text-xs font-bold text-[#323c4d] uppercase tracking-wider">
                   Alasan / Keperluan Pembelian
                 </h4>
               </div>
 
-              <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 text-xs text-slate-800 leading-relaxed font-medium">
+              <div className="p-3 bg-slate-50 rounded-[8px] border border-[#ebeef2] text-xs text-[#323c4d] leading-relaxed font-medium">
                 {getCleanReason(selectedRequest.reason) ? (
                   <p className="whitespace-pre-line">{getCleanReason(selectedRequest.reason)}</p>
                 ) : (
-                  <p className="text-slate-400 italic">Tidak ada alasan spesifik.</p>
+                  <p className="text-[#606c80] italic">Tidak ada alasan spesifik.</p>
                 )}
               </div>
             </div>
 
             {/* ─── 4. EDITABLE ADMIN NOTE CARD ─── */}
-            <div className="p-4 bg-white rounded-2xl border border-slate-200/80 shadow-2xs space-y-2.5">
-              <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+            <div className="p-4 bg-white rounded-[10px] border border-[#ebeef2] shadow-[0px_1px_3px_0px_rgba(96,108,128,0.05)] space-y-2.5">
+              <div className="flex items-center justify-between pb-2 border-b border-[#ebeef2]">
                 <div className="flex items-center gap-2">
-                  <div className="w-6 h-6 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center text-xs font-bold">
+                  <div className="w-6 h-6 rounded-[6px] bg-slate-100 text-[#323c4d] flex items-center justify-center text-xs font-bold">
                     🛡️
                   </div>
-                  <h4 className="text-xs font-extrabold text-slate-800 uppercase tracking-wider">
+                  <h4 className="text-xs font-bold text-[#323c4d] uppercase tracking-wider">
                     Catatan / Keterangan Administrator
                   </h4>
                 </div>
-                <Button
-                  variant="outline"
-                  size="xs"
-                  isLoading={isSavingNote}
+                <button
+                  type="button"
+                  disabled={isSavingNote}
                   onClick={handleSaveAdminNote}
-                  className="text-xs text-[#FF5500] border-orange-200 hover:bg-orange-50 font-bold"
+                  className="px-3 py-1.5 rounded-[8px] text-xs text-[#ff8f00] border border-orange-200 hover:bg-orange-50 font-bold transition cursor-pointer disabled:opacity-50"
                 >
-                  💾 Simpan Catatan
-                </Button>
+                  {isSavingNote ? "Menyimpan..." : "💾 Simpan Catatan"}
+                </button>
               </div>
               <Textarea
                 rows={3}
@@ -1015,7 +926,6 @@ export default function AdminPengajuanPembelianPage() {
         </Modal>
       )}
 
-
       {/* ─── REJECT MODAL ─── */}
       {rejectModalOpen && selectedRequest && (
         <Modal
@@ -1025,24 +935,23 @@ export default function AdminPengajuanPembelianPage() {
             setRejectNote("");
           }}
           title="Tolak Pengajuan Pembelian ATK"
-          subtitle={`Pengajuan #${selectedRequest.id.slice(-8)} oleh ${selectedRequest.user.name}`}
+          subtitle={`Tiket: #${selectedRequest.id.slice(-8).toUpperCase()} • Pemohon: ${selectedRequest.user.name}`}
           size="sm"
           footer={
             <div className="flex items-center justify-end gap-2 w-full">
-              <Button
-                variant="outline"
-                size="sm"
+              <button
+                type="button"
                 onClick={() => {
                   setRejectModalOpen(false);
                   setRejectNote("");
                 }}
+                className="px-4 py-2 rounded-[8px] border border-[#ebeef2] text-[#323c4d] hover:bg-slate-50 text-xs font-bold transition cursor-pointer"
               >
                 Batal
-              </Button>
-              <Button
-                variant="danger"
-                size="sm"
-                isLoading={isProcessing}
+              </button>
+              <button
+                type="button"
+                disabled={isProcessing}
                 onClick={() =>
                   handleUpdateStatus(
                     selectedRequest.id,
@@ -1050,14 +959,15 @@ export default function AdminPengajuanPembelianPage() {
                     rejectNote.trim() || "Pengajuan pembelian ditolak oleh Admin."
                   )
                 }
+                className="px-4 py-2 rounded-[8px] bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition shadow-2xs cursor-pointer disabled:opacity-50"
               >
-                Tolak Pengajuan
-              </Button>
+                {isProcessing ? "Menolak..." : "Tolak Pengajuan"}
+              </button>
             </div>
           }
         >
           <div className="space-y-3">
-            <p className="text-xs text-slate-600">
+            <p className="text-xs text-[#606c80] leading-relaxed">
               Apakah Anda yakin ingin menolak pengajuan pembelian <b>{selectedRequest.atkItem.name}</b> dari <b>{selectedRequest.user.name}</b>?
             </p>
             <Textarea
@@ -1081,28 +991,36 @@ export default function AdminPengajuanPembelianPage() {
           size="sm"
           footer={
             <div className="flex items-center justify-end gap-2 w-full">
-              <Button
-                variant="outline"
-                size="sm"
+              <button
+                type="button"
                 onClick={() => setSingleDeleteTarget(null)}
                 disabled={isDeleting}
+                className="px-4 py-2 rounded-[8px] border border-[#ebeef2] text-[#323c4d] hover:bg-slate-50 text-xs font-bold transition cursor-pointer disabled:opacity-50"
               >
                 Batal
-              </Button>
-              <Button
-                variant="danger"
-                size="sm"
-                isLoading={isDeleting}
+              </button>
+              <button
+                type="button"
+                disabled={isDeleting}
                 onClick={handleDeleteSingle}
+                className="px-4 py-2 rounded-[8px] bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition shadow-2xs cursor-pointer disabled:opacity-50"
               >
-                Ya, Hapus Data
-              </Button>
+                {isDeleting ? "Menghapus..." : "Ya, Hapus Data"}
+              </button>
             </div>
           }
         >
-          <p className="text-xs text-slate-600 leading-relaxed">
-            Apakah Anda yakin ingin menghapus data pengajuan pembelian <b>{singleDeleteTarget.atkItem.name}</b> oleh <b>{singleDeleteTarget.user.name}</b>? Tindakan ini tidak dapat dibatalkan.
-          </p>
+          <div className="flex items-start gap-3 p-3.5 bg-red-50 border border-red-200 rounded-[8px] text-red-900 text-xs font-medium">
+            <svg className="w-5 h-5 text-red-600 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+            <div>
+              <p className="font-bold text-red-950">Konfirmasi Hapus Pengajuan</p>
+              <p className="mt-1 leading-relaxed text-red-800">
+                Apakah Anda yakin ingin menghapus data pengajuan pembelian <b>{singleDeleteTarget.atkItem.name}</b> oleh <b>{singleDeleteTarget.user.name}</b>? Tindakan ini tidak dapat dibatalkan.
+              </p>
+            </div>
+          </div>
         </Modal>
       )}
 
@@ -1115,64 +1033,35 @@ export default function AdminPengajuanPembelianPage() {
           size="sm"
           footer={
             <div className="flex items-center justify-end gap-2 w-full">
-              <Button
-                variant="outline"
-                size="sm"
+              <button
+                type="button"
                 onClick={() => setBulkDeleteModalOpen(false)}
                 disabled={isDeleting}
+                className="px-4 py-2 rounded-[8px] border border-[#ebeef2] text-[#323c4d] hover:bg-slate-50 text-xs font-bold transition cursor-pointer disabled:opacity-50"
               >
                 Batal
-              </Button>
-              <Button
-                variant="danger"
-                size="sm"
-                isLoading={isDeleting}
-                onClick={handleDeleteBulk}
-              >
-                Ya, Hapus ({selectedIds.length}) Data
-              </Button>
-            </div>
-          }
-        >
-          <p className="text-xs text-slate-600 leading-relaxed">
-            Anda akan menghapus <b>{selectedIds.length} data pengajuan pembelian terpilih</b>. Tindakan ini permanen.
-          </p>
-        </Modal>
-      )}
-
-      {/* ─── DELETE ALL MODAL ─── */}
-      {deleteAllModalOpen && (
-        <Modal
-          isOpen={deleteAllModalOpen}
-          onClose={() => setDeleteAllModalOpen(false)}
-          title="Hapus Seluruh Data Pengajuan"
-          size="sm"
-          footer={
-            <div className="flex items-center justify-end gap-2 w-full">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setDeleteAllModalOpen(false)}
+              </button>
+              <button
+                type="button"
                 disabled={isDeleting}
+                onClick={handleDeleteBulk}
+                className="px-4 py-2 rounded-[8px] bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition shadow-2xs cursor-pointer disabled:opacity-50"
               >
-                Batal
-              </Button>
-              <Button
-                variant="danger"
-                size="sm"
-                isLoading={isDeleting}
-                onClick={handleDeleteAll}
-              >
-                Ya, Bersihkan Seluruh Data
-              </Button>
+                {isDeleting ? "Menghapus..." : `Ya, Hapus (${selectedIds.length}) Data`}
+              </button>
             </div>
           }
         >
-          <div className="space-y-2 text-xs text-rose-600 bg-rose-50 p-3 rounded-xl border border-rose-200">
-            <p className="font-bold">⚠️ Perhatian!</p>
-            <p className="text-slate-700">
-              Tindakan ini akan menghapus <b>seluruh riwayat pengajuan</b> dari database. Data yang dihapus tidak dapat dipulihkan kembali.
-            </p>
+          <div className="flex items-start gap-3 p-3.5 bg-red-50 border border-red-200 rounded-[8px] text-red-900 text-xs font-medium">
+            <svg className="w-5 h-5 text-red-600 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+            <div>
+              <p className="font-bold text-red-950">Hapus {selectedIds.length} Pengajuan Sekaligus?</p>
+              <p className="mt-1 leading-relaxed text-red-800">
+                Sebanyak <b>{selectedIds.length} data pengajuan pembelian</b> yang Anda pilih akan dihapus secara permanen dari database. Tindakan ini tidak dapat dibatalkan.
+              </p>
+            </div>
           </div>
         </Modal>
       )}

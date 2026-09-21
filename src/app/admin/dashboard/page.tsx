@@ -56,8 +56,10 @@ export default function AdminDashboardPage() {
     loadDashboardData();
 
     const interval = setInterval(() => {
-      loadDashboardData();
-    }, 5000);
+      if (document.visibilityState === "visible") {
+        loadDashboardData();
+      }
+    }, 15000);
 
     const handleFocus = () => {
       loadDashboardData();
@@ -105,66 +107,63 @@ export default function AdminDashboardPage() {
   const statusBadge = (status: string) => {
     switch (status) {
       case "MENUNGGU":
-        return <span className="px-2.5 py-1 text-[11px] font-bold rounded-full bg-amber-100 text-amber-800">MENUNGGU</span>;
+        return (
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-[6px] text-[11px] font-bold bg-amber-50 text-amber-700 border border-amber-200/80">
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+            Menunggu
+          </span>
+        );
       case "DISETUJUI":
-        return <span className="px-2.5 py-1 text-[11px] font-bold rounded-full bg-blue-100 text-blue-800">DISETUJUI</span>;
+        return (
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-[6px] text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/80">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+            Disetujui
+          </span>
+        );
       case "DIPROSES":
-        return <span className="px-2.5 py-1 text-[11px] font-bold rounded-full bg-orange-100 text-orange-800">DIPROSES</span>;
+        return (
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-[6px] text-[11px] font-bold bg-blue-50 text-blue-700 border border-blue-200/80">
+            <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+            Diproses
+          </span>
+        );
       case "SELESAI":
-        return <span className="px-2.5 py-1 text-[11px] font-bold rounded-full bg-emerald-100 text-emerald-800">SELESAI</span>;
+        return (
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-[6px] text-[11px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200/80">
+            <span className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
+            Selesai
+          </span>
+        );
       case "DITOLAK":
-        return <span className="px-2.5 py-1 text-[11px] font-bold rounded-full bg-red-100 text-red-800">DITOLAK</span>;
+        return (
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-[6px] text-[11px] font-bold bg-rose-50 text-rose-700 border border-rose-200/80">
+            <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+            Ditolak
+          </span>
+        );
       default:
-        return <span className="px-2.5 py-1 text-[11px] font-bold rounded-full bg-gray-100 text-gray-800">{status}</span>;
+        return (
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-[6px] text-[11px] font-bold bg-slate-50 text-slate-700 border border-slate-200">
+            {status}
+          </span>
+        );
     }
   };
 
-  // Indonesian Date Formatting (e.g. Selasa, 18 Agustus 2026)
-  const todayFormatted = new Date().toLocaleDateString("id-ID", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
-
   return (
     <AdminLayout>
-      {/* ─── HERO CARD ─── */}
-      <div className="bg-white border border-gray-200/70 rounded-2xl p-6 sm:p-7 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-gray-900 tracking-tight">
-            Selamat Datang di Portal Admin HasamitraJabar
-          </h1>
-          <p className="text-xs sm:text-sm text-gray-400 font-medium mt-1">
-            {todayFormatted}
-          </p>
-        </div>
-
-        <button
-          type="button"
-          onClick={loadDashboardData}
-          disabled={loading}
-          className="self-start sm:self-auto flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 text-xs font-semibold rounded-xl transition-colors cursor-pointer shadow-2xs"
-        >
-          <svg className={`w-3.5 h-3.5 text-gray-500 ${loading ? "animate-spin" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-          </svg>
-          <span>Refresh Data</span>
-        </button>
-      </div>
-
       {/* ─── STAT CARDS GRID (2 Columns) ─── */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         {/* Card 1: Total Pengajuan ATK (Permintaan Gudang) */}
         <Link
           href="/admin/pengajuan"
-          className="bg-white border border-slate-200 rounded-2xl p-6 shadow-2xs hover:border-[#FF5500]/50 hover:shadow-md transition-all flex flex-col justify-between block"
+          className="bg-white rounded-[10px] border border-[#ebeef2] shadow-[0px_1px_3px_0px_rgba(96,108,128,0.05)] p-5 sm:p-6 hover:border-[#ff8f00]/50 transition-all flex flex-col justify-between block group"
         >
           <div className="flex items-start justify-between">
-            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">
+            <span className="text-[11px] font-bold text-[#606c80] uppercase tracking-wider">
               TOTAL PENGAJUAN ATK
             </span>
-            <div className="w-9 h-9 rounded-xl bg-orange-50 text-[#FF5500] flex items-center justify-center">
+            <div className="w-9 h-9 rounded-[8px] bg-orange-50 text-[#ff8f00] border border-orange-100/60 flex items-center justify-center transition group-hover:scale-105">
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
@@ -172,25 +171,41 @@ export default function AdminDashboardPage() {
           </div>
 
           <div className="mt-4">
-            <h2 className="text-4xl font-black text-slate-900 tracking-tight">
+            <h2 className="text-3xl sm:text-4xl font-black text-[#323c4d] tracking-tight">
               {stats.regular.total}
             </h2>
-            <p className="text-xs text-slate-500 font-medium mt-1">
+            <p className="text-xs text-[#606c80] font-medium mt-1">
               Permohonan permintaan ATK dari stok gudang
             </p>
+          </div>
+
+          {/* Status Quick Badges */}
+          <div className="mt-5 pt-4 border-t border-[#ebeef2] flex flex-wrap items-center gap-2 text-[11px]">
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-[6px] font-bold bg-amber-50 text-amber-700 border border-amber-200/70">
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+              Menunggu: {stats.regular.menunggu}
+            </span>
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-[6px] font-bold bg-blue-50 text-blue-700 border border-blue-200/70">
+              <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+              Diproses: {stats.regular.diproses}
+            </span>
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-[6px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/70">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+              Selesai: {stats.regular.selesai}
+            </span>
           </div>
         </Link>
 
         {/* Card 2: Pengajuan Pembelian ATK */}
         <Link
           href="/admin/barang"
-          className="bg-white border border-slate-200 rounded-2xl p-6 shadow-2xs hover:border-[#FF5500]/50 hover:shadow-md transition-all flex flex-col justify-between block"
+          className="bg-white rounded-[10px] border border-[#ebeef2] shadow-[0px_1px_3px_0px_rgba(96,108,128,0.05)] p-5 sm:p-6 hover:border-[#ff8f00]/50 transition-all flex flex-col justify-between block group"
         >
           <div className="flex items-start justify-between">
-            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">
+            <span className="text-[11px] font-bold text-[#606c80] uppercase tracking-wider">
               TOTAL PENGAJUAN PEMBELIAN ATK
             </span>
-            <div className="w-9 h-9 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center">
+            <div className="w-9 h-9 rounded-[8px] bg-slate-100 text-[#323c4d] border border-slate-200/60 flex items-center justify-center transition group-hover:scale-105">
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
               </svg>
@@ -198,32 +213,48 @@ export default function AdminDashboardPage() {
           </div>
 
           <div className="mt-4">
-            <h2 className="text-4xl font-black text-slate-900 tracking-tight">
+            <h2 className="text-3xl sm:text-4xl font-black text-[#323c4d] tracking-tight">
               {stats.purchase.total}
             </h2>
-            <p className="text-xs text-slate-500 font-medium mt-1">
+            <p className="text-xs text-[#606c80] font-medium mt-1">
               Permohonan pengadaan & pembelian barang baru
             </p>
+          </div>
+
+          {/* Status Quick Badges */}
+          <div className="mt-5 pt-4 border-t border-[#ebeef2] flex flex-wrap items-center gap-2 text-[11px]">
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-[6px] font-bold bg-amber-50 text-amber-700 border border-amber-200/70">
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+              Menunggu: {stats.purchase.menunggu}
+            </span>
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-[6px] font-bold bg-blue-50 text-blue-700 border border-blue-200/70">
+              <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+              Diproses: {stats.purchase.diproses}
+            </span>
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-[6px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/70">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+              Selesai: {stats.purchase.selesai}
+            </span>
           </div>
         </Link>
       </div>
 
       {/* ─── TABLE CARD: Pengajuan ATK Terbaru ─── */}
-      <div className="bg-white border border-slate-200 rounded-2xl shadow-2xs overflow-hidden">
+      <div className="bg-white rounded-[10px] border border-[#ebeef2] shadow-[0px_1px_3px_0px_rgba(96,108,128,0.05)] overflow-hidden">
         {/* Table Card Header */}
-        <div className="px-6 py-5 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+        <div className="px-5 sm:px-6 py-4 sm:py-5 border-b border-[#ebeef2] flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div>
-            <h2 className="text-base font-bold text-slate-900">
+            <h2 className="text-base sm:text-lg font-black text-[#323c4d] tracking-tight">
               Pengajuan ATK Terbaru
             </h2>
-            <p className="text-xs text-slate-500 mt-0.5 font-medium">
+            <p className="text-xs text-[#606c80] font-medium mt-0.5">
               Daftar permohonan ATK yang baru diajukan karyawan
             </p>
           </div>
 
           <Link
             href="/admin/pengajuan"
-            className="text-xs font-bold text-[#FF5500] hover:underline flex items-center gap-1 self-start sm:self-auto"
+            className="text-xs font-bold text-[#ff8f00] hover:text-[#e07d00] flex items-center gap-1.5 self-start sm:self-auto transition"
           >
             <span>Kelola Semua Pengajuan</span>
             <span>→</span>
@@ -232,63 +263,63 @@ export default function AdminDashboardPage() {
 
         {/* Table Content */}
         {loading ? (
-          <div className="py-16 text-center text-slate-400 text-xs font-medium">
+          <div className="py-16 text-center text-[#606c80] text-xs font-medium">
             Memuat data pengajuan...
           </div>
         ) : recentRequests.length === 0 ? (
-          <div className="py-16 text-center text-slate-400 text-xs font-medium">
+          <div className="py-16 text-center text-[#606c80] text-xs font-medium">
             Belum ada data pengajuan yang masuk.
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-xs">
               <thead>
-                <tr className="border-b border-slate-100 bg-slate-50/70">
-                  <th className="text-left px-6 py-3.5 font-bold text-slate-600 uppercase tracking-wider text-[10px]">
+                <tr className="border-b border-[#ebeef2] bg-slate-50/70">
+                  <th className="text-left px-5 sm:px-6 py-3.5 font-bold text-[#606c80] uppercase tracking-wider text-[10px]">
                     PEMOHON
                   </th>
-                  <th className="text-left px-6 py-3.5 font-bold text-slate-600 uppercase tracking-wider text-[10px]">
+                  <th className="text-left px-5 sm:px-6 py-3.5 font-bold text-[#606c80] uppercase tracking-wider text-[10px]">
                     BARANG DIAJUKAN
                   </th>
-                  <th className="text-left px-6 py-3.5 font-bold text-slate-600 uppercase tracking-wider text-[10px]">
+                  <th className="text-left px-5 sm:px-6 py-3.5 font-bold text-[#606c80] uppercase tracking-wider text-[10px]">
                     STATUS
                   </th>
-                  <th className="text-left px-6 py-3.5 font-bold text-slate-600 uppercase tracking-wider text-[10px]">
+                  <th className="text-left px-5 sm:px-6 py-3.5 font-bold text-[#606c80] uppercase tracking-wider text-[10px]">
                     TANGGAL
                   </th>
-                  <th className="text-right px-6 py-3.5 font-bold text-slate-600 uppercase tracking-wider text-[10px]">
+                  <th className="text-right px-5 sm:px-6 py-3.5 font-bold text-[#606c80] uppercase tracking-wider text-[10px]">
                     AKSI
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-[#ebeef2]">
                 {recentRequests.map((req) => (
-                  <tr key={req.id} className="hover:bg-slate-50/60 transition-colors">
-                    <td className="px-6 py-4">
-                      <p className="font-bold text-slate-900 text-xs">{req.user.name}</p>
-                      <p className="text-[11px] text-slate-500 mt-0.5">
+                  <tr key={req.id} className="hover:bg-slate-50/70 transition-colors">
+                    <td className="px-5 sm:px-6 py-4">
+                      <p className="font-bold text-[#323c4d] text-xs">{req.user.name}</p>
+                      <p className="text-[11px] text-[#606c80] font-medium mt-0.5">
                         {req.user.department} • {req.user.position}
                       </p>
                     </td>
-                    <td className="px-6 py-4">
-                      <p className="font-semibold text-gray-800 text-xs">{req.atkItem.name}</p>
-                      <p className="text-[11px] text-[#FF5500] font-bold mt-0.5">
+                    <td className="px-5 sm:px-6 py-4">
+                      <p className="font-bold text-[#323c4d] text-xs">{req.atkItem.name}</p>
+                      <p className="text-[11px] text-[#ff8f00] font-black mt-0.5">
                         {req.quantity} {req.atkItem.unit}
                       </p>
                     </td>
-                    <td className="px-6 py-4">{statusBadge(req.status)}</td>
-                    <td className="px-6 py-4 text-gray-400 text-xs font-medium">
+                    <td className="px-5 sm:px-6 py-4">{statusBadge(req.status)}</td>
+                    <td className="px-5 sm:px-6 py-4 text-[#606c80] text-xs font-medium">
                       {new Date(req.createdAt).toLocaleDateString("id-ID", {
                         day: "numeric",
                         month: "short",
                         year: "numeric",
                       })}
                     </td>
-                    <td className="px-6 py-4 text-right">
+                    <td className="px-5 sm:px-6 py-4 text-right">
                       <button
                         type="button"
                         onClick={() => setSelectedRequest(req)}
-                        className="px-3 py-1.5 rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-100 text-xs font-semibold transition-colors cursor-pointer"
+                        className="px-3 py-1.5 rounded-[8px] border border-[#ebeef2] text-[#323c4d] hover:bg-slate-50 text-xs font-bold transition-colors cursor-pointer shadow-2xs"
                       >
                         Detail & Aksi
                       </button>
@@ -301,7 +332,7 @@ export default function AdminDashboardPage() {
         )}
       </div>
 
-      {/* ─── DETAIL & AKSI MODAL (Executive & Mobile-Optimized) ─── */}
+      {/* ─── DETAIL & AKSI MODAL ─── */}
       {selectedRequest && (
         <Modal
           isOpen={true}
@@ -314,7 +345,7 @@ export default function AdminDashboardPage() {
               <button
                 type="button"
                 onClick={() => setSelectedRequest(null)}
-                className="px-4 py-2 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 text-xs font-semibold transition cursor-pointer"
+                className="px-4 py-2 rounded-[8px] border border-[#ebeef2] text-[#323c4d] hover:bg-slate-50 text-xs font-bold transition cursor-pointer"
               >
                 Tutup
               </button>
@@ -325,9 +356,9 @@ export default function AdminDashboardPage() {
                     type="button"
                     disabled={isProcessing}
                     onClick={() => handleUpdateStatus(selectedRequest.id, "MENUNGGU")}
-                    className="px-3 py-1.5 rounded-xl text-xs font-bold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 transition cursor-pointer flex items-center gap-1 disabled:opacity-50"
+                    className="px-3 py-1.5 rounded-[8px] text-xs font-bold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 transition cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
                   >
-                    <span>🟡</span>
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
                     <span>Set Menunggu</span>
                   </button>
                 )}
@@ -337,9 +368,9 @@ export default function AdminDashboardPage() {
                     type="button"
                     disabled={isProcessing}
                     onClick={() => handleUpdateStatus(selectedRequest.id, "DIPROSES")}
-                    className="px-3 py-1.5 rounded-xl text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 transition cursor-pointer flex items-center gap-1 disabled:opacity-50"
+                    className="px-3 py-1.5 rounded-[8px] text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 transition cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
                   >
-                    <span>⚙️</span>
+                    <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
                     <span>Proses</span>
                   </button>
                 )}
@@ -349,9 +380,9 @@ export default function AdminDashboardPage() {
                     type="button"
                     disabled={isProcessing}
                     onClick={() => handleUpdateStatus(selectedRequest.id, "SELESAI")}
-                    className="px-3 py-1.5 rounded-xl text-xs font-bold text-teal-700 bg-teal-50 hover:bg-teal-100 border border-teal-200 transition cursor-pointer flex items-center gap-1 disabled:opacity-50"
+                    className="px-3 py-1.5 rounded-[8px] text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 transition cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
                   >
-                    <span>🏁</span>
+                    <span className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
                     <span>Selesai</span>
                   </button>
                 )}
@@ -361,7 +392,7 @@ export default function AdminDashboardPage() {
                     type="button"
                     disabled={isProcessing}
                     onClick={() => setRejectModalOpen(true)}
-                    className="px-3.5 py-1.5 rounded-xl text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 shadow-2xs transition cursor-pointer flex items-center gap-1 disabled:opacity-50"
+                    className="px-3.5 py-1.5 rounded-[8px] text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 shadow-2xs transition cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
                   >
                     <span>✕</span>
                     <span>Tolak</span>
@@ -373,7 +404,7 @@ export default function AdminDashboardPage() {
                     type="button"
                     disabled={isProcessing}
                     onClick={() => handleUpdateStatus(selectedRequest.id, "DISETUJUI")}
-                    className="px-4 py-1.5 rounded-xl text-xs font-extrabold text-white bg-emerald-600 hover:bg-emerald-700 shadow-sm transition cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
+                    className="px-4 py-1.5 rounded-[8px] text-xs font-bold text-white bg-[#01923f] hover:bg-[#017a35] shadow-xs transition cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
                   >
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
@@ -385,15 +416,15 @@ export default function AdminDashboardPage() {
             </div>
           }
         >
-          <div className="space-y-3.5 sm:space-y-4">
-            {/* ─── STATUS HEADER BAR ─── */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 p-3.5 bg-slate-50/90 rounded-2xl border border-slate-200/80">
+          <div className="space-y-4">
+            {/* Status Header Bar */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 p-3.5 bg-slate-50/70 rounded-[8px] border border-[#ebeef2]">
               <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Status Permohonan:</span>
+                <span className="text-xs font-bold text-[#606c80] uppercase tracking-wider">Status Permohonan:</span>
                 {statusBadge(selectedRequest.status)}
               </div>
-              <div className="text-[11px] font-semibold text-slate-500 flex items-center gap-1.5">
-                <svg className="w-3.5 h-3.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <div className="text-[11px] font-semibold text-[#606c80] flex items-center gap-1.5">
+                <svg className="w-3.5 h-3.5 text-[#606c80]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
                 <span>
@@ -408,85 +439,70 @@ export default function AdminDashboardPage() {
               </div>
             </div>
 
-            {/* ─── 1. DATA PEMOHON CARD ─── */}
-            <div className="p-3.5 sm:p-4 bg-white rounded-2xl border border-slate-200/80 shadow-2xs">
-              <div className="flex items-center gap-2 mb-2.5 sm:mb-3 pb-2 border-b border-slate-100">
-                <div className="w-6 h-6 rounded-lg bg-orange-100 text-[#FF5500] flex items-center justify-center text-xs font-bold">
-                  👤
-                </div>
-                <h4 className="text-xs font-extrabold text-slate-800 uppercase tracking-wider">
-                  Data Pemohon (Karyawan)
-                </h4>
-              </div>
+            {/* 1. Data Pemohon Card */}
+            <div className="p-4 bg-white rounded-[10px] border border-[#ebeef2]">
+              <h4 className="text-xs font-black text-[#323c4d] uppercase tracking-wider mb-3 pb-2 border-b border-[#ebeef2] flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-[#ff8f00]" />
+                Data Pemohon (Karyawan)
+              </h4>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-3">
-                <div className="p-2.5 sm:p-3 bg-slate-50/70 rounded-xl border border-slate-100">
-                  <p className="text-[11px] font-semibold text-slate-400 mb-0.5">Nama Lengkap</p>
-                  <p className="text-xs font-bold text-slate-900">{selectedRequest.user.name}</p>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="p-3 bg-slate-50/60 rounded-[8px] border border-[#ebeef2]">
+                  <p className="text-[11px] font-semibold text-[#606c80] mb-0.5">Nama Lengkap</p>
+                  <p className="text-xs font-bold text-[#323c4d]">{selectedRequest.user.name}</p>
                 </div>
-                <div className="p-2.5 sm:p-3 bg-slate-50/70 rounded-xl border border-slate-100">
-                  <p className="text-[11px] font-semibold text-slate-400 mb-0.5">Departemen / Divisi</p>
-                  <p className="text-xs font-bold text-slate-900">{selectedRequest.user.department}</p>
+                <div className="p-3 bg-slate-50/60 rounded-[8px] border border-[#ebeef2]">
+                  <p className="text-[11px] font-semibold text-[#606c80] mb-0.5">Departemen / Divisi</p>
+                  <p className="text-xs font-bold text-[#323c4d]">{selectedRequest.user.department}</p>
                 </div>
-                <div className="p-2.5 sm:p-3 bg-slate-50/70 rounded-xl border border-slate-100">
-                  <p className="text-[11px] font-semibold text-slate-400 mb-0.5">Jabatan</p>
-                  <p className="text-xs font-bold text-slate-900">{selectedRequest.user.position}</p>
+                <div className="p-3 bg-slate-50/60 rounded-[8px] border border-[#ebeef2]">
+                  <p className="text-[11px] font-semibold text-[#606c80] mb-0.5">Jabatan</p>
+                  <p className="text-xs font-bold text-[#323c4d]">{selectedRequest.user.position || "-"}</p>
                 </div>
               </div>
             </div>
 
-            {/* ─── 2. DETAIL BARANG YANG DIAJUKAN CARD ─── */}
-            <div className="p-3.5 sm:p-4 bg-white rounded-2xl border border-slate-200/80 shadow-2xs">
-              <div className="flex items-center justify-between mb-2.5 sm:mb-3 pb-2 border-b border-slate-100">
-                <div className="flex items-center gap-2">
-                  <div className="w-6 h-6 rounded-lg bg-orange-100 text-[#FF5500] flex items-center justify-center text-xs font-bold">
-                    📦
-                  </div>
-                  <h4 className="text-xs font-extrabold text-slate-800 uppercase tracking-wider">
-                    Detail Barang Yang Diajukan
-                  </h4>
-                </div>
-                <span className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-orange-100 text-[#FF5500]">
+            {/* 2. Detail Barang Yang Diajukan Card */}
+            <div className="p-4 bg-white rounded-[10px] border border-[#ebeef2]">
+              <div className="flex items-center justify-between mb-3 pb-2 border-b border-[#ebeef2]">
+                <h4 className="text-xs font-black text-[#323c4d] uppercase tracking-wider flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-[#ff8f00]" />
+                  Detail Barang Yang Diajukan
+                </h4>
+                <span className="text-[11px] font-bold px-2 py-0.5 rounded-[6px] bg-orange-50 text-[#ff8f00] border border-orange-200/60">
                   Permintaan Gudang
                 </span>
               </div>
 
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 bg-orange-50/40 rounded-xl border border-orange-200/60">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-white border border-orange-200 flex items-center justify-center text-lg shrink-0">
-                    📋
-                  </div>
-                  <div>
-                    <p className="text-sm font-extrabold text-slate-900">{selectedRequest.atkItem.name}</p>
-                    <p className="text-[11px] font-medium text-slate-500">Satuan: {selectedRequest.atkItem.unit || "pcs"}</p>
-                  </div>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 bg-slate-50/70 rounded-[8px] border border-[#ebeef2]">
+                <div>
+                  <p className="text-sm font-black text-[#323c4d]">{selectedRequest.atkItem.name}</p>
+                  <p className="text-[11px] font-semibold text-[#606c80] mt-0.5">
+                    Satuan: {selectedRequest.atkItem.unit || "pcs"}
+                  </p>
                 </div>
 
                 <div className="flex items-center gap-2 self-start sm:self-center">
-                  <span className="text-xs text-slate-500 font-semibold">Jumlah Permintaan:</span>
-                  <span className="px-3 py-1 bg-white text-[#FF5500] font-extrabold text-xs rounded-lg border border-orange-200 shadow-2xs">
+                  <span className="text-xs text-[#606c80] font-semibold">Jumlah Permintaan:</span>
+                  <span className="px-3 py-1 bg-white text-[#ff8f00] font-black text-xs rounded-[6px] border border-orange-200/70 shadow-2xs">
                     {selectedRequest.quantity} {selectedRequest.atkItem.unit || "pcs"}
                   </span>
                 </div>
               </div>
             </div>
 
-            {/* ─── 3. ALASAN & KEPERLUAN CARD ─── */}
-            <div className="p-3.5 sm:p-4 bg-white rounded-2xl border border-slate-200/80 shadow-2xs">
-              <div className="flex items-center gap-2 mb-2 pb-2 border-b border-slate-100">
-                <div className="w-6 h-6 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center text-xs font-bold">
-                  💬
-                </div>
-                <h4 className="text-xs font-extrabold text-slate-800 uppercase tracking-wider">
-                  Alasan / Keperluan Pengguna
-                </h4>
-              </div>
+            {/* 3. Alasan / Keperluan Card */}
+            <div className="p-4 bg-white rounded-[10px] border border-[#ebeef2]">
+              <h4 className="text-xs font-black text-[#323c4d] uppercase tracking-wider mb-2.5 pb-2 border-b border-[#ebeef2] flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-[#ff8f00]" />
+                Alasan / Keperluan Pengguna
+              </h4>
 
-              <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 text-xs text-slate-800 leading-relaxed font-medium">
+              <div className="p-3 bg-slate-50/60 rounded-[8px] border border-[#ebeef2] text-xs text-[#323c4d] leading-relaxed font-medium">
                 {selectedRequest.reason ? (
                   <p className="whitespace-pre-line">{selectedRequest.reason}</p>
                 ) : (
-                  <p className="text-slate-400 italic">Tidak ada catatan / alasan spesifik.</p>
+                  <p className="text-[#606c80] italic">Tidak ada catatan / alasan spesifik.</p>
                 )}
               </div>
             </div>
@@ -502,22 +518,22 @@ export default function AdminDashboardPage() {
           title="Tolak Pengajuan ATK"
           size="sm"
         >
-          <div className="space-y-4 text-xs sm:text-sm">
-            <p className="text-gray-600">
-              Silakan masukkan alasan penolakan pengajuan untuk <b>{selectedRequest.user.name}</b>:
+          <div className="space-y-4 text-xs">
+            <p className="text-[#606c80] font-medium leading-relaxed">
+              Silakan masukkan alasan penolakan pengajuan untuk <b className="text-[#323c4d]">{selectedRequest.user.name}</b>:
             </p>
             <textarea
               rows={3}
               placeholder="Contoh: Stok tidak mencukupi atau kuota divisi telah habis..."
               value={rejectNote}
               onChange={(e) => setRejectNote(e.target.value)}
-              className="w-full rounded-xl border border-gray-300 p-3 text-xs focus:outline-none focus:ring-2 focus:ring-red-500/30 focus:border-red-400"
+              className="w-full rounded-[8px] border border-[#ebeef2] p-3 text-xs text-[#323c4d] bg-white focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-400 font-medium"
             />
-            <div className="flex justify-end gap-2">
+            <div className="flex justify-end gap-2 pt-2">
               <button
                 type="button"
                 onClick={() => setRejectModalOpen(false)}
-                className="px-4 py-2 rounded-xl border border-gray-300 text-gray-700 text-xs font-semibold hover:bg-gray-50 transition-colors cursor-pointer"
+                className="px-4 py-2 rounded-[8px] border border-[#ebeef2] text-[#323c4d] text-xs font-bold hover:bg-slate-50 transition-colors cursor-pointer"
               >
                 Batal
               </button>
@@ -525,7 +541,7 @@ export default function AdminDashboardPage() {
                 type="button"
                 disabled={isProcessing || !rejectNote.trim()}
                 onClick={() => handleUpdateStatus(selectedRequest.id, "DITOLAK", rejectNote)}
-                className="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold disabled:opacity-50 transition-colors cursor-pointer"
+                className="px-4 py-2 rounded-[8px] bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold disabled:opacity-50 transition-colors cursor-pointer shadow-2xs"
               >
                 Konfirmasi Penolakan
               </button>

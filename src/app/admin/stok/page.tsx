@@ -3,7 +3,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Card } from "@/components/ui/Card";
-import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Table, Column } from "@/components/ui/Table";
@@ -26,7 +25,6 @@ export default function AdminStokPage() {
 
   const [items, setItems] = useState<AtkItemAdminData[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Filters
   const [search, setSearch] = useState("");
@@ -49,7 +47,6 @@ export default function AdminStokPage() {
 
   // Delete Modals
   const [deleteTarget, setDeleteTarget] = useState<AtkItemAdminData | null>(null);
-  const [deleteAllModalOpen, setDeleteAllModalOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
   // Fetch Items
@@ -78,12 +75,24 @@ export default function AdminStokPage() {
     fetchItems(true);
   }, [fetchItems]);
 
-  const handleManualRefresh = async () => {
-    setIsRefreshing(true);
-    await fetchItems(false);
-    setIsRefreshing(false);
-    toast.info("Data stok berhasil diperbarui");
-  };
+  // Safe background auto-refresh every 15s (only when tab is visible) + on window focus
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (document.visibilityState === "visible") {
+        fetchItems(false);
+      }
+    }, 15000);
+
+    const handleFocus = () => {
+      fetchItems(false);
+    };
+
+    window.addEventListener("focus", handleFocus);
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener("focus", handleFocus);
+    };
+  }, [fetchItems]);
 
   // Metrics
   const readyCount = useMemo(() => items.filter((i) => i.stock > 5).length, [items]);
@@ -246,40 +255,20 @@ export default function AdminStokPage() {
     }
   };
 
-  // Delete All Items
-  const handleDeleteAllItems = async () => {
-    setIsDeleting(true);
-    try {
-      const res = await fetch("/api/atk", {
-        method: "DELETE",
-      });
-      const result = await res.json();
-      if (!res.ok) throw new Error(result.error || "Gagal mengosongkan katalog");
-
-      toast.success("Semua data barang ATK berhasil dibersihkan");
-      setDeleteAllModalOpen(false);
-      fetchItems(false);
-    } catch (err: any) {
-      toast.error(err.message || "Terjadi kesalahan saat membersihkan katalog");
-    } finally {
-      setIsDeleting(false);
-    }
-  };
-
   // Columns definition
   const columns: Column<AtkItemAdminData>[] = [
     {
       header: "No",
-      className: "w-12 text-slate-400 text-xs text-center",
+      className: "w-12 text-[#606c80] text-xs font-semibold text-center",
       accessor: (_row, idx) => idx + 1,
     },
     {
       header: "Nama Barang ATK",
       accessor: (row) => (
         <div>
-          <p className="font-bold text-slate-900 text-xs sm:text-sm">{row.name}</p>
+          <p className="font-bold text-[#323c4d] text-xs sm:text-sm">{row.name}</p>
           {row.description && (
-            <p className="text-[11px] text-slate-400 mt-0.5 line-clamp-1">{row.description}</p>
+            <p className="text-[11px] text-[#606c80] mt-0.5 line-clamp-1">{row.description}</p>
           )}
         </div>
       ),
@@ -288,7 +277,7 @@ export default function AdminStokPage() {
       header: "Satuan",
       className: "w-24 text-center",
       accessor: (row) => (
-        <span className="px-2.5 py-1 rounded-md bg-slate-100 text-slate-700 text-xs font-bold uppercase">
+        <span className="px-2.5 py-1 rounded-[6px] bg-slate-100 text-[#606c80] border border-slate-200/60 text-xs font-bold uppercase">
           {row.unit || "pcs"}
         </span>
       ),
@@ -299,12 +288,11 @@ export default function AdminStokPage() {
       accessor: (row) => {
         const isReady = row.stock > 5;
         const isLow = row.stock > 0 && row.stock <= 5;
-        const isEmpty = row.stock === 0;
 
         return (
           <div className="flex flex-col items-center gap-1">
             <span
-              className={`px-3 py-1 rounded-lg text-xs font-extrabold shadow-2xs ${
+              className={`px-3 py-1 rounded-[6px] text-xs font-bold shadow-2xs ${
                 isReady
                   ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
                   : isLow
@@ -314,7 +302,7 @@ export default function AdminStokPage() {
             >
               {row.stock} {row.unit}
             </span>
-            <span className="text-[10px] font-semibold text-slate-400">
+            <span className="text-[10px] font-semibold text-[#606c80]">
               {isReady ? "🟢 Tersedia" : isLow ? "🟡 Stok Menipis" : "🔴 Stok Habis"}
             </span>
           </div>
@@ -331,7 +319,7 @@ export default function AdminStokPage() {
           <button
             type="button"
             onClick={() => handleOpenStockModal(row)}
-            className="px-2.5 py-1 rounded-lg bg-orange-50 hover:bg-[#FF5500] text-[#FF5500] hover:text-white border border-orange-200 text-xs font-bold transition cursor-pointer"
+            className="px-2.5 py-1.5 rounded-[8px] bg-orange-50 hover:bg-[#ff8f00] text-[#ff8f00] hover:text-white border border-orange-200 text-xs font-bold transition cursor-pointer"
             title="Ubah Angka Stok"
           >
             ± Stok
@@ -341,7 +329,7 @@ export default function AdminStokPage() {
           <button
             type="button"
             onClick={() => handleOpenEditModal(row)}
-            className="p-1.5 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition cursor-pointer"
+            className="p-1.5 rounded-[8px] text-[#606c80] hover:text-[#323c4d] hover:bg-slate-100 transition cursor-pointer border border-transparent hover:border-[#ebeef2]"
             title="Edit Barang"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -353,7 +341,7 @@ export default function AdminStokPage() {
           <button
             type="button"
             onClick={() => setDeleteTarget(row)}
-            className="p-1.5 rounded-lg text-rose-400 hover:text-rose-600 hover:bg-rose-50 transition cursor-pointer"
+            className="p-1.5 rounded-[8px] text-[#606c80] hover:text-rose-600 hover:bg-rose-50 transition cursor-pointer border border-transparent hover:border-rose-200"
             title="Hapus Barang"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -368,95 +356,30 @@ export default function AdminStokPage() {
   return (
     <AdminLayout>
       <div className="space-y-6">
-        {/* Page Header with Action Buttons */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-2 border-b border-gray-200/80">
-          <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
-              <span>Manajemen Stok ATK</span>
-              <span className="text-xs font-extrabold px-2.5 py-0.5 rounded-full bg-orange-100 text-[#FF5500] border border-orange-200">
-                Master Data
-              </span>
-            </h1>
-            <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
-              Tambah jenis barang baru, pantau ketersediaan, dan sesuaikan jumlah unit fisik di gudang.
-            </p>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2.5 self-start sm:self-auto">
-            {/* Refresh Button */}
-            <Button
-              variant="outline"
-              size="sm"
-              isLoading={isRefreshing}
-              onClick={handleManualRefresh}
-              className="text-slate-700 hover:text-[#FF5500] hover:border-orange-300 font-semibold"
-              leftIcon={
-                <svg className={`w-4 h-4 ${isRefreshing ? "animate-spin" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                </svg>
-              }
-            >
-              Refresh
-            </Button>
-
-            {/* Clear All Items (Danger) */}
-            {items.length > 0 && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setDeleteAllModalOpen(true)}
-                className="text-rose-600 border-rose-200 hover:bg-rose-50 font-semibold"
-                leftIcon={
-                  <svg className="w-4 h-4 text-rose-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                  </svg>
-                }
-              >
-                Kosongkan Semua
-              </Button>
-            )}
-
-            {/* Add New Item Button */}
-            <Button
-              variant="primary"
-              size="sm"
-              onClick={handleOpenCreateModal}
-              className="bg-[#FF5500] hover:bg-[#e04b00] text-white font-bold shadow-sm"
-              leftIcon={
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-                </svg>
-              }
-            >
-              + Tambah Barang ATK
-            </Button>
-          </div>
-        </div>
-
         {/* ─── METRIC CARDS ─── */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
-          <div className="p-4 bg-white rounded-2xl border border-slate-200/80 shadow-2xs">
-            <p className="text-xs font-semibold text-slate-500">Total Jenis Barang</p>
-            <p className="text-2xl font-extrabold text-slate-900 mt-1">{items.length}</p>
-            <p className="text-[10px] text-slate-400 mt-0.5">Katalog terdaftar di sistem</p>
+          <div className="p-4 bg-white rounded-[10px] border border-[#ebeef2] shadow-[0px_1px_3px_0px_rgba(96,108,128,0.05)]">
+            <p className="text-xs font-semibold text-[#606c80]">Total Jenis Barang</p>
+            <p className="text-2xl font-bold text-[#323c4d] mt-1">{items.length}</p>
+            <p className="text-[11px] text-[#606c80] mt-0.5">Katalog terdaftar di sistem</p>
           </div>
 
-          <div className="p-4 bg-white rounded-2xl border border-slate-200/80 shadow-2xs">
-            <p className="text-xs font-semibold text-emerald-600">Stok Tersedia (&gt;5)</p>
-            <p className="text-2xl font-extrabold text-emerald-700 mt-1">{readyCount}</p>
-            <p className="text-[10px] text-slate-400 mt-0.5">Siap didistribusikan</p>
+          <div className="p-4 bg-white rounded-[10px] border border-[#ebeef2] shadow-[0px_1px_3px_0px_rgba(96,108,128,0.05)]">
+            <p className="text-xs font-semibold text-[#01923f]">Stok Tersedia (&gt;5)</p>
+            <p className="text-2xl font-bold text-[#01923f] mt-1">{readyCount}</p>
+            <p className="text-[11px] text-[#606c80] mt-0.5">Siap didistribusikan</p>
           </div>
 
-          <div className="p-4 bg-white rounded-2xl border border-slate-200/80 shadow-2xs">
+          <div className="p-4 bg-white rounded-[10px] border border-[#ebeef2] shadow-[0px_1px_3px_0px_rgba(96,108,128,0.05)]">
             <p className="text-xs font-semibold text-amber-600">Stok Menipis (1-5)</p>
-            <p className="text-2xl font-extrabold text-amber-700 mt-1">{lowCount}</p>
-            <p className="text-[10px] text-slate-400 mt-0.5">Perlu pengadaan ulang</p>
+            <p className="text-2xl font-bold text-amber-700 mt-1">{lowCount}</p>
+            <p className="text-[11px] text-[#606c80] mt-0.5">Perlu pengadaan ulang</p>
           </div>
 
-          <div className="p-4 bg-white rounded-2xl border border-slate-200/80 shadow-2xs">
+          <div className="p-4 bg-white rounded-[10px] border border-[#ebeef2] shadow-[0px_1px_3px_0px_rgba(96,108,128,0.05)]">
             <p className="text-xs font-semibold text-rose-600">Stok Kosong (0)</p>
-            <p className="text-2xl font-extrabold text-rose-700 mt-1">{emptyCount}</p>
-            <p className="text-[10px] text-slate-400 mt-0.5">Tidak tersedia di gudang</p>
+            <p className="text-2xl font-bold text-rose-700 mt-1">{emptyCount}</p>
+            <p className="text-[11px] text-[#606c80] mt-0.5">Tidak tersedia di gudang</p>
           </div>
         </div>
 
@@ -494,7 +417,23 @@ export default function AdminStokPage() {
         </Card>
 
         {/* ─── TABLE ─── */}
-        <Card noPadding>
+        <Card
+          title="Stok Barang Gudang"
+          subtitle="Daftar inventaris alat tulis kantor yang terdaftar di sistem"
+          action={
+            <button
+              type="button"
+              onClick={handleOpenCreateModal}
+              className="inline-flex items-center gap-1.5 px-3.5 h-9 rounded-[8px] bg-[#ff8f00] hover:bg-[#e07d00] text-white text-xs font-bold transition shadow-2xs cursor-pointer"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+              </svg>
+              <span>+ Tambah Barang</span>
+            </button>
+          }
+          noPadding
+        >
           <Table
             columns={columns}
             data={filteredItems}
@@ -504,8 +443,8 @@ export default function AdminStokPage() {
           />
 
           {/* Table Footer */}
-          <div className="px-5 py-3 bg-slate-50 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
-            <span>Total Unit Fisik Gudang: <b className="text-slate-800">{totalUnits} Unit</b></span>
+          <div className="px-5 py-3 bg-slate-50/70 border-t border-[#ebeef2] flex items-center justify-between text-xs text-[#606c80]">
+            <span>Total Unit Fisik Gudang: <b className="text-[#323c4d]">{totalUnits} Unit</b></span>
             <span>Menampilkan <b>{filteredItems.length}</b> dari {items.length} jenis barang</span>
           </div>
         </Card>
@@ -516,11 +455,32 @@ export default function AdminStokPage() {
         isOpen={formModalOpen}
         onClose={() => setFormModalOpen(false)}
         title={editingItem ? "Edit Data Barang ATK" : "Tambah Jenis Barang ATK Baru"}
+        subtitle={editingItem ? "Perbarui spesifikasi dan kuantiti stok barang" : "Daftarkan jenis alat tulis baru ke katalog master"}
         size="md"
+        footer={
+          <div className="flex items-center justify-end gap-2 w-full">
+            <button
+              type="button"
+              disabled={isSaving}
+              onClick={() => setFormModalOpen(false)}
+              className="px-4 py-2 rounded-[8px] border border-[#ebeef2] text-[#323c4d] hover:bg-slate-50 text-xs font-bold transition cursor-pointer disabled:opacity-50"
+            >
+              Batal
+            </button>
+            <button
+              type="submit"
+              form="form-atk-item"
+              disabled={isSaving}
+              className="px-4 py-2 rounded-[8px] bg-[#ff8f00] hover:bg-[#e07d00] text-white text-xs font-bold transition shadow-2xs cursor-pointer disabled:opacity-50"
+            >
+              {isSaving ? "Menyimpan..." : editingItem ? "Simpan Perubahan" : "+ Tambah ke Katalog"}
+            </button>
+          </div>
+        }
       >
-        <form onSubmit={handleSaveItem} className="space-y-4">
+        <form id="form-atk-item" onSubmit={handleSaveItem} className="space-y-4">
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">
+            <label className="block text-xs font-bold text-[#323c4d] mb-1">
               Nama Barang ATK <span className="text-red-500">*</span>
             </label>
             <Input
@@ -533,7 +493,7 @@ export default function AdminStokPage() {
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">
+              <label className="block text-xs font-bold text-[#323c4d] mb-1">
                 Satuan Standar <span className="text-red-500">*</span>
               </label>
               <Select
@@ -555,7 +515,7 @@ export default function AdminStokPage() {
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">
+              <label className="block text-xs font-bold text-[#323c4d] mb-1">
                 {editingItem ? "Jumlah Stok Saat Ini" : "Jumlah Stok Awal"} <span className="text-red-500">*</span>
               </label>
               <Input
@@ -570,34 +530,14 @@ export default function AdminStokPage() {
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">
-              Deskripsi / Spesifikasi <span className="text-slate-400 font-normal">(Opsional)</span>
+            <label className="block text-xs font-bold text-[#323c4d] mb-1">
+              Deskripsi / Spesifikasi <span className="text-[#606c80] font-normal">(Opsional)</span>
             </label>
             <Input
               placeholder="Contoh: Warna Putih, 1 Box isi 10 pcs..."
               value={formDescription}
               onChange={(e) => setFormDescription(e.target.value)}
             />
-          </div>
-
-          <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => setFormModalOpen(false)}
-            >
-              Batal
-            </Button>
-            <Button
-              type="submit"
-              variant="primary"
-              size="sm"
-              isLoading={isSaving}
-              className="bg-[#FF5500] hover:bg-[#e04b00]"
-            >
-              {editingItem ? "Simpan Perubahan" : "+ Tambah ke Katalog"}
-            </Button>
           </div>
         </form>
       </Modal>
@@ -607,20 +547,41 @@ export default function AdminStokPage() {
         isOpen={stockModalOpen}
         onClose={() => setStockModalOpen(false)}
         title="Sesuaikan Stok Fisik Barang"
+        subtitle={stockTargetItem ? `Barang: ${stockTargetItem.name}` : undefined}
         size="sm"
+        footer={
+          <div className="flex items-center justify-end gap-2 w-full">
+            <button
+              type="button"
+              disabled={isUpdatingStock}
+              onClick={() => setStockModalOpen(false)}
+              className="px-4 py-2 rounded-[8px] border border-[#ebeef2] text-[#323c4d] hover:bg-slate-50 text-xs font-bold transition cursor-pointer disabled:opacity-50"
+            >
+              Batal
+            </button>
+            <button
+              type="button"
+              disabled={isUpdatingStock}
+              onClick={handleSaveQuickStock}
+              className="px-4 py-2 rounded-[8px] bg-[#ff8f00] hover:bg-[#e07d00] text-white text-xs font-bold transition shadow-2xs cursor-pointer disabled:opacity-50"
+            >
+              {isUpdatingStock ? "Menyimpan..." : "Simpan Perubahan"}
+            </button>
+          </div>
+        }
       >
         {stockTargetItem && (
           <div className="space-y-4">
-            <div className="p-3 bg-slate-50 rounded-xl border border-slate-200/70">
-              <p className="text-xs text-slate-400 font-medium">Barang:</p>
-              <p className="text-sm font-bold text-slate-900">{stockTargetItem.name}</p>
-              <p className="text-xs text-slate-500 mt-1">
-                Stok Sekarang: <b className="text-slate-900">{stockTargetItem.stock} {stockTargetItem.unit}</b>
+            <div className="p-3 bg-slate-50 rounded-[8px] border border-[#ebeef2]">
+              <p className="text-[11px] text-[#606c80] font-semibold">Barang yang disesuaikan:</p>
+              <p className="text-sm font-bold text-[#323c4d] mt-0.5">{stockTargetItem.name}</p>
+              <p className="text-xs text-[#606c80] mt-1">
+                Stok Sekarang: <b className="text-[#323c4d]">{stockTargetItem.stock} {stockTargetItem.unit}</b>
               </p>
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">
+              <label className="block text-xs font-bold text-[#323c4d] mb-1">
                 Masukkan Angka Stok Baru:
               </label>
               <Input
@@ -633,55 +594,36 @@ export default function AdminStokPage() {
             </div>
 
             {/* Quick shortcuts */}
-            <div className="flex flex-wrap gap-1.5">
-              <span className="text-[11px] text-slate-400 self-center mr-1">Shortcut:</span>
+            <div className="flex flex-wrap gap-1.5 items-center">
+              <span className="text-[11px] text-[#606c80] font-semibold mr-1">Shortcut:</span>
               <button
                 type="button"
                 onClick={() => setNewStockValue("0")}
-                className="px-2 py-0.5 rounded bg-rose-50 text-rose-700 text-xs font-bold border border-rose-200 cursor-pointer"
+                className="px-2 py-1 rounded-[6px] bg-rose-50 text-rose-700 text-xs font-bold border border-rose-200 hover:bg-rose-100 transition cursor-pointer"
               >
                 Set 0 (Habis)
               </button>
               <button
                 type="button"
                 onClick={() => setNewStockValue(String((parseInt(newStockValue, 10) || 0) + 10))}
-                className="px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 text-xs font-bold border border-emerald-200 cursor-pointer"
+                className="px-2 py-1 rounded-[6px] bg-emerald-50 text-emerald-700 text-xs font-bold border border-emerald-200 hover:bg-emerald-100 transition cursor-pointer"
               >
                 +10
               </button>
               <button
                 type="button"
                 onClick={() => setNewStockValue(String((parseInt(newStockValue, 10) || 0) + 50))}
-                className="px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 text-xs font-bold border border-emerald-200 cursor-pointer"
+                className="px-2 py-1 rounded-[6px] bg-emerald-50 text-emerald-700 text-xs font-bold border border-emerald-200 hover:bg-emerald-100 transition cursor-pointer"
               >
                 +50
               </button>
               <button
                 type="button"
                 onClick={() => setNewStockValue(String((parseInt(newStockValue, 10) || 0) + 100))}
-                className="px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 text-xs font-bold border border-emerald-200 cursor-pointer"
+                className="px-2 py-1 rounded-[6px] bg-emerald-50 text-emerald-700 text-xs font-bold border border-emerald-200 hover:bg-emerald-100 transition cursor-pointer"
               >
                 +100
               </button>
-            </div>
-
-            <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setStockModalOpen(false)}
-              >
-                Batal
-              </Button>
-              <Button
-                variant="primary"
-                size="sm"
-                isLoading={isUpdatingStock}
-                onClick={handleSaveQuickStock}
-                className="bg-[#FF5500] hover:bg-[#e04b00]"
-              >
-                Simpan Perubahan Stok
-              </Button>
             </div>
           </div>
         )}
@@ -693,67 +635,40 @@ export default function AdminStokPage() {
         onClose={() => setDeleteTarget(null)}
         title="Hapus Barang ATK"
         size="sm"
+        footer={
+          <div className="flex items-center justify-end gap-2 w-full">
+            <button
+              type="button"
+              disabled={isDeleting}
+              onClick={() => setDeleteTarget(null)}
+              className="px-4 py-2 rounded-[8px] border border-[#ebeef2] text-[#323c4d] hover:bg-slate-50 text-xs font-bold transition cursor-pointer disabled:opacity-50"
+            >
+              Batal
+            </button>
+            <button
+              type="button"
+              disabled={isDeleting}
+              onClick={handleDeleteItem}
+              className="px-4 py-2 rounded-[8px] bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition shadow-2xs cursor-pointer disabled:opacity-50"
+            >
+              {isDeleting ? "Menghapus..." : "Ya, Hapus Barang"}
+            </button>
+          </div>
+        }
       >
         {deleteTarget && (
-          <div className="space-y-4">
-            <p className="text-xs text-slate-600 leading-relaxed">
-              Apakah Anda yakin ingin menghapus barang <b>"{deleteTarget.name}"</b> dari katalog sistem?
-            </p>
-
-            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setDeleteTarget(null)}
-              >
-                Batal
-              </Button>
-              <Button
-                variant="danger"
-                size="sm"
-                isLoading={isDeleting}
-                onClick={handleDeleteItem}
-              >
-                Ya, Hapus Barang
-              </Button>
+          <div className="flex items-start gap-3 p-3.5 bg-red-50 border border-red-200 rounded-[8px] text-red-900 text-xs font-medium">
+            <svg className="w-5 h-5 text-red-600 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+            <div>
+              <p className="font-bold text-red-950">Konfirmasi Hapus Barang</p>
+              <p className="mt-1 leading-relaxed text-red-800">
+                Apakah Anda yakin ingin menghapus barang <b>"{deleteTarget.name}"</b> dari katalog sistem? Tindakan ini permanen.
+              </p>
             </div>
           </div>
         )}
-      </Modal>
-
-      {/* ─── MODAL 4: DELETE ALL ITEMS CONFIRMATION ─── */}
-      <Modal
-        isOpen={deleteAllModalOpen}
-        onClose={() => setDeleteAllModalOpen(false)}
-        title="Kosongkan Seluruh Katalog ATK"
-        size="sm"
-      >
-        <div className="space-y-4">
-          <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-900 leading-relaxed">
-            ⚠️ <b>Peringatan:</b> Tindakan ini akan menghapus <b>seluruh {items.length} jenis barang</b> yang ada di sistem logistik.
-          </div>
-          <p className="text-xs text-slate-600">
-            Apakah Anda yakin ingin mengosongkan katalog agar dapat diisi ulang secara manual?
-          </p>
-
-          <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setDeleteAllModalOpen(false)}
-            >
-              Batal
-            </Button>
-            <Button
-              variant="danger"
-              size="sm"
-              isLoading={isDeleting}
-              onClick={handleDeleteAllItems}
-            >
-              Ya, Kosongkan Semua
-            </Button>
-          </div>
-        </div>
       </Modal>
     </AdminLayout>
   );
