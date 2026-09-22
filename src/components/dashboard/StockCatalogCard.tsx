@@ -34,9 +34,9 @@ export const StockCatalogCard: React.FC<StockCatalogCardProps> = ({
   }, []);
 
   return (
-    <div className="bg-white rounded-[12px] border border-[#ebeef2] shadow-[0px_1px_3px_0px_rgba(96,108,128,0.05)] p-5 sm:p-6 flex flex-col transition-all duration-200 min-h-[580px]">
+    <div className="bg-white rounded-[12px] border border-[#ebeef2] shadow-[0px_1px_3px_0px_rgba(96,108,128,0.05)] p-5 sm:p-6 flex flex-col relative transition-all duration-200 h-full min-h-[460px] lg:min-h-0">
       {/* Card Header */}
-      <div className="flex items-center justify-between pb-5 border-b border-[#ebeef2]">
+      <div className="flex items-center justify-between pb-5 border-b border-[#ebeef2] shrink-0">
         <div className="flex items-center gap-3">
           {/* 3D Isometric Cube Icon */}
           <div className="w-10 h-10 rounded-xl bg-indigo-50/60 border border-indigo-100/80 flex items-center justify-center text-indigo-600 shadow-2xs">
@@ -139,7 +139,7 @@ export const StockCatalogCard: React.FC<StockCatalogCardProps> = ({
       </div>
 
       {/* Stock Items Content List */}
-      <div className="flex-1 overflow-y-auto mt-4 pr-1 divide-y divide-slate-100 max-h-[500px]">
+      <div className="flex-1 overflow-y-auto mt-4 pr-1 divide-y divide-slate-100 min-h-0">
         {loading ? (
           <div className="py-20 text-center">
             <div className="w-8 h-8 border-3 border-orange-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
@@ -197,7 +197,7 @@ export const StockCatalogCard: React.FC<StockCatalogCardProps> = ({
       </div>
 
       {/* Card Footer Summary */}
-      <div className="pt-4 border-t border-slate-100 mt-auto flex items-center justify-between text-xs text-slate-500 font-medium">
+      <div className="pt-4 border-t border-slate-100 mt-auto flex items-center justify-between text-xs text-slate-500 font-medium shrink-0">
         <span>Total: <b className="text-slate-800">{items.length}</b> barang ATK</span>
         <span className="text-[11px] text-slate-400">Pembaruan otomatis real-time</span>
       </div>

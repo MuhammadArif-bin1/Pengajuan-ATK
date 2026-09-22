@@ -256,7 +256,7 @@ export default function DashboardPengajuanPage() {
       />
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col lg:pl-64 min-w-0">
+      <div className="flex-1 flex flex-col lg:pl-64 min-w-0 min-h-screen">
         {/* Top Navbar Header */}
         <DashboardHeader
           onOpenSidebar={() => setSidebarOpen(true)}
@@ -277,7 +277,7 @@ export default function DashboardPengajuanPage() {
 
         {/* Active Search Filter Banner */}
         {debouncedSearch && (
-          <div className="px-4 sm:px-8 pt-4">
+          <div className="px-4 sm:px-8 pt-4 shrink-0">
             <div className="bg-orange-50 border border-orange-200/80 rounded-2xl px-4 py-2.5 flex items-center justify-between text-xs text-orange-900">
               <div className="flex items-center gap-2">
                 <span className="font-bold">🔍 Hasil Pencarian:</span>
@@ -303,8 +303,8 @@ export default function DashboardPengajuanPage() {
         )}
 
         {/* Main 2-Column Dashboard Cards */}
-        <main className="flex-1 p-4 sm:p-8">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 flex flex-col min-h-0">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch flex-1 min-h-0">
             {/* Column 1: Stok Barang ATK */}
             <StockCatalogCard
               items={filteredStockItems}
