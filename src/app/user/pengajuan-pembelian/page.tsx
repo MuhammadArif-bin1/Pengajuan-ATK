@@ -4,7 +4,6 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Sidebar } from "@/components/layout/Sidebar";
-import { Modal } from "@/components/ui/Modal";
 import { useToast } from "@/components/ui/Toast";
 import { playNotificationSound } from "@/lib/notificationSound";
 
@@ -50,16 +49,6 @@ export default function PengajuanPembelianPage() {
   const [notifDropdownOpen, setNotifDropdownOpen] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(true);
   const notifDropdownRef = useRef<HTMLDivElement>(null);
-
-  // Fast Track Modal State
-  const [fastTrackOpen, setFastTrackOpen] = useState(false);
-  const [ftApplicantName, setFtApplicantName] = useState("");
-  const [ftDepartment, setFtDepartment] = useState("");
-  const [ftPosition, setFtPosition] = useState("");
-  const [ftItemName, setFtItemName] = useState("");
-  const [ftQuantity, setFtQuantity] = useState("1");
-  const [ftReason, setFtReason] = useState("");
-  const [ftSubmitting, setFtSubmitting] = useState(false);
 
   // Fetch notifications in background (khusus pembelian)
   const fetchNotifs = useCallback(async () => {
@@ -218,54 +207,6 @@ export default function PengajuanPembelianPage() {
     }
   };
 
-  // Fast Track Submit
-  const handleFastTrackSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!ftApplicantName.trim() || !ftDepartment.trim() || !ftItemName.trim()) {
-      toast.error("Mohon lengkapi data nama, departemen, dan nama barang.");
-      return;
-    }
-
-    const qty = parseInt(ftQuantity, 10);
-    if (!qty || qty < 1) {
-      toast.error("Jumlah barang minimal 1.");
-      return;
-    }
-
-    try {
-      setFtSubmitting(true);
-      const res = await fetch("/api/requests", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          userName: ftApplicantName.trim(),
-          department: ftDepartment.trim(),
-          position: ftPosition.trim() || "Karyawan",
-          items: [{ itemName: ftItemName.trim(), quantity: qty }],
-          reason: `[FAST TRACK] ${ftReason.trim() || "Kebutuhan mendesak operasional"}`,
-        }),
-      });
-
-      const json = await res.json();
-      if (!res.ok) {
-        toast.error(json.error || "Gagal mengirim permohonan Fast Track");
-        return;
-      }
-
-      toast.success("🚀 Permohonan Fast Track berhasil diajukan!");
-      setFastTrackOpen(false);
-      setFtItemName("");
-      setFtQuantity("1");
-      setFtReason("");
-      router.push("/");
-    } catch (err) {
-      console.error(err);
-      toast.error("Terjadi kendala saat mengirim permohonan");
-    } finally {
-      setFtSubmitting(false);
-    }
-  };
-
   return (
     <div className="min-h-screen bg-[#F8FAFC] flex font-sans antialiased text-slate-800">
       {/* Sidebar Navigation */}
@@ -275,7 +216,6 @@ export default function PengajuanPembelianPage() {
         onClose={() => setSidebarOpen(false)}
         activeTab="purchase"
         purchaseBadgeCount={unreadCount}
-        onFastTrackClick={() => setFastTrackOpen(true)}
       />
 
       {/* Main Content Area */}
@@ -598,109 +538,6 @@ export default function PengajuanPembelianPage() {
           </div>
         </main>
       </div>
-
-      {/* ══════════════════════════════════════════════════════
-          MODAL: FAST TRACK (EXPRESS REQUEST)
-      ══════════════════════════════════════════════════════ */}
-      <Modal
-        isOpen={fastTrackOpen}
-        onClose={() => setFastTrackOpen(false)}
-        title="Fast Track Pengajuan ATK"
-        subtitle="Permohonan Kilat untuk Kebutuhan Mendesak"
-        size="md"
-        footer={
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={() => setFastTrackOpen(false)}
-              className="px-4 py-2.5 text-xs font-bold text-slate-600 hover:text-slate-900 rounded-xl hover:bg-slate-100 transition cursor-pointer"
-            >
-              Batal
-            </button>
-            <button
-              type="button"
-              onClick={handleFastTrackSubmit}
-              disabled={ftSubmitting}
-              className="px-5 py-2.5 text-xs font-bold text-white bg-[#37aee2] hover:bg-[#289ecf] rounded-xl transition shadow-sm cursor-pointer disabled:opacity-50"
-            >
-              {ftSubmitting ? "Mengirim..." : "Kirim Pengajuan Kilat"}
-            </button>
-          </div>
-        }
-      >
-        <form onSubmit={handleFastTrackSubmit} className="space-y-4 py-1">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">
-                Nama Pemohon <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                required
-                value={ftApplicantName}
-                onChange={(e) => setFtApplicantName(e.target.value)}
-                placeholder="cth. Budi Pratama"
-                className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-xs text-slate-900 font-medium bg-white focus:outline-none focus:ring-2 focus:ring-[#37aee2]/40 focus:border-[#37aee2] transition"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">
-                Departemen / Divisi <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                required
-                value={ftDepartment}
-                onChange={(e) => setFtDepartment(e.target.value)}
-                placeholder="cth. Operasional / TI"
-                className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-xs text-slate-900 font-medium bg-white focus:outline-none focus:ring-2 focus:ring-[#37aee2]/40 focus:border-[#37aee2] transition"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <div className="sm:col-span-2">
-              <label className="block text-xs font-bold text-slate-700 mb-1">
-                Nama Barang ATK <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                required
-                value={ftItemName}
-                onChange={(e) => setFtItemName(e.target.value)}
-                placeholder="cth. Kertas A4 70gr"
-                className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-xs text-slate-900 font-medium bg-white focus:outline-none focus:ring-2 focus:ring-[#37aee2]/40 focus:border-[#37aee2] transition"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">
-                Jumlah <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="number"
-                min="1"
-                required
-                value={ftQuantity}
-                onChange={(e) => setFtQuantity(e.target.value)}
-                className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-xs text-slate-900 font-medium bg-white focus:outline-none focus:ring-2 focus:ring-[#37aee2]/40 focus:border-[#37aee2] transition"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1">
-              Alasan Pengajuan Kilat
-            </label>
-            <textarea
-              rows={2}
-              value={ftReason}
-              onChange={(e) => setFtReason(e.target.value)}
-              placeholder="Alasan kebutuhan mendesak..."
-              className="w-full rounded-xl border border-slate-200 px-3.5 py-2 text-xs text-slate-900 font-medium bg-white focus:outline-none focus:ring-2 focus:ring-[#37aee2]/40 focus:border-[#37aee2] transition resize-none"
-            />
-          </div>
-        </form>
-      </Modal>
     </div>
   );
 }

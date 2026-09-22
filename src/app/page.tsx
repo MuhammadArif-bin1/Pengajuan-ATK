@@ -9,7 +9,6 @@ import { playNotificationSound } from "@/lib/notificationSound";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { StockCatalogCard } from "@/components/dashboard/StockCatalogCard";
 import { QueueListCard } from "@/components/dashboard/QueueListCard";
-import { FastTrackModal } from "@/components/dashboard/FastTrackModal";
 import { PengajuanAtkModal } from "@/components/dashboard/PengajuanAtkModal";
 import type {
   AtkCatalogItem,
@@ -46,7 +45,6 @@ export default function DashboardPengajuanPage() {
   const [isRinging, setIsRinging] = useState(false);
 
   // Modals
-  const [fastTrackOpen, setFastTrackOpen] = useState(false);
   const [pengajuanAtkOpen, setPengajuanAtkOpen] = useState(false);
 
   // References for Real-time Polling & Sound
@@ -252,7 +250,6 @@ export default function DashboardPengajuanPage() {
           }
         }}
         purchaseBadgeCount={purchaseCount}
-        onFastTrackClick={() => setFastTrackOpen(true)}
       />
 
       {/* Main Content Area */}
@@ -358,12 +355,6 @@ export default function DashboardPengajuanPage() {
           fetchCatalog();
         }}
         soundEnabled={soundEnabled}
-      />
-
-      <FastTrackModal
-        isOpen={fastTrackOpen}
-        onClose={() => setFastTrackOpen(false)}
-        onSuccess={fetchRequests}
       />
     </div>
   );

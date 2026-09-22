@@ -299,11 +299,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
               </>
             ) : (
               <>
-                {/* Fast Track Button - Figma Exact #37aee2 */}
-                <button
-                  type="button"
+                {/* Fast Track Button - Direct Telegram Link */}
+                <a
+                  href="https://t.me/DennyXIX"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   onClick={() => {
                     if (onFastTrackClick) onFastTrackClick();
+                    if (onClose) onClose();
                   }}
                   className="w-full h-14 bg-[#37aee2] hover:bg-[#289ecf] text-white rounded-[10px] flex items-center px-4 gap-3.5 shadow-sm transition-all duration-150 cursor-pointer active:scale-[0.98] group"
                 >
@@ -315,7 +318,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   <span className="font-black text-lg text-white tracking-wide">
                     Fast Track
                   </span>
-                </button>
+                </a>
 
                 {/* Admin Button - Figma Exact #ff8f00 */}
                 <Link
