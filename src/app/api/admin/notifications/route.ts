@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { getSession } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   try {
     const session = await getSession();
@@ -35,8 +37,9 @@ export async function GET() {
     });
 
     const notifications = requests.map((req) => {
-      const isPurchase = req.reason.includes("[PENGAJUAN PEMBELIAN ATK BARU]");
-      let cleanReason = req.reason.replace("[PENGAJUAN PEMBELIAN ATK BARU]", "").trim();
+      const reasonText = req.reason || "";
+      const isPurchase = reasonText.includes("[PENGAJUAN PEMBELIAN ATK BARU]");
+      let cleanReason = reasonText.replace("[PENGAJUAN PEMBELIAN ATK BARU]", "").trim();
       if (cleanReason.startsWith("Alasan:")) {
         cleanReason = cleanReason.replace(/^Alasan:\s*/, "").trim();
       }
@@ -45,12 +48,12 @@ export async function GET() {
         id: req.id,
         type: isPurchase ? ("purchase" as const) : ("regular" as const),
         typeLabel: isPurchase ? "Pengajuan Pembelian ATK" : "Permintaan ATK Gudang",
-        userName: req.user.name,
-        department: req.user.department,
-        position: req.user.position,
-        itemName: req.atkItem.name,
+        userName: req.user?.name || "Karyawan",
+        department: req.user?.department || "-",
+        position: req.user?.position || "-",
+        itemName: req.atkItem?.name || "Barang ATK",
         quantity: req.quantity,
-        unit: req.atkItem.unit || "pcs",
+        unit: req.atkItem?.unit || "pcs",
         reason: cleanReason,
         status: req.status,
         createdAt: req.createdAt.toISOString(),

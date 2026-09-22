@@ -34,6 +34,12 @@ export const NotificationDropdown: React.FC = () => {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const knownIdsRef = useRef<Set<string>>(new Set());
   const isInitialLoadRef = useRef(true);
+  const isFetchingRef = useRef(false);
+  const soundEnabledRef = useRef(soundEnabled);
+
+  useEffect(() => {
+    soundEnabledRef.current = soundEnabled;
+  }, [soundEnabled]);
 
   // Load readIds & sound preferences from localStorage on mount
   useEffect(() => {
@@ -62,8 +68,14 @@ export const NotificationDropdown: React.FC = () => {
 
   // Fetch notifications
   const fetchNotifications = useCallback(async () => {
+    // Prevent overlapping fetches (e.g. during slow networks or initial compilation)
+    if (isFetchingRef.current) return;
+    isFetchingRef.current = true;
+
     try {
-      const res = await fetch("/api/admin/notifications");
+      const res = await fetch("/api/admin/notifications", {
+        cache: "no-store",
+      });
       if (!res.ok) return;
       const data = await res.json();
       if (!data.success || !Array.isArray(data.data)) return;
@@ -75,7 +87,7 @@ export const NotificationDropdown: React.FC = () => {
         const newest = incomingList[0];
         if (!knownIdsRef.current.has(newest.id)) {
           // Play sound
-          if (soundEnabled) {
+          if (soundEnabledRef.current) {
             playNotificationSound();
           }
 
@@ -106,17 +118,28 @@ export const NotificationDropdown: React.FC = () => {
       isInitialLoadRef.current = false;
 
       setNotifications(incomingList);
-    } catch (err) {
-      console.error("Fetch notifications error:", err);
+    } catch {
+      // Quietly ignore transient network issues or compilation pauses during development
+    } finally {
+      isFetchingRef.current = false;
     }
-  }, [soundEnabled]);
+  }, []);
 
-  // Polling every 4 seconds + on window focus
+  // Safe background auto-refresh every 15s (only when tab is visible) + on window focus
   useEffect(() => {
     fetchNotifications();
 
-    const interval = setInterval(fetchNotifications, 4000);
-    const handleFocus = () => fetchNotifications();
+    const interval = setInterval(() => {
+      if (document.visibilityState === "visible") {
+        fetchNotifications();
+      }
+    }, 15000);
+
+    const handleFocus = () => {
+      if (document.visibilityState === "visible") {
+        fetchNotifications();
+      }
+    };
 
     window.addEventListener("focus", handleFocus);
     return () => {
