@@ -10,8 +10,8 @@ import type { AtkRequestData, RequestStatusType } from "@/types/request";
 export default function AdminDashboardPage() {
   const toast = useToast();
   const [stats, setStats] = useState({
-    regular: { total: 0, menunggu: 0, disetujui: 0, diproses: 0, selesai: 0, ditolak: 0 },
-    purchase: { total: 0, menunggu: 0, disetujui: 0, diproses: 0, selesai: 0, ditolak: 0 },
+    regular: { total: 0, diproses: 0, selesai: 0, ditolak: 0 },
+    purchase: { total: 0, diproses: 0, selesai: 0, ditolak: 0 },
   });
   const [recentRequests, setRecentRequests] = useState<AtkRequestData[]>([]);
   const [loading, setLoading] = useState(true);
@@ -106,31 +106,11 @@ export default function AdminDashboardPage() {
 
   const statusBadge = (status: string) => {
     switch (status) {
-      case "MENUNGGU":
-        return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-[6px] text-[11px] font-bold bg-amber-50 text-amber-700 border border-amber-200/80">
-            <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
-            Menunggu
-          </span>
-        );
+      case "SELESAI":
       case "DISETUJUI":
         return (
           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-[6px] text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/80">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-            Disetujui
-          </span>
-        );
-      case "DIPROSES":
-        return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-[6px] text-[11px] font-bold bg-blue-50 text-blue-700 border border-blue-200/80">
-            <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
-            Diproses
-          </span>
-        );
-      case "SELESAI":
-        return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-[6px] text-[11px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200/80">
-            <span className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
             Selesai
           </span>
         );
@@ -141,10 +121,13 @@ export default function AdminDashboardPage() {
             Ditolak
           </span>
         );
+      case "DIPROSES":
+      case "MENUNGGU":
       default:
         return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-[6px] text-[11px] font-bold bg-slate-50 text-slate-700 border border-slate-200">
-            {status}
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-[6px] text-[11px] font-bold bg-blue-50 text-blue-700 border border-blue-200/80">
+            <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+            Diproses
           </span>
         );
     }
@@ -181,10 +164,6 @@ export default function AdminDashboardPage() {
 
           {/* Status Quick Badges */}
           <div className="mt-5 pt-4 border-t border-[#ebeef2] flex flex-wrap items-center gap-2 text-[11px]">
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-[6px] font-bold bg-amber-50 text-amber-700 border border-amber-200/70">
-              <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-              Menunggu: {stats.regular.menunggu}
-            </span>
             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-[6px] font-bold bg-blue-50 text-blue-700 border border-blue-200/70">
               <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
               Diproses: {stats.regular.diproses}
@@ -192,6 +171,10 @@ export default function AdminDashboardPage() {
             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-[6px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/70">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
               Selesai: {stats.regular.selesai}
+            </span>
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-[6px] font-bold bg-rose-50 text-rose-700 border border-rose-200/70">
+              <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+              Ditolak: {stats.regular.ditolak}
             </span>
           </div>
         </Link>
@@ -223,10 +206,6 @@ export default function AdminDashboardPage() {
 
           {/* Status Quick Badges */}
           <div className="mt-5 pt-4 border-t border-[#ebeef2] flex flex-wrap items-center gap-2 text-[11px]">
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-[6px] font-bold bg-amber-50 text-amber-700 border border-amber-200/70">
-              <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-              Menunggu: {stats.purchase.menunggu}
-            </span>
             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-[6px] font-bold bg-blue-50 text-blue-700 border border-blue-200/70">
               <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
               Diproses: {stats.purchase.diproses}
@@ -234,6 +213,10 @@ export default function AdminDashboardPage() {
             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-[6px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/70">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
               Selesai: {stats.purchase.selesai}
+            </span>
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-[6px] font-bold bg-rose-50 text-rose-700 border border-rose-200/70">
+              <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+              Ditolak: {stats.purchase.ditolak}
             </span>
           </div>
         </Link>
@@ -351,39 +334,15 @@ export default function AdminDashboardPage() {
               </button>
 
               <div className="flex flex-wrap items-center gap-2 justify-end">
-                {selectedRequest.status !== "MENUNGGU" && (
-                  <button
-                    type="button"
-                    disabled={isProcessing}
-                    onClick={() => handleUpdateStatus(selectedRequest.id, "MENUNGGU")}
-                    className="px-3 py-1.5 rounded-[8px] text-xs font-bold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 transition cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
-                  >
-                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-                    <span>Set Menunggu</span>
-                  </button>
-                )}
-
                 {selectedRequest.status !== "DIPROSES" && (
                   <button
                     type="button"
                     disabled={isProcessing}
                     onClick={() => handleUpdateStatus(selectedRequest.id, "DIPROSES")}
-                    className="px-3 py-1.5 rounded-[8px] text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 transition cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
+                    className="px-3.5 py-1.5 rounded-[8px] text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 transition cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
                   >
                     <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
-                    <span>Proses</span>
-                  </button>
-                )}
-
-                {selectedRequest.status !== "SELESAI" && (
-                  <button
-                    type="button"
-                    disabled={isProcessing}
-                    onClick={() => handleUpdateStatus(selectedRequest.id, "SELESAI")}
-                    className="px-3 py-1.5 rounded-[8px] text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 transition cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
-                  >
-                    <span className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
-                    <span>Selesai</span>
+                    <span>Set Diproses</span>
                   </button>
                 )}
 
@@ -399,17 +358,17 @@ export default function AdminDashboardPage() {
                   </button>
                 )}
 
-                {selectedRequest.status !== "DISETUJUI" && (
+                {selectedRequest.status !== "SELESAI" && (
                   <button
                     type="button"
                     disabled={isProcessing}
-                    onClick={() => handleUpdateStatus(selectedRequest.id, "DISETUJUI")}
+                    onClick={() => handleUpdateStatus(selectedRequest.id, "SELESAI")}
                     className="px-4 py-1.5 rounded-[8px] text-xs font-bold text-white bg-[#01923f] hover:bg-[#017a35] shadow-xs transition cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
                   >
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                     </svg>
-                    <span>Setujui Permohonan</span>
+                    <span>Tandai Selesai</span>
                   </button>
                 )}
               </div>

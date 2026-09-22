@@ -170,8 +170,8 @@ export const createPublicRequestSchema = z.object({
 });
 
 export const updateRequestStatusSchema = z.object({
-  status: z.enum(["MENUNGGU", "DISETUJUI", "DITOLAK", "DIPROSES", "SELESAI"], {
-    errorMap: () => ({ message: "Status tidak valid" }),
+  status: z.enum(["DIPROSES", "DITOLAK", "SELESAI"], {
+    errorMap: () => ({ message: "Status tidak valid. Pilih: DIPROSES, DITOLAK, atau SELESAI" }),
   }),
   adminNote: z
     .string()

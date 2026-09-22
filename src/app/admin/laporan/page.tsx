@@ -10,7 +10,15 @@ interface ReportSummary {
   total: number;
   byDepartment: Record<
     string,
-    { total: number; approved: number; inProgress?: number; rejected: number }
+    {
+      total: number;
+      diproses?: number;
+      selesai?: number;
+      ditolak?: number;
+      approved?: number;
+      inProgress?: number;
+      rejected?: number;
+    }
   >;
   byItem: Record<string, { total: number; quantity: number; unit?: string }>;
 }
@@ -122,9 +130,12 @@ export default function AdminLaporanPage() {
         ([dept, val]) => ({
           department: dept,
           total: val.total,
-          approved: val.approved,
-          inProgress: val.inProgress || 0,
-          rejected: val.rejected,
+          diproses: val.diproses ?? val.inProgress ?? 0,
+          selesai: val.selesai ?? val.approved ?? 0,
+          ditolak: val.ditolak ?? val.rejected ?? 0,
+          approved: val.selesai ?? val.approved ?? 0,
+          inProgress: val.diproses ?? val.inProgress ?? 0,
+          rejected: val.ditolak ?? val.rejected ?? 0,
         })
       );
 
@@ -162,8 +173,11 @@ export default function AdminLaporanPage() {
     return Object.entries(reportData.summary.byDepartment).map(([dept, val]) => ({
       department: dept,
       total: val.total,
-      approved: val.approved,
-      rejected: val.rejected,
+      diproses: val.diproses ?? val.inProgress ?? 0,
+      selesai: val.selesai ?? val.approved ?? 0,
+      ditolak: val.ditolak ?? val.rejected ?? 0,
+      approved: val.selesai ?? val.approved ?? 0,
+      rejected: val.ditolak ?? val.rejected ?? 0,
     }));
   }, [reportData.summary.byDepartment]);
 
@@ -176,8 +190,8 @@ export default function AdminLaporanPage() {
     }));
   }, [reportData.summary.byItem]);
 
-  const totalApproved = useMemo(() => {
-    return departmentRows.reduce((acc, curr) => acc + curr.approved, 0);
+  const totalSelesai = useMemo(() => {
+    return departmentRows.reduce((acc, curr) => acc + curr.selesai, 0);
   }, [departmentRows]);
 
   const getCleanReason = (reason: string) => {
@@ -370,14 +384,14 @@ export default function AdminLaporanPage() {
             </div>
           </div>
 
-          {/* Card 4: Disetujui / Selesai */}
+          {/* Card 4: Total Selesai */}
           <div className="bg-white p-4 sm:p-5 rounded-[10px] border border-[#ebeef2] shadow-[0px_1px_3px_0px_rgba(96,108,128,0.05)] flex items-center justify-between">
             <div className="space-y-1">
               <span className="text-[11px] font-semibold text-[#606c80] uppercase tracking-wider">
-                Total Disetujui / Selesai
+                Total Selesai
               </span>
               <p className="text-2xl font-bold text-[#01923f] tracking-tight">
-                {totalApproved}
+                {totalSelesai}
               </p>
               <span className="text-[11px] text-[#606c80] block">
                 Pengajuan terselesaikan
@@ -415,14 +429,15 @@ export default function AdminLaporanPage() {
                   <tr>
                     <th className="px-4 py-3">Departemen</th>
                     <th className="px-4 py-3 text-center">Total</th>
-                    <th className="px-4 py-3 text-center">Disetujui</th>
+                    <th className="px-4 py-3 text-center">Diproses</th>
+                    <th className="px-4 py-3 text-center">Selesai</th>
                     <th className="px-4 py-3 text-center">Ditolak</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#ebeef2]">
                   {departmentRows.length === 0 ? (
                     <tr>
-                      <td colSpan={4} className="px-4 py-8 text-center text-[#606c80]">
+                      <td colSpan={5} className="px-4 py-8 text-center text-[#606c80]">
                         Tidak ada data pada parameter filter ini.
                       </td>
                     </tr>
@@ -441,13 +456,18 @@ export default function AdminLaporanPage() {
                           </span>
                         </td>
                         <td className="px-4 py-3.5 text-center">
+                          <span className="inline-block px-2 py-0.5 rounded-[6px] bg-blue-50 text-blue-700 border border-blue-200 font-bold text-[11px]">
+                            {r.diproses}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3.5 text-center">
                           <span className="inline-block px-2 py-0.5 rounded-[6px] bg-emerald-50 text-[#01923f] border border-emerald-200 font-bold text-[11px]">
-                            {r.approved}
+                            {r.selesai}
                           </span>
                         </td>
                         <td className="px-4 py-3.5 text-center">
                           <span className="inline-block px-2 py-0.5 rounded-[6px] bg-rose-50 text-rose-700 border border-rose-200 font-bold text-[11px]">
-                            {r.rejected}
+                            {r.ditolak}
                           </span>
                         </td>
                       </tr>

@@ -169,27 +169,15 @@ export default function DetailPengajuanAdminPage() {
 
             <Card title="Ubah Status Pengajuan">
               <div className="flex flex-wrap items-center gap-2">
-                {request.status !== "MENUNGGU" && (
-                  <button
-                    type="button"
-                    disabled={isProcessing}
-                    onClick={() => handleUpdateStatus("MENUNGGU")}
-                    className="px-3 py-1.5 rounded-[8px] text-xs font-bold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 transition cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
-                  >
-                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-                    <span>Set Menunggu</span>
-                  </button>
-                )}
-
                 {request.status !== "DIPROSES" && (
                   <button
                     type="button"
                     disabled={isProcessing}
                     onClick={() => handleUpdateStatus("DIPROSES")}
-                    className="px-3 py-1.5 rounded-[8px] text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 transition cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
+                    className="px-3.5 py-2 rounded-[8px] text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 transition cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
                   >
                     <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
-                    <span>Mulai Proses</span>
+                    <span>Set Diproses</span>
                   </button>
                 )}
 
@@ -198,9 +186,11 @@ export default function DetailPengajuanAdminPage() {
                     type="button"
                     disabled={isProcessing}
                     onClick={() => handleUpdateStatus("SELESAI")}
-                    className="px-3 py-1.5 rounded-[8px] text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 transition cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
+                    className="px-4 py-2 rounded-[8px] text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 shadow-xs transition cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
                   >
-                    <span className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
                     <span>Tandai Selesai</span>
                   </button>
                 )}
@@ -210,24 +200,10 @@ export default function DetailPengajuanAdminPage() {
                     type="button"
                     disabled={isProcessing}
                     onClick={() => setRejectModalOpen(true)}
-                    className="px-3.5 py-1.5 rounded-[8px] text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 shadow-2xs transition cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
+                    className="px-3.5 py-2 rounded-[8px] text-xs font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 transition cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
                   >
                     <span>✕</span>
                     <span>Tolak Pengajuan</span>
-                  </button>
-                )}
-
-                {request.status !== "DISETUJUI" && (
-                  <button
-                    type="button"
-                    disabled={isProcessing}
-                    onClick={() => handleUpdateStatus("DISETUJUI")}
-                    className="px-4 py-1.5 rounded-[8px] text-xs font-bold text-white bg-[#01923f] hover:bg-[#017a35] shadow-xs transition cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
-                  >
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                    </svg>
-                    <span>Setujui Pengajuan</span>
                   </button>
                 )}
               </div>

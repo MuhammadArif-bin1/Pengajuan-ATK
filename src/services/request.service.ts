@@ -88,32 +88,42 @@ export async function createRequest(data: {
     throw new Error("Barang ATK tidak aktif atau tidak ditemukan");
   }
 
-  return prisma.atkRequest.create({
-    data: {
-      userId: targetUserId,
-      atkItemId: data.atkItemId,
-      quantity: data.quantity,
-      reason: data.reason,
-      status: "MENUNGGU",
-    },
-    include: {
-      user: {
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          department: true,
-          position: true,
+  return prisma.$transaction(async (tx) => {
+    // Otomatis kurangi stok gudang saat pengajuan dibuat dengan status DIPROSES
+    await tx.atkItem.update({
+      where: { id: data.atkItemId },
+      data: {
+        stock: Math.max(0, item.stock - data.quantity),
+      },
+    });
+
+    return tx.atkRequest.create({
+      data: {
+        userId: targetUserId,
+        atkItemId: data.atkItemId,
+        quantity: data.quantity,
+        reason: data.reason,
+        status: "DIPROSES",
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            department: true,
+            position: true,
+          },
+        },
+        atkItem: {
+          select: {
+            id: true,
+            name: true,
+            unit: true,
+          },
         },
       },
-      atkItem: {
-        select: {
-          id: true,
-          name: true,
-          unit: true,
-        },
-      },
-    },
+    });
   });
 }
 
@@ -299,16 +309,20 @@ export async function updateRequestStatus(
       : request.adminNote;
 
   return prisma.$transaction(async (tx) => {
-    // If transitioning to DISETUJUI: deduct stock from warehouse
-    if (status === "DISETUJUI" && request.status !== "DISETUJUI") {
+    const isDeducted = (s: string) => s === "DIPROSES" || s === "SELESAI";
+    const wasDeducted = isDeducted(request.status);
+    const willBeDeducted = isDeducted(status);
+
+    // Jika beralih dari non-deducted (DITOLAK) ke deducted (DIPROSES atau SELESAI): kurangi stok
+    if (!wasDeducted && willBeDeducted) {
       const newStock = Math.max(0, request.atkItem.stock - request.quantity);
       await tx.atkItem.update({
         where: { id: request.atkItemId },
         data: { stock: newStock },
       });
     }
-    // If transitioning from DISETUJUI to DITOLAK or MENUNGGU: restore stock back
-    else if (request.status === "DISETUJUI" && (status === "DITOLAK" || status === "MENUNGGU")) {
+    // Jika beralih dari deducted (DIPROSES atau SELESAI) ke non-deducted (DITOLAK): kembalikan stok
+    else if (wasDeducted && !willBeDeducted) {
       await tx.atkItem.update({
         where: { id: request.atkItemId },
         data: { stock: request.atkItem.stock + request.quantity },
@@ -357,27 +371,21 @@ export async function getRequestStats(userId?: string, type?: "purchase" | "regu
     where.NOT = { reason: { contains: "[PENGAJUAN PEMBELIAN ATK BARU]" } };
   }
 
-  const [total, menunggu, disetujui, ditolak, diproses, selesai] =
+  const [total, diproses, selesai, ditolak] =
     await Promise.all([
       prisma.atkRequest.count({ where }),
-      prisma.atkRequest.count({
-        where: { ...where, status: "MENUNGGU" },
-      }),
-      prisma.atkRequest.count({
-        where: { ...where, status: "DISETUJUI" },
-      }),
-      prisma.atkRequest.count({
-        where: { ...where, status: "DITOLAK" },
-      }),
       prisma.atkRequest.count({
         where: { ...where, status: "DIPROSES" },
       }),
       prisma.atkRequest.count({
         where: { ...where, status: "SELESAI" },
       }),
+      prisma.atkRequest.count({
+        where: { ...where, status: "DITOLAK" },
+      }),
     ]);
 
-  return { total, menunggu, disetujui, ditolak, diproses, selesai };
+  return { total, diproses, selesai, ditolak };
 }
 
 export async function getReportData(filters?: {
@@ -428,7 +436,7 @@ export async function getReportData(filters?: {
   // Aggregate by department
   const byDepartment: Record<
     string,
-    { total: number; approved: number; rejected: number; inProgress: number }
+    { total: number; diproses: number; selesai: number; ditolak: number; approved: number; rejected: number; inProgress: number }
   > = {};
   // Aggregate by item
   const byItem: Record<string, { total: number; quantity: number; unit: string }> = {};
@@ -436,14 +444,17 @@ export async function getReportData(filters?: {
   for (const req of requests) {
     const dept = req.user.department || "Umum";
     if (!byDepartment[dept]) {
-      byDepartment[dept] = { total: 0, approved: 0, rejected: 0, inProgress: 0 };
+      byDepartment[dept] = { total: 0, diproses: 0, selesai: 0, ditolak: 0, approved: 0, rejected: 0, inProgress: 0 };
     }
     byDepartment[dept].total++;
-    if (req.status === "DISETUJUI" || req.status === "SELESAI") {
+    if (req.status === "SELESAI") {
+      byDepartment[dept].selesai++;
       byDepartment[dept].approved++;
-    } else if (req.status === "DIPROSES" || req.status === "MENUNGGU") {
+    } else if (req.status === "DIPROSES") {
+      byDepartment[dept].diproses++;
       byDepartment[dept].inProgress++;
     } else if (req.status === "DITOLAK") {
+      byDepartment[dept].ditolak++;
       byDepartment[dept].rejected++;
     }
 

@@ -387,9 +387,7 @@ export default function AdminPengajuanPage() {
                 }}
                 options={[
                   { value: "", label: "Semua Status" },
-                  { value: "MENUNGGU", label: "Menunggu Review" },
-                  { value: "DISETUJUI", label: "Disetujui" },
-                  { value: "DIPROSES", label: "Sedang Diproses" },
+                  { value: "DIPROSES", label: "Diproses" },
                   { value: "SELESAI", label: "Selesai" },
                   { value: "DITOLAK", label: "Ditolak" },
                 ]}
@@ -647,39 +645,15 @@ export default function AdminPengajuanPage() {
               </div>
 
               <div className="flex flex-wrap items-center gap-2 justify-end">
-                {selectedRequest.status !== "MENUNGGU" && (
-                  <button
-                    type="button"
-                    disabled={isProcessing}
-                    onClick={() => handleUpdateStatus(selectedRequest.id, "MENUNGGU")}
-                    className="px-3 py-1.5 rounded-[8px] text-xs font-bold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 transition cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
-                  >
-                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-                    <span>Set Menunggu</span>
-                  </button>
-                )}
-
                 {selectedRequest.status !== "DIPROSES" && (
                   <button
                     type="button"
                     disabled={isProcessing}
                     onClick={() => handleUpdateStatus(selectedRequest.id, "DIPROSES")}
-                    className="px-3 py-1.5 rounded-[8px] text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 transition cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
+                    className="px-3.5 py-1.5 rounded-[8px] text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 transition cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
                   >
                     <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
-                    <span>Proses</span>
-                  </button>
-                )}
-
-                {selectedRequest.status !== "SELESAI" && (
-                  <button
-                    type="button"
-                    disabled={isProcessing}
-                    onClick={() => handleUpdateStatus(selectedRequest.id, "SELESAI")}
-                    className="px-3 py-1.5 rounded-[8px] text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 transition cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
-                  >
-                    <span className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
-                    <span>Selesai</span>
+                    <span>Set Diproses</span>
                   </button>
                 )}
 
@@ -695,17 +669,17 @@ export default function AdminPengajuanPage() {
                   </button>
                 )}
 
-                {selectedRequest.status !== "DISETUJUI" && (
+                {selectedRequest.status !== "SELESAI" && (
                   <button
                     type="button"
                     disabled={isProcessing}
-                    onClick={() => handleUpdateStatus(selectedRequest.id, "DISETUJUI")}
+                    onClick={() => handleUpdateStatus(selectedRequest.id, "SELESAI")}
                     className="px-4 py-1.5 rounded-[8px] text-xs font-bold text-white bg-[#01923f] hover:bg-[#017a35] shadow-xs transition cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
                   >
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                     </svg>
-                    <span>Setujui Permohonan</span>
+                    <span>Tandai Selesai</span>
                   </button>
                 )}
               </div>

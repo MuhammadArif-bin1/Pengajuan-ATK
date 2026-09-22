@@ -72,7 +72,7 @@ export default function PengajuanPembelianPage() {
         if (json.success && Array.isArray(json.data)) {
           setNotifications(json.data);
           const pendingPurchaseCount = json.data.filter(
-            (n: { isPurchase: boolean; status: string }) => n.isPurchase && n.status === "MENUNGGU"
+            (n: { isPurchase: boolean; status: string }) => n.isPurchase && n.status === "DIPROSES"
           ).length;
           setUnreadCount(pendingPurchaseCount || 2);
         }

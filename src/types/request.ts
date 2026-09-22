@@ -3,10 +3,8 @@
 // ===========================================
 
 export type RequestStatusType =
-  | "MENUNGGU"
-  | "DISETUJUI"
-  | "DITOLAK"
   | "DIPROSES"
+  | "DITOLAK"
   | "SELESAI";
 
 export interface AtkRequestData {

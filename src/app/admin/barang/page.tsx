@@ -147,8 +147,8 @@ export default function AdminPengajuanPembelianPage() {
       }
 
       toast.success(
-        status === "DISETUJUI"
-          ? "Pengajuan pembelian berhasil disetujui!"
+        status === "SELESAI"
+          ? "Pengajuan pembelian berhasil diselesaikan!"
           : status === "DITOLAK"
           ? "Pengajuan pembelian berhasil ditolak."
           : `Status pengajuan berhasil diubah menjadi ${status}`
@@ -392,15 +392,15 @@ export default function AdminPengajuanPembelianPage() {
             Review & Aksi
           </button>
 
-          {row.status === "MENUNGGU" && (
+          {row.status === "DIPROSES" && (
             <>
               <button
                 type="button"
-                onClick={() => handleUpdateStatus(row.id, "DISETUJUI")}
-                title="Setujui Pembelian"
+                onClick={() => handleUpdateStatus(row.id, "SELESAI")}
+                title="Selesaikan Pembelian"
                 className="px-2 py-1 rounded-[8px] text-xs font-bold bg-emerald-50 text-[#01923f] border border-emerald-200 hover:bg-emerald-100 transition cursor-pointer"
               >
-                ✓ Setujui
+                ✓ Selesai
               </button>
               <button
                 type="button"
@@ -465,9 +465,7 @@ export default function AdminPengajuanPembelianPage() {
                 }}
                 options={[
                   { value: "", label: "Semua Status" },
-                  { value: "MENUNGGU", label: "Menunggu Review" },
-                  { value: "DISETUJUI", label: "Disetujui" },
-                  { value: "DIPROSES", label: "Sedang Diproses" },
+                  { value: "DIPROSES", label: "Diproses" },
                   { value: "SELESAI", label: "Selesai" },
                   { value: "DITOLAK", label: "Ditolak" },
                 ]}
@@ -724,27 +722,15 @@ export default function AdminPengajuanPembelianPage() {
               </div>
 
               <div className="flex flex-wrap items-center gap-2 justify-end">
-                {selectedRequest.status !== "MENUNGGU" && (
-                  <button
-                    type="button"
-                    disabled={isProcessing}
-                    onClick={() => handleUpdateStatus(selectedRequest.id, "MENUNGGU")}
-                    className="px-3 py-2 rounded-[8px] text-xs font-bold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 transition cursor-pointer flex items-center gap-1 disabled:opacity-50"
-                  >
-                    <span>🟡</span>
-                    <span>Set Menunggu</span>
-                  </button>
-                )}
-
                 {selectedRequest.status !== "DIPROSES" && (
                   <button
                     type="button"
                     disabled={isProcessing}
                     onClick={() => handleUpdateStatus(selectedRequest.id, "DIPROSES")}
-                    className="px-3 py-2 rounded-[8px] text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 transition cursor-pointer flex items-center gap-1 disabled:opacity-50"
+                    className="px-3.5 py-2 rounded-[8px] text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 transition cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
                   >
-                    <span>⚙️</span>
-                    <span>Proses</span>
+                    <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                    <span>Set Diproses</span>
                   </button>
                 )}
 
@@ -753,10 +739,12 @@ export default function AdminPengajuanPembelianPage() {
                     type="button"
                     disabled={isProcessing}
                     onClick={() => handleUpdateStatus(selectedRequest.id, "SELESAI")}
-                    className="px-3 py-2 rounded-[8px] text-xs font-bold text-teal-700 bg-teal-50 hover:bg-teal-100 border border-teal-200 transition cursor-pointer flex items-center gap-1 disabled:opacity-50"
+                    className="px-4 py-2 rounded-[8px] text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 shadow-xs transition cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
                   >
-                    <span>🏁</span>
-                    <span>Selesai</span>
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                    <span>Tandai Selesai</span>
                   </button>
                 )}
 
@@ -765,24 +753,10 @@ export default function AdminPengajuanPembelianPage() {
                     type="button"
                     disabled={isProcessing}
                     onClick={() => setRejectModalOpen(true)}
-                    className="px-3.5 py-2 rounded-[8px] text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 shadow-2xs transition cursor-pointer flex items-center gap-1 disabled:opacity-50"
+                    className="px-3.5 py-2 rounded-[8px] text-xs font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 transition cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
                   >
                     <span>✕</span>
                     <span>Tolak</span>
-                  </button>
-                )}
-
-                {selectedRequest.status !== "DISETUJUI" && (
-                  <button
-                    type="button"
-                    disabled={isProcessing}
-                    onClick={() => handleUpdateStatus(selectedRequest.id, "DISETUJUI")}
-                    className="px-4 py-2 rounded-[8px] text-xs font-bold text-white bg-[#01923f] hover:bg-emerald-700 shadow-2xs transition cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
-                  >
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                    </svg>
-                    <span>Setujui Pembelian</span>
                   </button>
                 )}
               </div>

@@ -20,10 +20,8 @@ enum Role {
 }
 
 enum RequestStatus {
-  MENUNGGU
-  DISETUJUI
-  DITOLAK
   DIPROSES
+  DITOLAK
   SELESAI
 }
 
@@ -72,7 +70,7 @@ model AtkRequest {
   atkItemId   String
   quantity    Int
   reason      String
-  status      RequestStatus @default(MENUNGGU)
+  status      RequestStatus @default(DIPROSES)
   adminNote   String?
   processedBy String?
   processedAt DateTime?

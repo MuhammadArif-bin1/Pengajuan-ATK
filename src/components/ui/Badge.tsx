@@ -26,13 +26,9 @@ export const Badge: React.FC<BadgeProps> = ({
   // Determine badge styling based on request status or variant
   let badgeClasses = "inline-flex items-center font-bold rounded-[6px] ";
 
-  if (status === "MENUNGGU") {
-    badgeClasses += "bg-amber-50 text-amber-700 border border-amber-200/80";
-  } else if (status === "DISETUJUI") {
+  if (status === "DIPROSES" || status === "MENUNGGU") {
     badgeClasses += "bg-blue-50 text-blue-700 border border-blue-200/80";
-  } else if (status === "DIPROSES") {
-    badgeClasses += "bg-indigo-50 text-indigo-700 border border-indigo-200/80";
-  } else if (status === "SELESAI") {
+  } else if (status === "SELESAI" || status === "DISETUJUI") {
     badgeClasses += "bg-emerald-50 text-emerald-700 border border-emerald-200/80";
   } else if (status === "DITOLAK") {
     badgeClasses += "bg-rose-50 text-rose-700 border border-rose-200/80";
@@ -51,7 +47,7 @@ export const Badge: React.FC<BadgeProps> = ({
   } else if (variant === "danger") {
     badgeClasses += "bg-rose-50 text-rose-700 border border-rose-200/80";
   } else if (variant === "info") {
-    badgeClasses += "bg-indigo-50 text-indigo-700 border border-indigo-200/80";
+    badgeClasses += "bg-blue-50 text-blue-700 border border-blue-200/80";
   } else {
     badgeClasses += "bg-slate-100 text-slate-700 border border-slate-200";
   }
@@ -59,13 +55,11 @@ export const Badge: React.FC<BadgeProps> = ({
   // Label lookup
   const getStatusLabel = () => {
     switch (status) {
-      case "MENUNGGU":
-        return "Menunggu Review";
-      case "DISETUJUI":
-        return "Disetujui";
       case "DIPROSES":
-        return "Sedang Diproses";
+      case "MENUNGGU":
+        return "Diproses";
       case "SELESAI":
+      case "DISETUJUI":
         return "Selesai";
       case "DITOLAK":
         return "Ditolak";
@@ -84,13 +78,11 @@ export const Badge: React.FC<BadgeProps> = ({
 
   const dotColor = () => {
     switch (status) {
-      case "MENUNGGU":
-        return "bg-amber-400";
-      case "DISETUJUI":
-        return "bg-blue-500";
       case "DIPROSES":
-        return "bg-indigo-500";
+      case "MENUNGGU":
+        return "bg-blue-500";
       case "SELESAI":
+      case "DISETUJUI":
         return "bg-emerald-500";
       case "DITOLAK":
         return "bg-rose-500";

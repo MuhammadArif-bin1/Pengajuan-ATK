@@ -55,7 +55,7 @@ export default function DashboardPengajuanPage() {
 
   // Purchase Badge Count calculation for Sidebar
   const purchaseCount = useMemo(() => {
-    return notifications.filter((n) => n.isPurchase && n.status === "MENUNGGU").length || 2;
+    return notifications.filter((n) => n.isPurchase && n.status === "DIPROSES").length || 2;
   }, [notifications]);
 
   // 1.5s Debounce Effect
@@ -100,7 +100,7 @@ export default function DashboardPengajuanPage() {
       const items: PortalNotificationItem[] = json.data;
       setNotifications(items);
 
-      // On initial fetch, populate unread for Admin Decisions
+      // On initial fetch, populate unread for Admin Decisions (SELESAI / DITOLAK)
       if (isInitialFetchRef.current) {
         let storedRead: string[] = [];
         try {
@@ -109,7 +109,7 @@ export default function DashboardPengajuanPage() {
         } catch {}
         const readSet = new Set(storedRead);
         const initialUnreads = items
-          .filter((it) => it.status !== "MENUNGGU" && !readSet.has(it.id))
+          .filter((it) => it.status !== "DIPROSES" && !readSet.has(it.id))
           .map((it) => it.id);
         if (initialUnreads.length > 0) {
           setUnreadIds((prev) => new Set([...prev, ...initialUnreads]));
@@ -124,14 +124,12 @@ export default function DashboardPengajuanPage() {
           if (prev && prev !== item.status) {
             hasChange = true;
             setUnreadIds((prevSet) => new Set([...prevSet, item.id]));
-            if (item.status === "DISETUJUI") {
-              toast.success(`🎉 Pengajuan Disetujui: ${item.itemName} (${item.quantity} ${item.unit})`);
+            if (item.status === "SELESAI") {
+              toast.success(`🎉 Pengajuan Selesai: ${item.itemName} (${item.quantity} ${item.unit}) siap diambil`);
             } else if (item.status === "DITOLAK") {
               toast.error(`❌ Pengajuan Ditolak: ${item.itemName}`);
             } else if (item.status === "DIPROSES") {
-              toast.info(`⚙️ Pengajuan Diproses: ${item.itemName}`);
-            } else if (item.status === "SELESAI") {
-              toast.success(`🏁 Pengajuan Selesai: ${item.itemName} siap diambil`);
+              toast.info(`⚙️ Pengajuan Sedang Diproses: ${item.itemName}`);
             }
           }
         });

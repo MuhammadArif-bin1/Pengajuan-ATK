@@ -216,14 +216,14 @@ async function main() {
           atkItemId: allItems[0].id,
           quantity: 5,
           reason: "Kebutuhan operasional harian departemen keuangan",
-          status: "MENUNGGU" as const,
+          status: "DIPROSES" as const,
         },
         {
           userId: allUsers[0].id,
           atkItemId: allItems[4].id,
           quantity: 2,
           reason: "Stok kertas departemen habis untuk cetak laporan bulanan",
-          status: "DISETUJUI" as const,
+          status: "SELESAI" as const,
         },
         {
           userId: allUsers[1].id,
@@ -237,7 +237,7 @@ async function main() {
           atkItemId: allItems[9].id,
           quantity: 4,
           reason: "Presentasi client untuk kebutuhan marketing",
-          status: "MENUNGGU" as const,
+          status: "DIPROSES" as const,
         },
         {
           userId: allUsers[3].id,
@@ -260,9 +260,9 @@ async function main() {
             status: req.status,
             adminNote: req.adminNote,
             processedBy:
-              req.status !== "MENUNGGU" ? admin.id : undefined,
+              req.status !== "DIPROSES" ? admin.id : undefined,
             processedAt:
-              req.status !== "MENUNGGU" ? new Date() : undefined,
+              req.status !== "DIPROSES" ? new Date() : undefined,
           },
         });
       }

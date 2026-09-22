@@ -150,7 +150,7 @@ export async function POST(request: NextRequest) {
           atkItemId: atkItem.id,
           quantity: itm.quantity,
           reason: fullReason,
-          status: "MENUNGGU",
+          status: "DIPROSES",
         },
         include: {
           user: true,
@@ -164,7 +164,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         success: true,
-        message: `Pengajuan pembelian ${createdRequests.length} barang ATK berhasil dikirim dan menunggu persetujuan Admin.`,
+        message: `Pengajuan pembelian ${createdRequests.length} barang ATK berhasil dikirim dan sedang diproses Admin.`,
         data: createdRequests.length === 1 ? createdRequests[0] : createdRequests,
         items: createdRequests,
       },

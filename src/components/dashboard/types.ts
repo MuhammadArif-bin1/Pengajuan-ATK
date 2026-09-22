@@ -18,7 +18,7 @@ export interface PortalNotificationItem {
   quantity: number;
   unit: string;
   reason: string;
-  status: "MENUNGGU" | "DISETUJUI" | "DITOLAK" | "DIPROSES" | "SELESAI";
+  status: "DIPROSES" | "DITOLAK" | "SELESAI";
   adminNote: string | null;
   processedByName: string | null;
   processedAt: string | null;

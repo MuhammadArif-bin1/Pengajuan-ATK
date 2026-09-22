@@ -21,9 +21,12 @@ export interface ReportTransactionExport {
 export interface DepartmentSummaryExport {
   department: string;
   total: number;
-  approved: number;
-  inProgress: number;
-  rejected: number;
+  diproses?: number;
+  selesai?: number;
+  ditolak?: number;
+  approved?: number;
+  inProgress?: number;
+  rejected?: number;
 }
 
 export interface ItemSummaryExport {
@@ -182,8 +185,8 @@ export function exportReportToCsv(params: {
       escapeCsv("No"),
       escapeCsv("Departemen / Divisi"),
       escapeCsv("Total Pengajuan"),
-      escapeCsv("Disetujui / Selesai"),
-      escapeCsv("Menunggu / Diproses"),
+      escapeCsv("Diproses"),
+      escapeCsv("Selesai"),
       escapeCsv("Ditolak"),
     ].join(",")
   );
@@ -194,9 +197,9 @@ export function exportReportToCsv(params: {
         escapeCsv(idx + 1),
         escapeCsv(dept.department),
         escapeCsv(dept.total),
-        escapeCsv(dept.approved),
-        escapeCsv(dept.inProgress),
-        escapeCsv(dept.rejected),
+        escapeCsv(dept.diproses ?? dept.inProgress ?? 0),
+        escapeCsv(dept.selesai ?? dept.approved ?? 0),
+        escapeCsv(dept.ditolak ?? dept.rejected ?? 0),
       ].join(",")
     );
   });

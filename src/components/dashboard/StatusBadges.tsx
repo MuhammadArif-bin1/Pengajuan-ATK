@@ -32,11 +32,11 @@ export function formatDateTime(isoString: string): string {
 // Status Badge Component
 export function StatusBadge({ status }: { status: PortalNotificationItem["status"] }) {
   switch (status) {
-    case "DISETUJUI":
+    case "SELESAI":
       return (
         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/80">
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-          Disetujui
+          Selesai
         </span>
       );
     case "DITOLAK":
@@ -47,24 +47,11 @@ export function StatusBadge({ status }: { status: PortalNotificationItem["status
         </span>
       );
     case "DIPROSES":
-      return (
-        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-blue-50 text-blue-700 border border-blue-200/80">
-          <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
-          Diproses
-        </span>
-      );
-    case "SELESAI":
-      return (
-        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200/80">
-          <span className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
-          Selesai
-        </span>
-      );
     default:
       return (
-        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-50 text-amber-700 border border-amber-200/80">
-          <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
-          Menunggu
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-blue-50 text-blue-700 border border-blue-200/80">
+          <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
+          Diproses
         </span>
       );
   }
