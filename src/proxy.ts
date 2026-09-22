@@ -45,6 +45,7 @@ export async function proxy(request: NextRequest) {
   if (
     pathname === "/" ||
     pathname === "/user/pengajuan-pembelian" ||
+    pathname === "/user/riwayat" ||
     pathname === "/admin" ||
     pathname === "/admin/login"
   ) {
@@ -63,6 +64,7 @@ export async function proxy(request: NextRequest) {
     pathname === "/api/users/departments" ||
     (pathname === "/api/atk" && method === "GET") ||
     (pathname === "/api/requests" && (method === "GET" || method === "POST")) ||
+    (pathname === "/api/requests/portal-notifications" && method === "GET") ||
     (pathname === "/api/requests/purchase" && method === "POST")
   ) {
     return NextResponse.next();
