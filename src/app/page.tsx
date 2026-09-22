@@ -90,8 +90,15 @@ export default function DashboardPengajuanPage() {
     try {
       const res = await fetch(`/api/requests/portal-notifications?limit=100&_t=${Date.now()}`, {
         cache: "no-store",
+        headers: {
+          "Cache-Control": "no-cache",
+          Pragma: "no-cache",
+        },
       });
-      if (!res.ok) return;
+      if (!res.ok) {
+        console.error("Fetch requests failed with status:", res.status);
+        return;
+      }
       const json = await res.json();
       if (!json.success || !Array.isArray(json.data)) return;
 
