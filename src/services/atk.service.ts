@@ -96,13 +96,23 @@ export async function toggleAtkItemStatus(id: string) {
 }
 
 export async function deleteAtkItem(id: string) {
-  return prisma.atkItem.delete({
-    where: { id },
+  return prisma.$transaction(async (tx) => {
+    // Hapus terlebih dahulu pengajuan/riwayat yang terhubung dengan barang ini
+    await tx.atkRequest.deleteMany({
+      where: { atkItemId: id },
+    });
+    // Kemudian hapus barang dari katalog inventaris
+    return tx.atkItem.delete({
+      where: { id },
+    });
   });
 }
 
 export async function deleteAllAtkItems() {
-  return prisma.atkItem.deleteMany({});
+  return prisma.$transaction(async (tx) => {
+    await tx.atkRequest.deleteMany({});
+    return tx.atkItem.deleteMany({});
+  });
 }
 
 // ===========================================

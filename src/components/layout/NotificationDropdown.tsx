@@ -34,6 +34,12 @@ export const NotificationDropdown: React.FC = () => {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const knownIdsRef = useRef<Set<string>>(new Set());
   const isInitialLoadRef = useRef(true);
+  const isFetchingRef = useRef(false);
+  const soundEnabledRef = useRef(soundEnabled);
+
+  useEffect(() => {
+    soundEnabledRef.current = soundEnabled;
+  }, [soundEnabled]);
 
   // Load readIds & sound preferences from localStorage on mount
   useEffect(() => {
@@ -62,8 +68,14 @@ export const NotificationDropdown: React.FC = () => {
 
   // Fetch notifications
   const fetchNotifications = useCallback(async () => {
+    // Prevent overlapping fetches (e.g. during slow networks or initial compilation)
+    if (isFetchingRef.current) return;
+    isFetchingRef.current = true;
+
     try {
-      const res = await fetch("/api/admin/notifications");
+      const res = await fetch("/api/admin/notifications", {
+        cache: "no-store",
+      });
       if (!res.ok) return;
       const data = await res.json();
       if (!data.success || !Array.isArray(data.data)) return;
@@ -75,7 +87,7 @@ export const NotificationDropdown: React.FC = () => {
         const newest = incomingList[0];
         if (!knownIdsRef.current.has(newest.id)) {
           // Play sound
-          if (soundEnabled) {
+          if (soundEnabledRef.current) {
             playNotificationSound();
           }
 
@@ -106,17 +118,28 @@ export const NotificationDropdown: React.FC = () => {
       isInitialLoadRef.current = false;
 
       setNotifications(incomingList);
-    } catch (err) {
-      console.error("Fetch notifications error:", err);
+    } catch {
+      // Quietly ignore transient network issues or compilation pauses during development
+    } finally {
+      isFetchingRef.current = false;
     }
-  }, [soundEnabled]);
+  }, []);
 
-  // Polling every 4 seconds + on window focus
+  // Safe background auto-refresh every 15s (only when tab is visible) + on window focus
   useEffect(() => {
     fetchNotifications();
 
-    const interval = setInterval(fetchNotifications, 4000);
-    const handleFocus = () => fetchNotifications();
+    const interval = setInterval(() => {
+      if (document.visibilityState === "visible") {
+        fetchNotifications();
+      }
+    }, 15000);
+
+    const handleFocus = () => {
+      if (document.visibilityState === "visible") {
+        fetchNotifications();
+      }
+    };
 
     window.addEventListener("focus", handleFocus);
     return () => {
@@ -201,38 +224,32 @@ export const NotificationDropdown: React.FC = () => {
   return (
     <>
       <div className="relative" ref={dropdownRef}>
-        {/* Bell Button */}
+        {/* Bell Button matching User Navbar */}
         <button
           type="button"
           onClick={() => {
             setIsOpen(!isOpen);
             requestDesktopPermission();
           }}
-          className={`relative p-2 rounded-xl text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors focus:outline-none cursor-pointer ${
-            isOpen ? "bg-gray-100 text-gray-900" : ""
+          className={`w-11 h-11 rounded-[10px] flex items-center justify-center text-[#ff8f00] hover:bg-orange-50 transition cursor-pointer relative shadow-2xs border border-orange-100 ${
+            isOpen ? "bg-orange-50" : "bg-white"
           }`}
           title="Notifikasi Realtime"
           aria-label="Notifikasi Realtime"
         >
           <svg
-            className={`w-5 h-5 transition-transform duration-300 ${
-              isRinging ? "animate-bounce text-[#FF5500]" : ""
+            className={`w-6 h-6 transition-transform ${
+              isRinging ? "animate-bounce text-amber-600" : ""
             }`}
-            fill="none"
+            fill="currentColor"
             viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth={2}
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
-            />
+            <path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2zm-2 1H8v-6c0-2.48 1.51-4.5 4-4.5s4 2.02 4 4.5v6z" />
           </svg>
 
           {/* Unread Badge Counter */}
           {unreadCount > 0 && (
-            <span className="absolute -top-0.5 -right-0.5 flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[10px] font-black text-white bg-[#FF5500] rounded-full border-2 border-white shadow-xs animate-pulse">
+            <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-[#dc2626] text-white text-[10px] font-black flex items-center justify-center border-2 border-white shadow-xs animate-pulse">
               {unreadCount > 9 ? "9+" : unreadCount}
             </span>
           )}
@@ -248,9 +265,9 @@ export const NotificationDropdown: React.FC = () => {
 
         {/* ─── DROPDOWN PANEL ─── */}
         {isOpen && (
-          <div className="fixed inset-x-3.5 top-16 sm:absolute sm:inset-x-auto sm:right-0 sm:top-full sm:mt-2 w-auto sm:w-96 max-w-full sm:max-w-md bg-white rounded-2xl shadow-2xl border border-gray-200/90 z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150">
+          <div className="fixed inset-x-3.5 top-16 sm:absolute sm:inset-x-auto sm:right-0 sm:top-full sm:mt-2 w-auto sm:w-96 max-w-full sm:max-w-md bg-white rounded-[10px] shadow-xl border border-[#ebeef2] z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150">
             {/* Header */}
-            <div className="px-4 py-3.5 bg-slate-900 text-white flex items-center justify-between">
+            <div className="px-4 py-3 bg-slate-900 text-white flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <span className="flex h-2 w-2 relative">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
@@ -266,7 +283,7 @@ export const NotificationDropdown: React.FC = () => {
                 <button
                   type="button"
                   onClick={handleToggleSound}
-                  className="p-1 rounded text-slate-300 hover:text-white hover:bg-slate-800 transition"
+                  className="p-1 rounded-[6px] text-slate-300 hover:text-white hover:bg-slate-800 transition"
                   title={soundEnabled ? "Suara notifikasi aktif" : "Suara dinonaktifkan"}
                 >
                   {soundEnabled ? (
@@ -286,7 +303,7 @@ export const NotificationDropdown: React.FC = () => {
                   <button
                     type="button"
                     onClick={handleMarkAllAsRead}
-                    className="text-[11px] text-[#FF5500] hover:text-orange-400 font-semibold cursor-pointer"
+                    className="text-[11px] text-[#ff8f00] hover:text-orange-400 font-semibold cursor-pointer"
                   >
                     Tandai Dibaca
                   </button>
@@ -295,14 +312,14 @@ export const NotificationDropdown: React.FC = () => {
             </div>
 
             {/* Filter Tabs */}
-            <div className="flex border-b border-gray-100 bg-gray-50/70 p-1.5 gap-1 text-[11px] font-bold">
+            <div className="flex border-b border-[#ebeef2] bg-slate-50/70 p-1.5 gap-1 text-[11px] font-bold">
               <button
                 type="button"
                 onClick={() => setActiveFilter("all")}
-                className={`flex-1 py-1 px-2 rounded-lg transition ${
+                className={`flex-1 py-1 px-2 rounded-[6px] transition ${
                   activeFilter === "all"
-                    ? "bg-white text-gray-900 shadow-xs"
-                    : "text-gray-500 hover:text-gray-800"
+                    ? "bg-white text-[#323c4d] shadow-2xs border border-[#ebeef2]"
+                    : "text-[#606c80] hover:text-[#323c4d]"
                 }`}
               >
                 Semua ({notifications.length})
@@ -310,10 +327,10 @@ export const NotificationDropdown: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setActiveFilter("regular")}
-                className={`flex-1 py-1 px-2 rounded-lg transition ${
+                className={`flex-1 py-1 px-2 rounded-[6px] transition ${
                   activeFilter === "regular"
-                    ? "bg-white text-[#FF5500] shadow-xs"
-                    : "text-gray-500 hover:text-gray-800"
+                    ? "bg-white text-[#ff8f00] shadow-2xs border border-[#ebeef2]"
+                    : "text-[#606c80] hover:text-[#323c4d]"
                 }`}
               >
                 Permintaan ATK
@@ -321,10 +338,10 @@ export const NotificationDropdown: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setActiveFilter("purchase")}
-                className={`flex-1 py-1 px-2 rounded-lg transition ${
+                className={`flex-1 py-1 px-2 rounded-[6px] transition ${
                   activeFilter === "purchase"
-                    ? "bg-white text-purple-600 shadow-xs"
-                    : "text-gray-500 hover:text-gray-800"
+                    ? "bg-white text-purple-600 shadow-2xs border border-[#ebeef2]"
+                    : "text-[#606c80] hover:text-[#323c4d]"
                 }`}
               >
                 Pembelian ATK
@@ -332,14 +349,14 @@ export const NotificationDropdown: React.FC = () => {
             </div>
 
             {/* Notification List */}
-            <div className="max-h-[380px] overflow-y-auto divide-y divide-gray-100">
+            <div className="max-h-[380px] overflow-y-auto divide-y divide-[#ebeef2]">
               {filteredNotifications.length === 0 ? (
-                <div className="p-8 text-center text-gray-400">
-                  <svg className="w-8 h-8 mx-auto text-gray-300 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <div className="p-8 text-center text-[#606c80]">
+                  <svg className="w-8 h-8 mx-auto text-slate-300 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                   </svg>
-                  <p className="text-xs font-semibold">Belum ada pengajuan baru</p>
-                  <p className="text-[10px] text-gray-400 mt-0.5">Sistem memantau permohonan secara realtime</p>
+                  <p className="text-xs font-semibold text-[#323c4d]">Belum ada pengajuan baru</p>
+                  <p className="text-[10px] text-[#606c80] mt-0.5">Sistem memantau permohonan secara realtime</p>
                 </div>
               ) : (
                 filteredNotifications.map((item) => {
@@ -351,16 +368,16 @@ export const NotificationDropdown: React.FC = () => {
                       key={item.id}
                       type="button"
                       onClick={() => handleMarkAsRead(item.id, item.targetUrl)}
-                      className={`w-full text-left p-3.5 hover:bg-orange-50/40 transition-colors flex items-start gap-3 cursor-pointer ${
-                        isUnread ? "bg-orange-50/20" : "bg-white"
+                      className={`w-full text-left p-3.5 hover:bg-slate-50/80 transition-colors flex items-start gap-3 cursor-pointer ${
+                        isUnread ? "bg-orange-50/25" : "bg-white"
                       }`}
                     >
                       {/* Indicator Icon */}
                       <div
-                        className={`w-8 h-8 rounded-xl shrink-0 flex items-center justify-center text-xs font-bold ${
+                        className={`w-8 h-8 rounded-[6px] shrink-0 flex items-center justify-center text-xs font-bold ${
                           isPurchase
                             ? "bg-purple-100 text-purple-700"
-                            : "bg-orange-100 text-[#FF5500]"
+                            : "bg-orange-100 text-[#ff8f00]"
                         }`}
                       >
                         {isPurchase ? "🛍️" : "📦"}
@@ -370,38 +387,38 @@ export const NotificationDropdown: React.FC = () => {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between gap-1 mb-0.5">
                           <span
-                            className={`text-[10px] font-extrabold uppercase px-1.5 py-0.5 rounded tracking-wide ${
+                            className={`text-[10px] font-bold uppercase px-1.5 py-0.5 rounded-[4px] tracking-wide ${
                               isPurchase
                                 ? "bg-purple-50 text-purple-700 border border-purple-200"
-                                : "bg-orange-50 text-[#FF5500] border border-orange-200"
+                                : "bg-orange-50 text-[#ff8f00] border border-orange-200"
                             }`}
                           >
                             {isPurchase ? "Pembelian ATK" : "Permintaan ATK"}
                           </span>
-                          <span className="text-[10px] text-gray-400 font-medium whitespace-nowrap">
+                          <span className="text-[10px] text-[#606c80] font-medium whitespace-nowrap">
                             {getRelativeTime(item.createdAt)}
                           </span>
                         </div>
 
-                        <p className="text-xs font-bold text-gray-900 truncate">
+                        <p className="text-xs font-bold text-[#323c4d] truncate">
                           {item.userName}{" "}
-                          <span className="text-[11px] font-normal text-gray-500">
+                          <span className="text-[11px] font-normal text-[#606c80]">
                             ({item.department})
                           </span>
                         </p>
 
-                        <p className="text-xs text-gray-700 mt-0.5">
+                        <p className="text-xs text-[#323c4d] mt-0.5">
                           Mengajukan:{" "}
-                          <span className="font-bold text-slate-900">
+                          <span className="font-bold text-[#323c4d]">
                             {item.itemName}
                           </span>{" "}
-                          <span className="text-[#FF5500] font-bold">
+                          <span className="text-[#ff8f00] font-bold">
                             ({item.quantity} {item.unit})
                           </span>
                         </p>
 
                         {item.reason && (
-                          <p className="text-[11px] text-gray-500 line-clamp-1 italic mt-0.5">
+                          <p className="text-[11px] text-[#606c80] line-clamp-1 italic mt-0.5">
                             "{item.reason}"
                           </p>
                         )}
@@ -409,7 +426,7 @@ export const NotificationDropdown: React.FC = () => {
 
                       {/* Unread indicator dot */}
                       {isUnread && (
-                        <span className="w-2 h-2 rounded-full bg-[#FF5500] shrink-0 mt-1.5" />
+                        <span className="w-2 h-2 rounded-full bg-[#ff8f00] shrink-0 mt-1.5" />
                       )}
                     </button>
                   );
@@ -418,11 +435,11 @@ export const NotificationDropdown: React.FC = () => {
             </div>
 
             {/* Footer Quick Links */}
-            <div className="px-4 py-2.5 bg-gray-50 border-t border-gray-100 flex items-center justify-between text-xs font-bold">
+            <div className="px-4 py-2.5 bg-slate-50 border-t border-[#ebeef2] flex items-center justify-between text-xs font-bold">
               <Link
                 href="/admin/pengajuan"
                 onClick={() => setIsOpen(false)}
-                className="text-[#FF5500] hover:underline"
+                className="text-[#ff8f00] hover:underline"
               >
                 Permintaan ATK →
               </Link>
@@ -440,22 +457,22 @@ export const NotificationDropdown: React.FC = () => {
 
       {/* ─── FLOATING LIVE ALERT TOAST (Top Right / Mobile Responsive) ─── */}
       {livePopup && (
-        <div className="fixed top-20 inset-x-3.5 sm:inset-x-auto sm:right-6 z-50 max-w-sm w-auto sm:w-full bg-white rounded-2xl shadow-2xl border-2 border-[#FF5500] p-4 animate-in slide-in-from-top-4 fade-in duration-300">
+        <div className="fixed top-20 inset-x-3.5 sm:inset-x-auto sm:right-6 z-50 max-w-sm w-auto sm:w-full bg-white rounded-[10px] shadow-xl border border-[#ff8f00] p-4 animate-in slide-in-from-top-4 fade-in duration-300">
           <div className="flex items-start justify-between gap-3">
             <div className="flex items-start gap-3 min-w-0">
-              <div className="w-9 h-9 rounded-xl bg-orange-100 text-[#FF5500] flex items-center justify-center shrink-0 font-bold text-lg animate-bounce">
+              <div className="w-9 h-9 rounded-[8px] bg-orange-50 text-[#ff8f00] border border-orange-200 flex items-center justify-center shrink-0 font-bold text-lg animate-bounce">
                 🔔
               </div>
               <div className="min-w-0">
-                <span className="text-[10px] font-black text-[#FF5500] uppercase tracking-wider block">
+                <span className="text-[10px] font-bold text-[#ff8f00] uppercase tracking-wider block">
                   Pengajuan Baru Masuk!
                 </span>
-                <p className="text-xs font-bold text-gray-900 mt-0.5">
+                <p className="text-xs font-bold text-[#323c4d] mt-0.5">
                   {livePopup.userName} ({livePopup.department})
                 </p>
-                <p className="text-xs text-gray-700 mt-0.5">
+                <p className="text-xs text-[#606c80] mt-0.5">
                   {livePopup.typeLabel}:{" "}
-                  <b className="text-slate-900">{livePopup.itemName}</b> (
+                  <b className="text-[#323c4d]">{livePopup.itemName}</b> (
                   {livePopup.quantity} {livePopup.unit})
                 </p>
               </div>
@@ -464,14 +481,14 @@ export const NotificationDropdown: React.FC = () => {
             <button
               type="button"
               onClick={() => setLivePopup(null)}
-              className="text-gray-400 hover:text-gray-600 text-xs font-bold p-1 cursor-pointer"
+              className="text-[#606c80] hover:text-[#323c4d] text-xs font-bold p-1 cursor-pointer"
             >
               ✕
             </button>
           </div>
 
-          <div className="mt-3 pt-2.5 border-t border-gray-100 flex items-center justify-between gap-2">
-            <span className="text-[10px] text-gray-400 font-medium">
+          <div className="mt-3 pt-2.5 border-t border-[#ebeef2] flex items-center justify-between gap-2">
+            <span className="text-[10px] text-[#606c80] font-medium">
               Baru saja diterima
             </span>
             <button
@@ -481,7 +498,7 @@ export const NotificationDropdown: React.FC = () => {
                 setLivePopup(null);
                 handleMarkAsRead(livePopup.id, target);
               }}
-              className="px-3 py-1 bg-[#FF5500] hover:bg-[#e04b00] text-white text-xs font-bold rounded-lg transition shadow-xs cursor-pointer"
+              className="px-3 py-1.5 bg-[#ff8f00] hover:bg-orange-600 text-white text-xs font-bold rounded-[8px] transition shadow-2xs cursor-pointer"
             >
               Periksa Pengajuan →
             </button>

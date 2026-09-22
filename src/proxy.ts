@@ -28,9 +28,23 @@ export async function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
+  // Check decoded pathname
+  const decodedPath = decodeURIComponent(pathname);
+
+  // Handle case-insensitive and space variations for Pengajuan Pembelian
+  if (
+    decodedPath === "/Pengajuan Pembelian" ||
+    decodedPath.toLowerCase() === "/pengajuan pembelian" ||
+    pathname === "/Pengajuan%20Pembelian" ||
+    pathname === "/pengajuan-pembelian"
+  ) {
+    return NextResponse.redirect(new URL("/user/pengajuan-pembelian", request.url));
+  }
+
   // 2. Public Frontend Pages (no auth needed)
   if (
     pathname === "/" ||
+    pathname === "/user/pengajuan-pembelian" ||
     pathname === "/admin" ||
     pathname === "/admin/login"
   ) {

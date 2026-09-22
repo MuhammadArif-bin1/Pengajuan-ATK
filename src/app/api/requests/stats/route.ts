@@ -17,6 +17,23 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const type = (searchParams.get("type") as "purchase" | "regular") || undefined;
 
+    if (!type) {
+      const [regularStats, purchaseStats, userStats, atkStats] = await Promise.all([
+        getRequestStats(session.role === "USER" ? session.userId : undefined, "regular"),
+        getRequestStats(session.role === "USER" ? session.userId : undefined, "purchase"),
+        session.role === "ADMIN" ? getUserStats() : Promise.resolve(null),
+        session.role === "ADMIN" ? getAtkItemStats() : Promise.resolve(null),
+      ]);
+
+      return NextResponse.json({
+        regular: regularStats,
+        purchase: purchaseStats,
+        requests: regularStats,
+        users: userStats,
+        atk: atkStats,
+      });
+    }
+
     if (session.role === "USER") {
       const requestStats = await getRequestStats(session.userId, type);
       return NextResponse.json({
@@ -24,7 +41,7 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // Role is ADMIN: return comprehensive stats
+    // Role is ADMIN: return comprehensive stats for specific type
     const [requestStats, userStats, atkStats] = await Promise.all([
       getRequestStats(undefined, type),
       getUserStats(),

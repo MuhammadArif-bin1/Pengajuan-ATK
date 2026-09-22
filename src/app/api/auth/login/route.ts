@@ -78,7 +78,7 @@ export async function POST(request: NextRequest) {
         department: user.department,
         position: user.position,
       },
-      redirectTo: user.role === "ADMIN" ? "/admin/dashboard" : "/user/dashboard",
+      redirectTo: user.role === "ADMIN" ? "/admin/dashboard" : "/",
     });
   } catch (error) {
     console.error("Login error:", error);

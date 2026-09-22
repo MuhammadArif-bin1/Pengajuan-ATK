@@ -112,10 +112,10 @@ export async function DELETE(
       success: true,
       message: "Barang ATK berhasil dihapus",
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error("DELETE /api/atk/[id] error:", error);
     return NextResponse.json(
-      { error: "Gagal menghapus barang ATK" },
+      { error: error?.message || "Gagal menghapus barang ATK" },
       { status: 500 }
     );
   }

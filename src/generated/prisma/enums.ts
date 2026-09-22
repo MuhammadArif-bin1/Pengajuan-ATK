@@ -18,10 +18,8 @@ export type Role = (typeof Role)[keyof typeof Role]
 
 
 export const RequestStatus = {
-  MENUNGGU: 'MENUNGGU',
-  DISETUJUI: 'DISETUJUI',
-  DITOLAK: 'DITOLAK',
   DIPROSES: 'DIPROSES',
+  DITOLAK: 'DITOLAK',
   SELESAI: 'SELESAI'
 } as const
 

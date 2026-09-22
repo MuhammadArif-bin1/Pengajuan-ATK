@@ -141,31 +141,35 @@ export async function POST(request: NextRequest) {
       for (const itm of itemsToProcess) {
         let finalItemId = itm.atkItemId;
 
-        if (!finalItemId && itm.itemName) {
-          let atkItem = await prisma.atkItem.findFirst({
+        // Find the item in master ATK stock (must be active)
+        let atkItem = null;
+        if (finalItemId) {
+          atkItem = await prisma.atkItem.findFirst({
+            where: { id: finalItemId, isActive: true },
+          });
+        } else if (itm.itemName) {
+          atkItem = await prisma.atkItem.findFirst({
             where: {
               name: {
                 equals: itm.itemName,
                 mode: "insensitive",
               },
+              isActive: true,
             },
           });
-
-          if (!atkItem) {
-            atkItem = await prisma.atkItem.create({
-              data: {
-                name: itm.itemName,
-                description: "Permintaan ATK Karyawan",
-                unit: "pcs",
-                stock: 0,
-                isActive: true,
-              },
-            });
-          }
-          finalItemId = atkItem.id;
         }
 
-        if (!finalItemId) continue;
+        // Only Admin can manage Stok Barang ATK. Non-existent items cannot be requested via Pengajuan ATK.
+        if (!atkItem) {
+          return NextResponse.json(
+            {
+              error: `Barang "${itm.itemName || "yang dipilih"}" tidak ditemukan dalam stok ATK aktif. Pengajuan ATK hanya untuk barang yang tersedia di stok gudang. Untuk pengadaan barang baru, silakan gunakan menu Pengajuan Pembelian.`,
+            },
+            { status: 400 }
+          );
+        }
+
+        finalItemId = atkItem.id;
 
         const newRequest = await createRequest({
           userName: cleanUserName,
@@ -198,31 +202,33 @@ export async function POST(request: NextRequest) {
       for (const itm of itemsToProcess) {
         let finalItemId = itm.atkItemId;
 
-        if (!finalItemId && itm.itemName) {
-          let atkItem = await prisma.atkItem.findFirst({
+        let atkItem = null;
+        if (finalItemId) {
+          atkItem = await prisma.atkItem.findFirst({
+            where: { id: finalItemId, isActive: true },
+          });
+        } else if (itm.itemName) {
+          atkItem = await prisma.atkItem.findFirst({
             where: {
               name: {
                 equals: itm.itemName,
                 mode: "insensitive",
               },
+              isActive: true,
             },
           });
-
-          if (!atkItem) {
-            atkItem = await prisma.atkItem.create({
-              data: {
-                name: itm.itemName,
-                description: "Permintaan ATK Karyawan",
-                unit: "pcs",
-                stock: 0,
-                isActive: true,
-              },
-            });
-          }
-          finalItemId = atkItem.id;
         }
 
-        if (!finalItemId) continue;
+        if (!atkItem) {
+          return NextResponse.json(
+            {
+              error: `Barang "${itm.itemName || "yang dipilih"}" tidak ditemukan dalam stok ATK aktif. Pengajuan ATK hanya untuk barang yang tersedia di gudang.`,
+            },
+            { status: 400 }
+          );
+        }
+
+        finalItemId = atkItem.id;
 
         const newRequest = await createRequest({
           userId: session.userId,
