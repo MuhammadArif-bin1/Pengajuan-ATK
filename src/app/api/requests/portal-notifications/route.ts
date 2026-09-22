@@ -8,9 +8,18 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const idsParam = searchParams.get("ids");
     const search = searchParams.get("search");
+    const type = searchParams.get("type"); // "regular" | "purchase" | "all"
     const limit = parseInt(searchParams.get("limit") || "50", 10);
 
     const where: Record<string, unknown> = {};
+
+    // Filter tipe pengajuan: jika bukan "purchase" atau "all", jangan tampilkan pengajuan pembelian di antrian
+    if (type === "purchase") {
+      where.reason = { contains: "[PENGAJUAN PEMBELIAN ATK BARU]" };
+    } else if (type !== "all") {
+      // Default / "regular": Hanya permohonan ATK reguler
+      where.NOT = { reason: { contains: "[PENGAJUAN PEMBELIAN ATK BARU]" } };
+    }
 
     let idList: string[] = [];
     if (idsParam) {

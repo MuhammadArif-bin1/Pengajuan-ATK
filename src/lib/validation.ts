@@ -178,6 +178,7 @@ export const updateRequestStatusSchema = z.object({
     .max(500, "Catatan maksimal 500 karakter")
     .optional()
     .nullable(),
+  addToStock: z.boolean().optional(),
 });
 
 // ===========================================

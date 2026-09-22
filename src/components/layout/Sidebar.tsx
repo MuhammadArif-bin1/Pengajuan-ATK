@@ -136,7 +136,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     {
       id: "history",
       label: "Riwayat",
-      href: "/#riwayat",
+      href: "/user/riwayat",
       icon: (
         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -165,25 +165,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <div>
             {/* Brand Header */}
             <div className="px-5 py-5 border-b border-[#ebeef2] flex items-center justify-between">
-              <Link href="/" className="flex items-center gap-2.5">
+              <Link href="/" className="flex items-center">
                 <img
-                  src="/Image/logo/logo-bulat.png"
+                  src="/Image/logo/Logo.webp"
                   alt="Hasamitra Logo"
-                  className="w-11 h-11 rounded-full object-contain shrink-0"
+                  className="w-full max-w-[192px] h-auto aspect-[6/1] object-contain"
                 />
-                <div className="flex flex-col">
-                  <div className="flex items-baseline gap-1">
-                    <span className="font-extrabold text-[#027A48] text-xl tracking-tight leading-none">
-                      hasamitra
-                    </span>
-                    <span className="font-bold text-[#027A48] text-[11px] italic leading-none">
-                      Jabar
-                    </span>
-                  </div>
-                  <span className="text-[9.5px] text-[#606c80] font-medium tracking-tight mt-1 leading-none">
-                    bank perekonomian rakyat
-                  </span>
-                </div>
               </Link>
 
               {onClose && (
@@ -289,7 +276,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     </svg>
                   </div>
                   <span className="font-black text-lg text-white tracking-wide">
-                    Portal Karyawan
+                    Karyawan
                   </span>
                 </Link>
 
@@ -306,7 +293,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     </svg>
                   </div>
                   <span className="font-black text-lg text-white tracking-wide">
-                    {isLoggingOut ? "Keluar..." : "Keluar Sesi"}
+                    {isLoggingOut ? "Keluar..." : "Logout"}
                   </span>
                 </button>
               </>

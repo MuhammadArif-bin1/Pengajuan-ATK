@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Modal } from "@/components/ui/Modal";
@@ -22,55 +22,64 @@ export default function AdminDashboardPage() {
   const [rejectNote, setRejectNote] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
 
-  const loadDashboardData = async () => {
-    try {
-      setLoading(true);
-      const [regularStatsRes, purchaseStatsRes, requestsRes] = await Promise.all([
-        fetch("/api/requests/stats?type=regular"),
-        fetch("/api/requests/stats?type=purchase"),
-        fetch("/api/requests?limit=6"),
-      ]);
+  // Prevent overlapping background requests
+  const isFetchingRef = useRef(false);
 
-      if (regularStatsRes.ok && purchaseStatsRes.ok) {
-        const regData = await regularStatsRes.json();
-        const purData = await purchaseStatsRes.json();
-        setStats({
-          regular: regData.requests || stats.regular,
-          purchase: purData.requests || stats.purchase,
-        });
-      }
+  const loadDashboardData = useCallback(
+    async (showLoading = true) => {
+      if (isFetchingRef.current) return;
+      isFetchingRef.current = true;
 
-      if (requestsRes.ok) {
-        const rData = await requestsRes.json();
-        if (rData.data) setRecentRequests(rData.data);
+      try {
+        if (showLoading) setLoading(true);
+
+        const [statsRes, requestsRes] = await Promise.all([
+          fetch("/api/requests/stats"),
+          fetch("/api/requests?limit=6&type=regular"),
+        ]);
+
+        if (statsRes.ok) {
+          const sData = await statsRes.json();
+          setStats((prev) => ({
+            regular: sData.regular || sData.requests || prev.regular,
+            purchase: sData.purchase || prev.purchase,
+          }));
+        }
+
+        if (requestsRes.ok) {
+          const rData = await requestsRes.json();
+          if (Array.isArray(rData.data)) {
+            setRecentRequests(rData.data);
+          }
+        }
+      } catch (err) {
+        console.error("Admin dashboard data fetch error:", err);
+        if (showLoading) {
+          toast.error("Gagal memuat data dashboard");
+        }
+      } finally {
+        if (showLoading) setLoading(false);
+        isFetchingRef.current = false;
       }
-    } catch (err) {
-      console.error("Admin dashboard data fetch error:", err);
-      toast.error("Gagal memuat data dashboard");
-    } finally {
-      setLoading(false);
-    }
-  };
+    },
+    [toast]
+  );
 
   useEffect(() => {
-    loadDashboardData();
+    // Initial fetch displays loading skeleton/indicator
+    loadDashboardData(true);
 
+    // Silent background auto-refresh every 30s only when page is visible
     const interval = setInterval(() => {
       if (document.visibilityState === "visible") {
-        loadDashboardData();
+        loadDashboardData(false);
       }
-    }, 15000);
+    }, 30000);
 
-    const handleFocus = () => {
-      loadDashboardData();
-    };
-
-    window.addEventListener("focus", handleFocus);
     return () => {
       clearInterval(interval);
-      window.removeEventListener("focus", handleFocus);
     };
-  }, []);
+  }, [loadDashboardData]);
 
   const handleUpdateStatus = async (
     requestId: string,
@@ -95,7 +104,7 @@ export default function AdminDashboardPage() {
       setSelectedRequest(null);
       setRejectModalOpen(false);
       setRejectNote("");
-      loadDashboardData();
+      loadDashboardData(false);
     } catch (err) {
       console.error("Update request status error:", err);
       toast.error("Terjadi gangguan koneksi");
@@ -245,8 +254,9 @@ export default function AdminDashboardPage() {
         </div>
 
         {/* Table Content */}
-        {loading ? (
+        {loading && recentRequests.length === 0 ? (
           <div className="py-16 text-center text-[#606c80] text-xs font-medium">
+            <div className="w-6 h-6 border-2 border-orange-500 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
             Memuat data pengajuan...
           </div>
         ) : recentRequests.length === 0 ? (

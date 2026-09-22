@@ -189,9 +189,28 @@ export default function DashboardPengajuanPage() {
     });
   }, [catalogItems, stockStatusFilter, debouncedSearch]);
 
-  // Filtered & Sorted Queue Items
+  // Filtered & Sorted Queue Items (Hanya permohonan ATK reguler, bukan pengajuan pembelian)
+  // Pengajuan yang statusnya telah SELESAI hanya muncul di antrian pada hari tersebut, dan hilang di hari berikutnya
   const filteredQueueItems = useMemo(() => {
-    let list = [...notifications];
+    let list = notifications.filter((item) => {
+      if (item.isPurchase) return false;
+
+      // Status SELESAI hanya muncul pada hari tersebut
+      if (item.status === "SELESAI") {
+        const completionDateStr = item.processedAt || item.updatedAt || item.createdAt;
+        if (completionDateStr) {
+          const compDate = new Date(completionDateStr);
+          const now = new Date();
+          const isToday =
+            compDate.getFullYear() === now.getFullYear() &&
+            compDate.getMonth() === now.getMonth() &&
+            compDate.getDate() === now.getDate();
+          if (!isToday) return false;
+        }
+      }
+
+      return true;
+    });
 
     // Debounced search query
     if (debouncedSearch.trim()) {

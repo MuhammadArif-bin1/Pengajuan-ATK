@@ -302,9 +302,6 @@ export default function AdminStokPage() {
             >
               {row.stock} {row.unit}
             </span>
-            <span className="text-[10px] font-semibold text-[#606c80]">
-              {isReady ? "🟢 Tersedia" : isLow ? "🟡 Stok Menipis" : "🔴 Stok Habis"}
-            </span>
           </div>
         );
       },
@@ -429,7 +426,7 @@ export default function AdminStokPage() {
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
               </svg>
-              <span>+ Tambah Barang</span>
+              <span>Tambah Barang</span>
             </button>
           }
           noPadding

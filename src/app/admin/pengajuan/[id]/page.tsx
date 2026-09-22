@@ -24,6 +24,7 @@ export default function DetailPengajuanAdminPage() {
 
   const [rejectModalOpen, setRejectModalOpen] = useState(false);
   const [rejectNote, setRejectNote] = useState("");
+  const [completeModalOpen, setCompleteModalOpen] = useState(false);
 
   const fetchRequest = useCallback(async () => {
     try {
@@ -50,14 +51,15 @@ export default function DetailPengajuanAdminPage() {
 
   const handleUpdateStatus = async (
     status: RequestStatusType,
-    adminNote?: string
+    adminNote?: string,
+    addToStock?: boolean
   ) => {
     try {
       setIsProcessing(true);
       const res = await fetch(`/api/requests/${id}/status`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status, adminNote }),
+        body: JSON.stringify({ status, adminNote, addToStock }),
       });
 
       const data = await res.json();
@@ -66,8 +68,15 @@ export default function DetailPengajuanAdminPage() {
         return;
       }
 
-      toast.success(data.message || `Status berhasil diubah menjadi ${status}`);
+      toast.success(
+        status === "SELESAI" && isPurchase
+          ? addToStock
+            ? "Pengajuan pembelian selesai & stok berhasil ditambahkan ke inventaris!"
+            : "Pengajuan pembelian selesai (tanpa penambahan stok gudang)."
+          : data.message || `Status berhasil diubah menjadi ${status}`
+      );
       setRejectModalOpen(false);
+      setCompleteModalOpen(false);
       setRejectNote("");
       fetchRequest();
     } catch (err) {
@@ -95,6 +104,10 @@ export default function DetailPengajuanAdminPage() {
       </AdminLayout>
     );
   }
+
+  const isPurchase = Boolean(
+    request?.reason?.includes("[PENGAJUAN PEMBELIAN ATK BARU]")
+  );
 
   return (
     <AdminLayout>
@@ -185,7 +198,13 @@ export default function DetailPengajuanAdminPage() {
                   <button
                     type="button"
                     disabled={isProcessing}
-                    onClick={() => handleUpdateStatus("SELESAI")}
+                    onClick={() => {
+                      if (isPurchase) {
+                        setCompleteModalOpen(true);
+                      } else {
+                        handleUpdateStatus("SELESAI");
+                      }
+                    }}
                     className="px-4 py-2 rounded-[8px] text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 shadow-xs transition cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
                   >
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -315,6 +334,103 @@ export default function DetailPengajuanAdminPage() {
               value={rejectNote}
               onChange={(e) => setRejectNote(e.target.value)}
             />
+          </div>
+        </Modal>
+      )}
+
+      {/* Complete & Stock Confirmation Modal (for Purchase Requests) */}
+      {completeModalOpen && request && (
+        <Modal
+          isOpen={completeModalOpen}
+          onClose={() => setCompleteModalOpen(false)}
+          title="Konfirmasi Penerimaan Barang & Stok ATK"
+          subtitle={`Permohonan Pembelian #${request.id.slice(-8).toUpperCase()} • ${request.atkItem.name}`}
+          size="md"
+          footer={
+            <div className="flex flex-col sm:flex-row items-center justify-end gap-2.5 w-full">
+              <button
+                type="button"
+                disabled={isProcessing}
+                onClick={() => setCompleteModalOpen(false)}
+                className="w-full sm:w-auto px-4 py-2 rounded-[8px] border border-[#ebeef2] text-[#323c4d] hover:bg-slate-50 text-xs font-bold transition cursor-pointer disabled:opacity-50"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                disabled={isProcessing}
+                onClick={() => handleUpdateStatus("SELESAI", undefined, false)}
+                className="w-full sm:w-auto px-4 py-2 rounded-[8px] bg-slate-100 hover:bg-slate-200 text-[#323c4d] border border-[#ebeef2] text-xs font-bold transition cursor-pointer disabled:opacity-50"
+                title="Selesaikan pengajuan tanpa menambah stok inventaris"
+              >
+                Tanpa Tambah Stok
+              </button>
+              <button
+                type="button"
+                disabled={isProcessing}
+                onClick={() => handleUpdateStatus("SELESAI", undefined, true)}
+                className="w-full sm:w-auto px-4.5 py-2 rounded-[8px] bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition shadow-xs cursor-pointer flex items-center justify-center gap-1.5 disabled:opacity-50"
+                title={`Selesaikan dan tambahkan +${request.quantity} ${request.atkItem.unit} ke stok gudang`}
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+                <span>Ya, Simpan ke Stok (+{request.quantity} {request.atkItem.unit})</span>
+              </button>
+            </div>
+          }
+        >
+          <div className="space-y-4">
+            {/* Item & Stock Simulation Card */}
+            <div className="bg-slate-50 rounded-[10px] border border-[#ebeef2] p-4 space-y-3">
+              <div className="flex items-center justify-between pb-3 border-b border-[#ebeef2]">
+                <div>
+                  <span className="text-[11px] font-semibold text-[#606c80] uppercase tracking-wider block">
+                    Nama Barang ATK
+                  </span>
+                  <span className="text-sm font-black text-[#323c4d] mt-0.5 block">
+                    {request.atkItem.name}
+                  </span>
+                </div>
+                <div className="text-right">
+                  <span className="text-[11px] font-semibold text-[#606c80] uppercase tracking-wider block">
+                    Pemohon
+                  </span>
+                  <span className="text-xs font-bold text-[#323c4d] mt-0.5 block">
+                    {request.user.name} ({request.user.department})
+                  </span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-3 text-center">
+                <div className="p-2.5 bg-white rounded-[8px] border border-[#ebeef2]">
+                  <span className="text-[10px] font-bold text-[#606c80] uppercase tracking-wider block">
+                    Stok Saat Ini
+                  </span>
+                  <span className="text-base font-black text-[#323c4d] mt-1 block">
+                    {request.atkItem.stock ?? 0} <span className="text-xs font-normal text-[#606c80]">{request.atkItem.unit}</span>
+                  </span>
+                </div>
+
+                <div className="p-2.5 bg-white rounded-[8px] border border-blue-200">
+                  <span className="text-[10px] font-bold text-blue-600 uppercase tracking-wider block">
+                    Jumlah Dibeli
+                  </span>
+                  <span className="text-base font-black text-blue-700 mt-1 block">
+                    +{request.quantity} <span className="text-xs font-normal text-blue-600">{request.atkItem.unit}</span>
+                  </span>
+                </div>
+
+                <div className="p-2.5 bg-emerald-50/80 rounded-[8px] border border-emerald-200">
+                  <span className="text-[10px] font-bold text-emerald-700 uppercase tracking-wider block">
+                    Estimasi Stok Baru
+                  </span>
+                  <span className="text-base font-black text-[#01923f] mt-1 block">
+                    {(request.atkItem.stock ?? 0) + request.quantity} <span className="text-xs font-normal text-emerald-700">{request.atkItem.unit}</span>
+                  </span>
+                </div>
+              </div>
+            </div>
           </div>
         </Modal>
       )}

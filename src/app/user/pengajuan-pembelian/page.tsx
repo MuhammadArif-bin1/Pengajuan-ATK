@@ -61,10 +61,10 @@ export default function PengajuanPembelianPage() {
   const [ftReason, setFtReason] = useState("");
   const [ftSubmitting, setFtSubmitting] = useState(false);
 
-  // Fetch notifications in background
+  // Fetch notifications in background (khusus pembelian)
   const fetchNotifs = useCallback(async () => {
     try {
-      const res = await fetch(`/api/requests/portal-notifications?limit=20&_t=${Date.now()}`, {
+      const res = await fetch(`/api/requests/portal-notifications?type=purchase&limit=20&_t=${Date.now()}`, {
         cache: "no-store",
       });
       if (res.ok) {
@@ -74,7 +74,7 @@ export default function PengajuanPembelianPage() {
           const pendingPurchaseCount = json.data.filter(
             (n: { isPurchase: boolean; status: string }) => n.isPurchase && n.status === "DIPROSES"
           ).length;
-          setUnreadCount(pendingPurchaseCount || 2);
+          setUnreadCount(pendingPurchaseCount);
         }
       }
     } catch {}
@@ -198,7 +198,7 @@ export default function PengajuanPembelianPage() {
       }
 
       if (soundEnabled) playNotificationSound();
-      toast.success("🎉 Pengajuan pembelian berhasil dikirim dan menunggu persetujuan Admin!");
+      toast.success("Permohonan pembelian berhasil dikirim ke Manajemen Pembelian Admin!");
 
       // Reset form
       setApplicantName("");
@@ -208,10 +208,8 @@ export default function PengajuanPembelianPage() {
       setNotes("");
       setErrors({});
 
-      // Redirect to dashboard to see request in queue
-      setTimeout(() => {
-        router.push("/");
-      }, 1200);
+      // Refresh notification badge
+      fetchNotifs();
     } catch (err) {
       console.error(err);
       toast.error("Terjadi kendala jaringan saat mengirim formulir.");

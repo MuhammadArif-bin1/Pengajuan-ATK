@@ -289,7 +289,8 @@ export async function updateRequestStatus(
   id: string,
   adminId: string,
   status: RequestStatus,
-  adminNote?: string | null
+  adminNote?: string | null,
+  addToStock?: boolean
 ) {
   const request = await prisma.atkRequest.findUnique({
     where: { id },
@@ -309,24 +310,37 @@ export async function updateRequestStatus(
       : request.adminNote;
 
   return prisma.$transaction(async (tx) => {
-    const isDeducted = (s: string) => s === "DIPROSES" || s === "SELESAI";
-    const wasDeducted = isDeducted(request.status);
-    const willBeDeducted = isDeducted(status);
+    const isPurchase = request.reason?.includes("[PENGAJUAN PEMBELIAN ATK BARU]");
 
-    // Jika beralih dari non-deducted (DITOLAK) ke deducted (DIPROSES atau SELESAI): kurangi stok
-    if (!wasDeducted && willBeDeducted) {
-      const newStock = Math.max(0, request.atkItem.stock - request.quantity);
-      await tx.atkItem.update({
-        where: { id: request.atkItemId },
-        data: { stock: newStock },
-      });
-    }
-    // Jika beralih dari deducted (DIPROSES atau SELESAI) ke non-deducted (DITOLAK): kembalikan stok
-    else if (wasDeducted && !willBeDeducted) {
-      await tx.atkItem.update({
-        where: { id: request.atkItemId },
-        data: { stock: request.atkItem.stock + request.quantity },
-      });
+    if (!isPurchase) {
+      const isDeducted = (s: string) => s === "DIPROSES" || s === "SELESAI";
+      const wasDeducted = isDeducted(request.status);
+      const willBeDeducted = isDeducted(status);
+
+      // Jika beralih dari non-deducted (DITOLAK) ke deducted (DIPROSES atau SELESAI): kurangi stok
+      if (!wasDeducted && willBeDeducted) {
+        const newStock = Math.max(0, request.atkItem.stock - request.quantity);
+        await tx.atkItem.update({
+          where: { id: request.atkItemId },
+          data: { stock: newStock },
+        });
+      }
+      // Jika beralih dari deducted (DIPROSES atau SELESAI) ke non-deducted (DITOLAK): kembalikan stok
+      else if (wasDeducted && !willBeDeducted) {
+        await tx.atkItem.update({
+          where: { id: request.atkItemId },
+          data: { stock: request.atkItem.stock + request.quantity },
+        });
+      }
+    } else {
+      // Pengajuan Pembelian ATK:
+      // Jika status diubah ke SELESAI dan admin memilih untuk menambah stok ke gudang:
+      if (status === "SELESAI" && addToStock === true) {
+        await tx.atkItem.update({
+          where: { id: request.atkItemId },
+          data: { stock: request.atkItem.stock + request.quantity },
+        });
+      }
     }
 
     return tx.atkRequest.update({

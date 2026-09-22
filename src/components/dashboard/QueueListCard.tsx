@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useMemo } from "react";
+import Link from "next/link";
 import type { PortalNotificationItem, QueueSortOrder } from "./types";
 import { StatusBadge, getRelativeTime } from "./StatusBadges";
 
@@ -32,6 +33,29 @@ export const QueueListCard: React.FC<QueueListCardProps> = ({
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  // Hanya menampilkan permohonan ATK reguler (permohonan pembelian tidak masuk ke antrian)
+  // Pengajuan yang statusnya telah SELESAI hanya muncul pada hari tersebut, dan hilang di hari berikutnya
+  const displayItems = useMemo(() => {
+    return items.filter((item) => {
+      if (item.isPurchase) return false;
+
+      if (item.status === "SELESAI") {
+        const completionDateStr = item.processedAt || item.updatedAt || item.createdAt;
+        if (completionDateStr) {
+          const compDate = new Date(completionDateStr);
+          const now = new Date();
+          const isToday =
+            compDate.getFullYear() === now.getFullYear() &&
+            compDate.getMonth() === now.getMonth() &&
+            compDate.getDate() === now.getDate();
+          if (!isToday) return false;
+        }
+      }
+
+      return true;
+    });
+  }, [items]);
 
   return (
     <div className="bg-white rounded-[12px] border border-[#ebeef2] shadow-[0px_1px_3px_0px_rgba(96,108,128,0.05)] p-5 sm:p-6 flex flex-col relative transition-all duration-200 min-h-[580px]">
@@ -106,7 +130,7 @@ export const QueueListCard: React.FC<QueueListCardProps> = ({
             <div className="w-8 h-8 border-3 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
             <p className="text-xs font-medium text-slate-400">Memuat daftar antrian...</p>
           </div>
-        ) : items.length === 0 ? (
+        ) : displayItems.length === 0 ? (
           <div className="py-20 text-center px-4">
             <div className="w-12 h-12 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center mx-auto mb-3 text-xl">
               🗂️
@@ -119,7 +143,7 @@ export const QueueListCard: React.FC<QueueListCardProps> = ({
             </p>
           </div>
         ) : (
-          items.map((req) => (
+          displayItems.map((req) => (
             <div
               key={req.id}
               className="py-3.5 first:pt-1 last:pb-1 flex items-start justify-between gap-4 group hover:bg-slate-50/70 px-2 rounded-xl transition"
@@ -169,10 +193,14 @@ export const QueueListCard: React.FC<QueueListCardProps> = ({
 
       {/* Card Footer Summary */}
       <div className="pt-4 border-t border-slate-100 mt-auto flex items-center justify-between text-xs text-slate-500 font-medium">
-        <span>Total: <b className="text-slate-800">{items.length}</b> antrian</span>
-        <span className="text-[11px] text-slate-400">
-          Urutan: {sortOrder === "NEWEST" ? "Waktu Terbaru" : "Waktu Terlama"}
-        </span>
+        <span>Total: <b className="text-slate-800">{displayItems.length}</b> antrian aktif</span>
+        <Link
+          href="/user/riwayat"
+          className="text-[11.5px] font-bold text-[#ff8f00] hover:text-[#e07d00] hover:underline flex items-center gap-1 transition"
+        >
+          <span>Lihat Riwayat Selesai</span>
+          <span>→</span>
+        </Link>
       </div>
     </div>
   );
