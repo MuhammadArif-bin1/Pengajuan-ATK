@@ -3,6 +3,7 @@
 // ===========================================
 
 import { prisma } from "@/lib/prisma";
+import { getOrCreateEmployeeUser } from "@/services/user.service";
 import type { RequestStatus } from "@/generated/prisma/enums";
 
 // ===========================================
@@ -23,49 +24,13 @@ export async function createRequest(data: {
 
   // If public employee info is provided, find or create user
   if (!targetUserId && (data.userName || data.userEmail)) {
-    const cleanName = (data.userName || "Karyawan").trim();
-    const cleanDept = (data.department || "Umum").trim();
-    const cleanPos = (data.position || "Staff").trim();
-    const emailKey =
-      data.userEmail?.toLowerCase().trim() ||
-      `${cleanName.toLowerCase().replace(/[^a-z0-9]/g, "")}.${cleanDept.toLowerCase().replace(/[^a-z0-9]/g, "")}@hasamitra.internal`;
-
-    let existingUser = await prisma.user.findFirst({
-      where: {
-        OR: [
-          { email: emailKey },
-          { name: { equals: cleanName, mode: "insensitive" }, department: cleanDept },
-        ],
-      },
+    const employee = await getOrCreateEmployeeUser({
+      name: data.userName || "Karyawan",
+      department: data.department,
+      position: data.position,
+      email: data.userEmail,
     });
-
-    if (!existingUser) {
-      // Create user automatically for employee
-      const { hashPassword } = await import("@/lib/auth");
-      const defaultPassword = await hashPassword("User123!");
-      existingUser = await prisma.user.create({
-        data: {
-          name: cleanName,
-          email: emailKey,
-          password: defaultPassword,
-          role: "USER",
-          department: cleanDept,
-          position: cleanPos,
-          isActive: true,
-        },
-      });
-    } else {
-      // Update name/dept/position to ensure 100% exact match with submitted form
-      existingUser = await prisma.user.update({
-        where: { id: existingUser.id },
-        data: {
-          name: cleanName,
-          department: cleanDept,
-          position: cleanPos,
-        },
-      });
-    }
-    targetUserId = existingUser.id;
+    targetUserId = employee.id;
   }
 
   if (!targetUserId) {

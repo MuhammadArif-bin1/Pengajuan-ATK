@@ -1,9 +1,11 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Sidebar } from "@/components/layout/Sidebar";
+import { PortalHeader } from "@/components/layout/PortalHeader";
+import { usePortalNotifications } from "@/hooks/usePortalNotifications";
 import { useToast } from "@/components/ui/Toast";
 import { playNotificationSound } from "@/lib/notificationSound";
 
@@ -37,52 +39,22 @@ export default function PengajuanPembelianPage() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
 
-  // Notification State
-  const [unreadCount, setUnreadCount] = useState(0);
-  const [notifications, setNotifications] = useState<Array<{
-    id: string;
-    itemName: string;
-    status: string;
-    userName: string;
-    updatedAt: string;
-  }>>([]);
-  const [notifDropdownOpen, setNotifDropdownOpen] = useState(false);
-  const [soundEnabled, setSoundEnabled] = useState(true);
-  const notifDropdownRef = useRef<HTMLDivElement>(null);
+  // Notifications State via Shared Hook
+  const {
+    notifications,
+    unreadIds,
+    isRinging,
+    soundEnabled,
+    toggleSound,
+    markAllRead,
+    refetch: fetchNotifs,
+  } = usePortalNotifications({ type: "purchase", limit: 20 });
 
-  // Fetch notifications in background (khusus pembelian)
-  const fetchNotifs = useCallback(async () => {
-    try {
-      const res = await fetch(`/api/requests/portal-notifications?type=purchase&limit=20&_t=${Date.now()}`, {
-        cache: "no-store",
-      });
-      if (res.ok) {
-        const json = await res.json();
-        if (json.success && Array.isArray(json.data)) {
-          setNotifications(json.data);
-          const pendingPurchaseCount = json.data.filter(
-            (n: { isPurchase: boolean; status: string }) => n.isPurchase && n.status === "DIPROSES"
-          ).length;
-          setUnreadCount(pendingPurchaseCount);
-        }
-      }
-    } catch {}
-  }, []);
-
-  useEffect(() => {
-    fetchNotifs();
-  }, [fetchNotifs]);
-
-  // Click outside to close notif dropdown
-  useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
-      if (notifDropdownRef.current && !notifDropdownRef.current.contains(e.target as Node)) {
-        setNotifDropdownOpen(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+  const pendingPurchaseCount = useMemo(() => {
+    return notifications.filter(
+      (n) => n.isPurchase && n.status === "DIPROSES"
+    ).length;
+  }, [notifications]);
 
   // Add Item Row (Figma (+) Button)
   const handleAddItem = () => {
@@ -215,79 +187,23 @@ export default function PengajuanPembelianPage() {
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
         activeTab="purchase"
-        purchaseBadgeCount={unreadCount}
+        purchaseBadgeCount={pendingPurchaseCount}
       />
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col lg:pl-64 min-w-0">
         {/* Top Navbar Header */}
-        <header className="sticky top-0 z-30 flex h-20 w-full items-center justify-between border-b border-slate-200/80 bg-white/95 backdrop-blur-md px-4 sm:px-8 shadow-xs">
-          {/* Left: Mobile Menu Trigger & Page Title */}
-          <div className="flex items-center gap-3.5">
-            <button
-              onClick={() => setSidebarOpen(true)}
-              type="button"
-              className="lg:hidden p-2 rounded-xl text-slate-600 hover:bg-slate-100 transition cursor-pointer"
-              aria-label="Buka Menu"
-            >
-              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
-              </svg>
-            </button>
-            <h1 className="text-xl sm:text-2xl font-black text-[#323c4d] tracking-tight">
-              Pengajuan Pembelian
-            </h1>
-          </div>
-
-          {/* Right: Notifications Bell Icon */}
-          <div className="flex items-center gap-3 relative" ref={notifDropdownRef}>
-            <button
-              type="button"
-              onClick={() => setNotifDropdownOpen(!notifDropdownOpen)}
-              className="w-11 h-11 rounded-2xl flex items-center justify-center text-[#ff8f00] hover:bg-orange-50 transition cursor-pointer relative shadow-2xs border border-orange-100"
-              aria-label="Notifikasi Pengajuan"
-            >
-              <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2zm-2 1H8v-6c0-2.48 1.51-4.5 4-4.5s4 2.02 4 4.5v6z" />
-              </svg>
-
-              {unreadCount > 0 && (
-                <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-[#dc2626] text-white text-[10px] font-black flex items-center justify-center border-2 border-white shadow-xs">
-                  {unreadCount}
-                </span>
-              )}
-            </button>
-
-            {/* Notification Dropdown */}
-            {notifDropdownOpen && (
-              <div className="absolute right-0 top-14 w-80 sm:w-96 bg-white rounded-2xl shadow-xl border border-slate-200/90 z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
-                <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/70">
-                  <span className="font-bold text-slate-800 text-sm">Notifikasi Pengajuan</span>
-                  <button
-                    type="button"
-                    onClick={() => setSoundEnabled(!soundEnabled)}
-                    className="text-xs text-slate-500 hover:text-slate-800 flex items-center gap-1 font-semibold"
-                  >
-                    {soundEnabled ? "🔔 Suara Aktif" : "🔕 Mute"}
-                  </button>
-                </div>
-                <div className="max-h-80 overflow-y-auto divide-y divide-slate-100 p-2">
-                  {notifications.slice(0, 8).map((notif) => (
-                    <div key={notif.id} className="p-3 rounded-xl hover:bg-slate-50 transition">
-                      <div className="flex items-start justify-between gap-2">
-                        <p className="text-xs font-bold text-slate-900">{notif.itemName}</p>
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700">
-                          {notif.status}
-                        </span>
-                      </div>
-                      <p className="text-[11px] text-slate-500 mt-1">Pemohon: {notif.userName}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        </header>
+        <PortalHeader
+          title="Pengajuan Pembelian"
+          onOpenSidebar={() => setSidebarOpen(true)}
+          notifications={notifications}
+          unreadIds={unreadIds}
+          badgeCount={pendingPurchaseCount}
+          isRinging={isRinging}
+          soundEnabled={soundEnabled}
+          onToggleSound={toggleSound}
+          onMarkAllRead={markAllRead}
+        />
 
         {/* Main Content Form Card */}
         <main className="flex-1 p-4 sm:p-8">

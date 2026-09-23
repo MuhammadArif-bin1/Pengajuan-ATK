@@ -159,13 +159,31 @@ export default function DashboardPengajuanPage() {
     }
   }, [soundEnabled, toast]);
 
+  // Smart polling: only poll when tab is visible; immediately refresh on focus or visibility change
   useEffect(() => {
     fetchCatalog();
     fetchRequests();
+
+    const handleVisibility = () => {
+      if (typeof document !== "undefined" && document.visibilityState === "visible") {
+        fetchRequests();
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibility);
+    window.addEventListener("focus", handleVisibility);
+
     const interval = setInterval(() => {
-      fetchRequests();
+      if (typeof document !== "undefined" && document.visibilityState === "visible") {
+        fetchRequests();
+      }
     }, 10000);
-    return () => clearInterval(interval);
+
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener("visibilitychange", handleVisibility);
+      window.removeEventListener("focus", handleVisibility);
+    };
   }, [fetchCatalog, fetchRequests]);
 
   // Filtered Stock Items (Debounced Search & Status Filter)

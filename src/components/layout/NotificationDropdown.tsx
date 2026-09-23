@@ -125,9 +125,18 @@ export const NotificationDropdown: React.FC = () => {
     }
   }, []);
 
-  // Safe background auto-refresh every 15s (only when tab is visible) + on window focus
+  // Safe background auto-refresh every 15s (only when tab is visible) + on window focus & visibilitychange
   useEffect(() => {
     fetchNotifications();
+
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible") {
+        fetchNotifications();
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibility);
+    window.addEventListener("focus", handleVisibility);
 
     const interval = setInterval(() => {
       if (document.visibilityState === "visible") {
@@ -135,16 +144,10 @@ export const NotificationDropdown: React.FC = () => {
       }
     }, 15000);
 
-    const handleFocus = () => {
-      if (document.visibilityState === "visible") {
-        fetchNotifications();
-      }
-    };
-
-    window.addEventListener("focus", handleFocus);
     return () => {
       clearInterval(interval);
-      window.removeEventListener("focus", handleFocus);
+      document.removeEventListener("visibilitychange", handleVisibility);
+      window.removeEventListener("focus", handleVisibility);
     };
   }, [fetchNotifications]);
 

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { hashPassword } from "@/lib/auth";
+import { getOrCreateEmployeeUser } from "@/services/user.service";
 
 export async function POST(request: NextRequest) {
   try {
@@ -72,46 +72,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const cleanName = userName.trim();
-    const cleanDept = department.trim();
-    const cleanPos = position.trim();
-    const emailFallback =
-      userEmail?.trim() ||
-      `${cleanName.toLowerCase().replace(/[^a-z0-9]/g, "")}.${cleanDept.toLowerCase().replace(/[^a-z0-9]/g, "")}@hasamitra.internal`;
-
-    // 1. Find or create user
-    let user = await prisma.user.findFirst({
-      where: {
-        OR: [
-          { email: emailFallback.toLowerCase() },
-          { name: { equals: cleanName, mode: "insensitive" }, department: cleanDept },
-        ],
-      },
+    // 1. Find or create user via centralized employee helper
+    const user = await getOrCreateEmployeeUser({
+      name: userName,
+      department,
+      position,
+      email: userEmail,
     });
-
-    if (!user) {
-      const defaultPassword = await hashPassword("User123!");
-      user = await prisma.user.create({
-        data: {
-          name: cleanName,
-          email: emailFallback.toLowerCase().trim(),
-          password: defaultPassword,
-          role: "USER",
-          department: cleanDept,
-          position: cleanPos,
-          isActive: true,
-        },
-      });
-    } else {
-      user = await prisma.user.update({
-        where: { id: user.id },
-        data: {
-          name: cleanName,
-          department: cleanDept,
-          position: cleanPos,
-        },
-      });
-    }
 
     // 2. Construct Reason text
     const fullReason = [
