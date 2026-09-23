@@ -352,12 +352,12 @@ export default function DashboardPengajuanPage() {
       <button
         type="button"
         onClick={() => setPengajuanAtkOpen(true)}
-        className="fixed bottom-8 right-8 z-30 w-14 h-14 bg-[#1d1633] hover:bg-[#2c224d] active:scale-95 text-white rounded-[19px] shadow-2xl flex items-center justify-center transition-all cursor-pointer group hover:shadow-indigo-950/30"
+        className="fixed bottom-8 right-8 z-30 w-[84px] h-[84px] bg-[#1d1633] hover:bg-[#2c224d] active:scale-95 text-white rounded-[28px] shadow-2xl flex items-center justify-center transition-all cursor-pointer group hover:shadow-indigo-950/30"
         title="Ajukan Pengajuan ATK Baru"
         aria-label="Tambah Pengajuan ATK"
       >
         <svg
-          className="w-7 h-7 group-hover:scale-110 transition-transform"
+          className="w-[42px] h-[42px] group-hover:scale-110 transition-transform"
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"

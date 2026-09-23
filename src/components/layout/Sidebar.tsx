@@ -79,7 +79,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
       id: "admin-barang",
       label: "Pengajuan Pembelian",
       href: "/admin/barang",
-      badge: purchaseBadgeCount,
       icon: (
         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
@@ -108,7 +107,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     },
   ];
 
-  const publicNavTabs = [
+  const publicNavTabs: NavItem[] = [
     {
       id: "dashboard",
       label: "Dashboard Pengajuan",
@@ -126,7 +125,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
       id: "purchase",
       label: "Pengajuan Pembelian",
       href: "/user/pengajuan-pembelian",
-      badge: purchaseBadgeCount,
       icon: (
         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
@@ -233,7 +231,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       key={tab.id}
                       href={tab.href}
                       onClick={() => {
-                        if (onSelectTab) onSelectTab(tab.id);
+                        if (onSelectTab && tab.id) onSelectTab(tab.id);
                         if (onClose) onClose();
                       }}
                       className={`w-full flex items-center justify-between px-3.5 py-3 rounded-[10px] text-xs font-semibold transition-all duration-150 cursor-pointer ${
@@ -249,7 +247,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         <span className="text-[13px]">{tab.label}</span>
                       </div>
 
-                      {tab.badge !== undefined && tab.badge > 0 && (
+                      {tab.badge !== undefined && Number(tab.badge) > 0 && (
                         <span className="h-5 min-w-[20px] px-1.5 rounded-full bg-[#ef4444]/15 text-[#dc2626] flex items-center justify-center text-[10.5px] font-black">
                           {tab.badge}
                         </span>
