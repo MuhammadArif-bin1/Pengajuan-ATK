@@ -5,6 +5,7 @@ import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Badge } from "@/components/ui/Badge";
 import { useToast } from "@/components/ui/Toast";
 import { exportReportToCsv, exportReportToExcel } from "@/lib/exportExcel";
+import { isPurchaseRequest, cleanPurchaseReason } from "@/lib/requestHelpers";
 
 interface ReportSummary {
   total: number;
@@ -252,17 +253,7 @@ export default function AdminLaporanPage() {
     return departmentRows.reduce((acc, curr) => acc + curr.selesai, 0);
   }, [departmentRows]);
 
-  const getCleanReason = (reason: string) => {
-    if (!reason) return "-";
-    let clean = reason
-      .replace("[PENGAJUAN PEMBELIAN ATK BARU]", "")
-      .replace("[PERMINTAAN ATK]", "")
-      .trim();
-    if (clean.startsWith("Alasan:")) {
-      clean = clean.replace(/^Alasan:\s*/, "").trim();
-    }
-    return clean || "-";
-  };
+  const getCleanReason = cleanPurchaseReason;
 
   const isFiltered = Boolean(startDate || endDate || department || typeFilter);
 
@@ -655,9 +646,7 @@ export default function AdminLaporanPage() {
                   </tr>
                 ) : (
                   reportData.requests.map((row, idx) => {
-                    const isPurchase =
-                      row.reason &&
-                      row.reason.includes("[PENGAJUAN PEMBELIAN ATK BARU]");
+                    const isPurchase = isPurchaseRequest(row.reason);
 
                     const cleanReason = getCleanReason(row.reason);
 

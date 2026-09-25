@@ -55,6 +55,18 @@ export const NotificationDropdown: React.FC = () => {
     } catch (e) {
       console.error("Failed to load notification storage", e);
     }
+
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === "admin_read_notifications_v1" && e.newValue) {
+        try {
+          setReadIds(new Set(JSON.parse(e.newValue)));
+        } catch {}
+      } else if (e.key === "admin_sound_enabled" && e.newValue !== null) {
+        setSoundEnabled(e.newValue === "true");
+      }
+    };
+    window.addEventListener("storage", handleStorageChange);
+    return () => window.removeEventListener("storage", handleStorageChange);
   }, []);
 
   // Request browser desktop notification permission if supported
@@ -161,6 +173,20 @@ export const NotificationDropdown: React.FC = () => {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  // Close dropdown and dismiss live popup on Escape key
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        if (isOpen) setIsOpen(false);
+        if (livePopup) setLivePopup(null);
+      }
+    };
+    if (isOpen || livePopup) {
+      document.addEventListener("keydown", handleKeyDown);
+      return () => document.removeEventListener("keydown", handleKeyDown);
+    }
+  }, [isOpen, livePopup]);
 
   // Mark single item as read
   const handleMarkAsRead = (id: string, targetUrl: string) => {

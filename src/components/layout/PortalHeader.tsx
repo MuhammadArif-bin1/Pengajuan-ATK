@@ -23,7 +23,10 @@ export interface PortalHeaderProps {
   soundEnabled?: boolean;
   onToggleSound?: () => void;
   onMarkAllRead?: () => void;
+  onMarkItemRead?: (id: string) => void;
   badgeCount?: number;
+  livePopup?: PortalNotificationItem | null;
+  onDismissLivePopup?: () => void;
 }
 
 export const PortalHeader: React.FC<PortalHeaderProps> = ({
@@ -37,7 +40,10 @@ export const PortalHeader: React.FC<PortalHeaderProps> = ({
   soundEnabled = true,
   onToggleSound,
   onMarkAllRead,
+  onMarkItemRead,
   badgeCount,
+  livePopup,
+  onDismissLivePopup,
 }) => {
   const [notifDropdownOpen, setNotifDropdownOpen] = useState(false);
   const notifDropdownRef = useRef<HTMLDivElement>(null);
@@ -52,6 +58,20 @@ export const PortalHeader: React.FC<PortalHeaderProps> = ({
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  // Close dropdown and dismiss live popup on Escape key
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") {
+        if (notifDropdownOpen) setNotifDropdownOpen(false);
+        if (livePopup && onDismissLivePopup) onDismissLivePopup();
+      }
+    }
+    if (notifDropdownOpen || livePopup) {
+      document.addEventListener("keydown", handleKeyDown);
+      return () => document.removeEventListener("keydown", handleKeyDown);
+    }
+  }, [notifDropdownOpen, livePopup, onDismissLivePopup]);
 
   const displayBadgeNumber = badgeCount !== undefined
     ? badgeCount
@@ -165,30 +185,49 @@ export const PortalHeader: React.FC<PortalHeaderProps> = ({
               </div>
 
               <div className="max-h-80 overflow-y-auto divide-y divide-slate-100 p-2">
-                {notifications.slice(0, 10).map((notif) => (
-                  <div
-                    key={notif.id}
-                    className={`p-3 rounded-xl transition ${
-                      unreadIds.has(notif.id) ? "bg-orange-50/40" : "hover:bg-slate-50"
-                    }`}
-                  >
-                    <div className="flex items-start justify-between gap-2">
-                      <p className="text-xs font-bold text-slate-900">{notif.itemName}</p>
-                      <StatusBadge status={notif.status} />
-                    </div>
-                    <p className="text-[11px] text-slate-500 mt-1">
-                      Pemohon: <span className="font-semibold text-slate-700">{notif.userName}</span> ({notif.department})
-                    </p>
-                    {notif.adminNote && (
-                      <p className="text-[11px] text-slate-600 bg-white/90 p-1.5 rounded-lg border border-slate-100 mt-1.5">
-                        💬 {notif.adminNote}
+                {notifications.slice(0, 10).map((notif) => {
+                  const isUnread = unreadIds.has(notif.id);
+                  return (
+                    <div
+                      key={notif.id}
+                      onClick={() => {
+                        if (isUnread && onMarkItemRead) {
+                          onMarkItemRead(notif.id);
+                        }
+                      }}
+                      className={`p-3 rounded-xl transition ${
+                        isUnread
+                          ? "bg-orange-50/70 border-l-2 border-[#ff8f00] cursor-pointer hover:bg-orange-100/60"
+                          : "hover:bg-slate-50"
+                      }`}
+                      role={isUnread ? "button" : undefined}
+                      tabIndex={isUnread ? 0 : undefined}
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <p className="text-xs font-bold text-slate-900">{notif.itemName}</p>
+                        <StatusBadge status={notif.status} />
+                      </div>
+                      <p className="text-[11px] text-slate-500 mt-1">
+                        Pemohon: <span className="font-semibold text-slate-700">{notif.userName}</span> ({notif.department})
                       </p>
-                    )}
-                    <span className="text-[10px] text-slate-400 mt-1 block">
-                      {getRelativeTime(notif.updatedAt)}
-                    </span>
-                  </div>
-                ))}
+                      {notif.adminNote && (
+                        <p className="text-[11px] text-slate-600 bg-white/90 p-1.5 rounded-lg border border-slate-100 mt-1.5">
+                          💬 {notif.adminNote}
+                        </p>
+                      )}
+                      <div className="flex items-center justify-between mt-1">
+                        <span className="text-[10px] text-slate-400">
+                          {getRelativeTime(notif.updatedAt)}
+                        </span>
+                        {isUnread && (
+                          <span className="text-[10px] text-[#ff8f00] font-bold">
+                            Belum dibaca
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
                 {notifications.length === 0 && (
                   <div className="py-8 text-center text-xs text-slate-400">
                     Belum ada pembaruan status pengajuan
@@ -211,6 +250,64 @@ export const PortalHeader: React.FC<PortalHeaderProps> = ({
           )}
         </div>
       </header>
+
+      {/* Floating Live Popup Notification Banner */}
+      {livePopup && (
+        <div className="fixed top-20 inset-x-3.5 sm:inset-x-auto sm:right-6 z-50 max-w-sm w-auto sm:w-full bg-white rounded-[14px] shadow-2xl border-2 border-[#ff8f00] p-4 animate-in slide-in-from-top-4 fade-in duration-300">
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex items-start gap-3 min-w-0">
+              <div className="w-10 h-10 rounded-xl bg-orange-50 text-[#ff8f00] border border-orange-200 flex items-center justify-center shrink-0 font-bold text-lg animate-bounce">
+                🔔
+              </div>
+              <div className="min-w-0">
+                <span className="text-[10px] font-extrabold text-[#ff8f00] uppercase tracking-wider block">
+                  {livePopup.status === "SELESAI"
+                    ? "🎉 Pengajuan Selesai!"
+                    : livePopup.status === "DITOLAK"
+                    ? "❌ Pengajuan Ditolak"
+                    : "📋 Pengajuan ATK Masuk!"}
+                </span>
+                <p className="text-xs font-bold text-slate-800 mt-0.5 truncate">
+                  {livePopup.userName} ({livePopup.department})
+                </p>
+                <p className="text-xs text-slate-600 mt-0.5">
+                  <b className="text-slate-900">{livePopup.itemName}</b> ({livePopup.quantity} {livePopup.unit})
+                </p>
+                {livePopup.adminNote && (
+                  <p className="text-[11px] text-slate-500 bg-slate-50 p-1.5 rounded-lg mt-1 border border-slate-100 italic">
+                    💬 {livePopup.adminNote}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={onDismissLivePopup}
+              className="text-slate-400 hover:text-slate-700 text-xs font-bold p-1 cursor-pointer"
+              aria-label="Tutup Notifikasi"
+            >
+              ✕
+            </button>
+          </div>
+
+          <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between gap-2">
+            <span className="text-[10px] text-slate-400 font-medium">
+              Baru saja diterima
+            </span>
+            <button
+              type="button"
+              onClick={() => {
+                if (onMarkItemRead) onMarkItemRead(livePopup.id);
+                if (onDismissLivePopup) onDismissLivePopup();
+              }}
+              className="text-xs font-bold text-[#ff8f00] hover:underline cursor-pointer"
+            >
+              Tandai Dibaca
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Mobile Search Input (Visible on small screens when search prop is passed) */}
       {search && (

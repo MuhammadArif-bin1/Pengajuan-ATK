@@ -16,6 +16,9 @@ export interface DashboardHeaderProps {
   soundEnabled: boolean;
   onToggleSound: () => void;
   onMarkAllRead: () => void;
+  onMarkItemRead?: (id: string) => void;
+  livePopup?: PortalNotificationItem | null;
+  onDismissLivePopup?: () => void;
 }
 
 export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
@@ -30,6 +33,9 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   soundEnabled,
   onToggleSound,
   onMarkAllRead,
+  onMarkItemRead,
+  livePopup,
+  onDismissLivePopup,
 }) => {
   return (
     <PortalHeader
@@ -48,6 +54,9 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
       soundEnabled={soundEnabled}
       onToggleSound={onToggleSound}
       onMarkAllRead={onMarkAllRead}
+      onMarkItemRead={onMarkItemRead}
+      livePopup={livePopup}
+      onDismissLivePopup={onDismissLivePopup}
     />
   );
 };

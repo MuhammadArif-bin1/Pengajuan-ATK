@@ -11,17 +11,20 @@ export interface HistoryDetailModalProps {
 export function HistoryDetailModal({ request, onClose }: HistoryDetailModalProps) {
   if (!request) return null;
 
+  const isRejected = request.status === "DITOLAK";
+
   return (
     <Modal
       isOpen={true}
       onClose={onClose}
-      title="Detail Berkas Pengajuan Selesai"
+      title="Detail Riwayat Pengajuan"
       subtitle={`Tiket #${request.id.slice(-8).toUpperCase()} • ${request.user.name}`}
       size="md"
       footer={
         <div className="flex items-center justify-between w-full">
           <span className="text-xs font-semibold text-slate-500">
-            Diselesaikan: {formatDate(request.processedAt || request.updatedAt)}
+            {isRejected ? "Ditolak: " : "Diselesaikan: "}{" "}
+            {formatDate(request.processedAt || request.updatedAt)}
           </span>
           <button
             type="button"
@@ -35,20 +38,37 @@ export function HistoryDetailModal({ request, onClose }: HistoryDetailModalProps
     >
       <div className="space-y-4 py-1 text-xs">
         {/* Status Header Box */}
-        <div className="p-3.5 rounded-[10px] bg-emerald-50 border border-emerald-200/80 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <span className="text-xl">✅</span>
-            <div>
-              <p className="font-bold text-emerald-900 text-xs">Pengajuan Telah Selesai</p>
-              <p className="text-[11px] text-emerald-700 mt-0.5">
-                Barang ATK telah diserahkan kepada pemohon
-              </p>
+        {isRejected ? (
+          <div className="p-3.5 rounded-[10px] bg-rose-50 border border-rose-200/80 flex items-center justify-between">
+            <div className="flex items-center gap-2.5">
+              <span className="text-xl">❌</span>
+              <div>
+                <p className="font-bold text-rose-900 text-xs">Pengajuan Ditolak</p>
+                <p className="text-[11px] text-rose-700 mt-0.5">
+                  Permohonan ATK ditolak oleh administrator
+                </p>
+              </div>
             </div>
+            <span className="px-2.5 py-1 rounded-[6px] text-[11px] font-bold bg-rose-600 text-white shadow-2xs">
+              DITOLAK
+            </span>
           </div>
-          <span className="px-2.5 py-1 rounded-[6px] text-[11px] font-bold bg-emerald-600 text-white shadow-2xs">
-            SELESAI
-          </span>
-        </div>
+        ) : (
+          <div className="p-3.5 rounded-[10px] bg-emerald-50 border border-emerald-200/80 flex items-center justify-between">
+            <div className="flex items-center gap-2.5">
+              <span className="text-xl">✅</span>
+              <div>
+                <p className="font-bold text-emerald-900 text-xs">Pengajuan Telah Selesai</p>
+                <p className="text-[11px] text-emerald-700 mt-0.5">
+                  Barang ATK telah diserahkan kepada pemohon
+                </p>
+              </div>
+            </div>
+            <span className="px-2.5 py-1 rounded-[6px] text-[11px] font-bold bg-emerald-600 text-white shadow-2xs">
+              SELESAI
+            </span>
+          </div>
+        )}
 
         {/* Info Grid */}
         <div className="grid grid-cols-2 gap-3 p-4 rounded-[10px] bg-slate-50 border border-slate-200/80">
@@ -78,7 +98,7 @@ export function HistoryDetailModal({ request, onClose }: HistoryDetailModalProps
           </div>
           <div>
             <span className="text-[10.5px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">
-              Jumlah Diserahkan
+              {isRejected ? "Jumlah Diajukan" : "Jumlah Diserahkan"}
             </span>
             <span className="text-xs font-black text-slate-900 block">
               {request.quantity} {request.atkItem.unit}
@@ -94,7 +114,7 @@ export function HistoryDetailModal({ request, onClose }: HistoryDetailModalProps
           </div>
           <div>
             <span className="text-[10.5px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">
-              Waktu Diselesaikan
+              {isRejected ? "Waktu Ditolak" : "Waktu Diselesaikan"}
             </span>
             <span className="text-xs font-semibold text-slate-700 block">
               {formatDateTime(request.processedAt || request.updatedAt)}
@@ -102,7 +122,7 @@ export function HistoryDetailModal({ request, onClose }: HistoryDetailModalProps
           </div>
           <div className="col-span-2">
             <span className="text-[10.5px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">
-              Diproses / Disetujui Oleh
+              {isRejected ? "Ditolak Oleh" : "Diproses / Disetujui Oleh"}
             </span>
             <span className="text-xs font-bold text-slate-800 block">
               {request.processor?.name || "Administrator"}
@@ -124,10 +144,21 @@ export function HistoryDetailModal({ request, onClose }: HistoryDetailModalProps
 
         {request.adminNote && (
           <div>
-            <span className="text-xs font-bold text-amber-800 block mb-1">
-              Catatan dari Administrator:
+            <span
+              className={`text-xs font-bold ${
+                isRejected ? "text-rose-800" : "text-amber-800"
+              } block mb-1`}
+            >
+              {isRejected
+                ? "Alasan / Catatan Penolakan Administrator:"
+                : "Catatan dari Administrator:"}
             </span>
-            <div className="p-3 rounded-[8px] bg-amber-50/80 border border-amber-200 text-amber-900 leading-relaxed text-[11.5px]">
+            <div
+              className={`p-3 rounded-[8px] ${
+                isRejected
+                  ? "bg-rose-50/80 border border-rose-200 text-rose-900"
+                  : "bg-amber-50/80 border border-amber-200 text-amber-900"
+              } leading-relaxed text-[11.5px]`}>
               {request.adminNote}
             </div>
           </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Sidebar } from "@/components/layout/Sidebar";
@@ -39,16 +39,31 @@ export default function PengajuanPembelianPage() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
 
+  // Real-time toast alert callback
+  const toastAlert = useCallback((item: any) => {
+    if (item.status === "SELESAI") {
+      toast.success(`🎉 Pengajuan Selesai: ${item.itemName} (${item.quantity} ${item.unit}) siap diambil`);
+    } else if (item.status === "DITOLAK") {
+      toast.error(`❌ Pengajuan Ditolak: ${item.itemName}`);
+    } else if (item.status === "DIPROSES") {
+      toast.info(`📋 Pengajuan Pembelian Masuk: ${item.itemName} (${item.quantity} ${item.unit})`);
+    }
+  }, [toast]);
+
   // Notifications State via Shared Hook
   const {
     notifications,
     unreadIds,
+    unreadCount,
     isRinging,
     soundEnabled,
     toggleSound,
+    livePopup,
+    dismissLivePopup,
     markAllRead,
+    markAsRead,
     refetch: fetchNotifs,
-  } = usePortalNotifications({ type: "purchase", limit: 20 });
+  } = usePortalNotifications({ type: "purchase", limit: 20, enableToastAlert: toastAlert });
 
   const pendingPurchaseCount = useMemo(() => {
     return notifications.filter(
@@ -198,11 +213,14 @@ export default function PengajuanPembelianPage() {
           onOpenSidebar={() => setSidebarOpen(true)}
           notifications={notifications}
           unreadIds={unreadIds}
-          badgeCount={pendingPurchaseCount}
+          unreadCount={unreadCount}
           isRinging={isRinging}
           soundEnabled={soundEnabled}
           onToggleSound={toggleSound}
           onMarkAllRead={markAllRead}
+          onMarkItemRead={markAsRead}
+          livePopup={livePopup}
+          onDismissLivePopup={dismissLivePopup}
         />
 
         {/* Main Content Form Card */}

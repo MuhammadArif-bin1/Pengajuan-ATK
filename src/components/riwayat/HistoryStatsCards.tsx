@@ -13,12 +13,12 @@ export function HistoryStatsCards({
 }: HistoryStatsCardsProps) {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 print:grid-cols-3">
-      {/* Stat 1: Total Selesai */}
+      {/* Stat 1: Total Riwayat */}
       <div className="bg-white rounded-[10px] border border-[#ebeef2] p-5 shadow-2xs">
         <div className="flex items-center justify-between text-[#606c80] text-[11px] font-bold uppercase tracking-wider">
           <span>TOTAL RIWAYAT</span>
-          <span className="w-7 h-7 rounded-[6px] bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-xs">
-            ✔
+          <span className="w-7 h-7 rounded-[6px] bg-slate-100 text-slate-600 flex items-center justify-center font-bold text-xs">
+            📋
           </span>
         </div>
         <div className="mt-3">
@@ -28,14 +28,14 @@ export function HistoryStatsCards({
           <span className="text-xs font-semibold text-slate-400 ml-1.5">Berkas</span>
         </div>
         <p className="text-[11px] text-slate-400 font-medium mt-1">
-          Permohonan selesai secara keseluruhan
+          Total berkas selesai & ditolak
         </p>
       </div>
 
-      {/* Stat 2: Diselesaikan Hari Ini */}
+      {/* Stat 2: Diproses Hari Ini */}
       <div className="bg-white rounded-[10px] border border-[#ebeef2] p-5 shadow-2xs">
         <div className="flex items-center justify-between text-[#606c80] text-[11px] font-bold uppercase tracking-wider">
-          <span>SELESAI HARI INI</span>
+          <span>DIPROSES HARI INI</span>
           <span className="w-7 h-7 rounded-[6px] bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-xs">
             ⏱
           </span>

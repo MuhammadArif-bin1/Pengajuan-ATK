@@ -30,13 +30,14 @@ export default function RiwayatPengajuanPage() {
   const [total, setTotal] = useState(0);
 
   // Quick Stats
-  const [statsTotalSelesai, setStatsTotalSelesai] = useState(0);
+  const [statsTotalRiwayat, setStatsTotalRiwayat] = useState(0);
   const [statsTotalQty, setStatsTotalQty] = useState(0);
 
   // Filters
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [departmentFilter, setDepartmentFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("ALL"); // "ALL" | "SELESAI" | "DITOLAK"
   const [dateMode, setDateMode] = useState<DateMode>("all");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
@@ -44,6 +45,17 @@ export default function RiwayatPengajuanPage() {
 
   // Modal Detail State
   const [selectedRequest, setSelectedRequest] = useState<AtkRequestData | null>(null);
+
+  // Real-time toast alert callback
+  const toastAlert = useCallback((item: any) => {
+    if (item.status === "SELESAI") {
+      toast.success(`🎉 Pengajuan Selesai: ${item.itemName} (${item.quantity} ${item.unit}) siap diambil`);
+    } else if (item.status === "DITOLAK") {
+      toast.error(`❌ Pengajuan Ditolak: ${item.itemName}`);
+    } else if (item.status === "DIPROSES") {
+      toast.info(`📋 Pengajuan ATK Masuk: ${item.itemName} (${item.quantity} ${item.unit})`);
+    }
+  }, [toast]);
 
   // Notifications State via Shared Hook
   const {
@@ -53,8 +65,11 @@ export default function RiwayatPengajuanPage() {
     isRinging,
     soundEnabled,
     toggleSound,
+    livePopup,
+    dismissLivePopup,
     markAllRead,
-  } = usePortalNotifications({ limit: 20 });
+    markAsRead,
+  } = usePortalNotifications({ limit: 20, enableToastAlert: toastAlert });
 
   // Debounce search
   useEffect(() => {
@@ -101,7 +116,7 @@ export default function RiwayatPengajuanPage() {
     return { computedStartDate: "", computedEndDate: "" };
   }, [dateMode, startDate, endDate]);
 
-  // Fetch requests (Khusus status=SELESAI & type=regular)
+  // Fetch requests (Khusus riwayat berkas: SELESAI & DITOLAK & type=regular)
   const fetchRequests = useCallback(
     async (showLoading = true) => {
       try {
@@ -110,7 +125,11 @@ export default function RiwayatPengajuanPage() {
         const params = new URLSearchParams();
         params.set("page", page.toString());
         params.set("limit", "10");
-        params.set("status", "SELESAI");
+        if (statusFilter === "ALL") {
+          params.set("status", "SELESAI,DITOLAK");
+        } else {
+          params.set("status", statusFilter);
+        }
         params.set("type", "regular");
 
         if (debouncedSearch) params.set("search", debouncedSearch);
@@ -119,7 +138,7 @@ export default function RiwayatPengajuanPage() {
         if (computedEndDate) params.set("endDate", computedEndDate);
 
         const res = await fetch(`/api/requests?${params.toString()}`);
-        if (!res.ok) throw new Error("Gagal mengambil riwayat pengajuan selesai");
+        if (!res.ok) throw new Error("Gagal mengambil riwayat pengajuan");
 
         const data = await res.json();
         let list: AtkRequestData[] = data.data || [];
@@ -138,8 +157,8 @@ export default function RiwayatPengajuanPage() {
         // Compute total quantity on current fetched list
         const qtySum = list.reduce((acc, curr) => acc + (curr.quantity || 0), 0);
         setStatsTotalQty(qtySum);
-        if (!debouncedSearch && !departmentFilter && dateMode === "all") {
-          setStatsTotalSelesai(data.total || 0);
+        if (!debouncedSearch && !departmentFilter && dateMode === "all" && statusFilter === "ALL") {
+          setStatsTotalRiwayat(data.total || 0);
         }
       } catch (err) {
         console.error("Fetch history requests error:", err);
@@ -148,7 +167,7 @@ export default function RiwayatPengajuanPage() {
         if (showLoading) setLoading(false);
       }
     },
-    [page, debouncedSearch, departmentFilter, computedStartDate, computedEndDate, sortOrder, dateMode, toast]
+    [page, debouncedSearch, departmentFilter, statusFilter, computedStartDate, computedEndDate, sortOrder, dateMode, toast]
   );
 
   // Initial load
@@ -165,6 +184,7 @@ export default function RiwayatPengajuanPage() {
     setSearch("");
     setDebouncedSearch("");
     setDepartmentFilter("");
+    setStatusFilter("ALL");
     setDateMode("all");
     setStartDate("");
     setEndDate("");
@@ -172,7 +192,7 @@ export default function RiwayatPengajuanPage() {
     setPage(1);
   };
 
-  // Today completed count in current list
+  // Today completed/rejected count in current list
   const completedTodayCount = useMemo(() => {
     const todayStr = new Date().toISOString().slice(0, 10);
     return requests.filter((r) => {
@@ -196,7 +216,7 @@ export default function RiwayatPengajuanPage() {
       <div className="flex-1 flex flex-col lg:pl-64 min-w-0 print:pl-0">
         {/* Top Navbar Header */}
         <PortalHeader
-          title="Riwayat Pengajuan Selesai"
+          title="Riwayat Pengajuan"
           onOpenSidebar={() => setSidebarOpen(true)}
           notifications={notifications}
           unreadIds={unreadIds}
@@ -205,13 +225,16 @@ export default function RiwayatPengajuanPage() {
           soundEnabled={soundEnabled}
           onToggleSound={toggleSound}
           onMarkAllRead={markAllRead}
+          onMarkItemRead={markAsRead}
+          livePopup={livePopup}
+          onDismissLivePopup={dismissLivePopup}
         />
 
         {/* Main Content Body */}
         <main className="flex-1 p-4 sm:p-8 space-y-6 max-w-7xl w-full mx-auto">
           {/* 3 Stat Summary Cards */}
           <HistoryStatsCards
-            total={statsTotalSelesai || total}
+            total={statsTotalRiwayat || total}
             completedTodayCount={completedTodayCount}
             totalQuantity={statsTotalQty}
           />
@@ -224,6 +247,11 @@ export default function RiwayatPengajuanPage() {
             departmentFilter={departmentFilter}
             onDepartmentChange={(dept) => {
               setDepartmentFilter(dept);
+              setPage(1);
+            }}
+            statusFilter={statusFilter}
+            onStatusFilterChange={(st) => {
+              setStatusFilter(st);
               setPage(1);
             }}
             dateMode={dateMode}
@@ -256,7 +284,12 @@ export default function RiwayatPengajuanPage() {
             totalPages={totalPages}
             onPageChange={setPage}
             onSelectRequest={setSelectedRequest}
-            isFiltered={Boolean(debouncedSearch || departmentFilter || dateMode !== "all")}
+            isFiltered={Boolean(
+              debouncedSearch ||
+              departmentFilter ||
+              statusFilter !== "ALL" ||
+              dateMode !== "all"
+            )}
             onResetFilters={handleResetFilters}
           />
         </main>

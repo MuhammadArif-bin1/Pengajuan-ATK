@@ -31,10 +31,10 @@ export function HistoryTable({
       <div className="px-5 sm:px-6 py-4 border-b border-[#ebeef2] flex items-center justify-between">
         <div>
           <h3 className="text-base font-black text-[#323c4d] tracking-tight">
-            Daftar Berkas Selesai
+            Daftar Riwayat Pengajuan
           </h3>
           <p className="text-xs text-[#606c80] font-medium mt-0.5">
-            Menampilkan {requests.length} dari total {total} berkas selesai
+            Menampilkan {requests.length} dari total {total} berkas riwayat
           </p>
         </div>
 
@@ -50,11 +50,6 @@ export function HistoryTable({
             </svg>
             <span>Cetak</span>
           </button>
-
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-[6px] text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/80">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            Status: Selesai
-          </span>
         </div>
       </div>
 
@@ -62,18 +57,18 @@ export function HistoryTable({
       {loading ? (
         <div className="py-24 text-center">
           <div className="w-8 h-8 border-3 border-[#ff8f00] border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-          <p className="text-xs font-semibold text-slate-500">Memuat riwayat pengajuan selesai...</p>
+          <p className="text-xs font-semibold text-slate-500">Memuat riwayat pengajuan...</p>
         </div>
       ) : requests.length === 0 ? (
         <div className="py-20 text-center px-4">
           <div className="w-14 h-14 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center mx-auto mb-3 text-2xl shadow-2xs">
             📂
           </div>
-          <h4 className="text-sm font-bold text-slate-700">Belum ada data riwayat selesai</h4>
+          <h4 className="text-sm font-bold text-slate-700">Belum ada data riwayat</h4>
           <p className="text-xs text-slate-400 mt-1 max-w-sm mx-auto">
             {isFiltered
-              ? "Tidak ada permohonan selesai yang sesuai dengan filter pencarian Anda."
-              : "Pengajuan ATK yang telah selesai diproses oleh administrator akan secara otomatis diarsipkan di sini."}
+              ? "Tidak ada permohonan yang sesuai dengan filter pencarian Anda."
+              : "Pengajuan ATK yang telah selesai diproses atau ditolak oleh administrator akan secara otomatis diarsipkan di sini."}
           </p>
           {isFiltered && (
             <button
@@ -95,7 +90,7 @@ export function HistoryTable({
                 <th className="text-left px-5 py-3.5">BARANG ATK</th>
                 <th className="text-center px-4 py-3.5">JUMLAH</th>
                 <th className="text-left px-5 py-3.5">TGL PENGAJUAN</th>
-                <th className="text-left px-5 py-3.5">TGL SELESAI</th>
+                <th className="text-left px-5 py-3.5">TGL PROSES</th>
                 <th className="text-left px-5 py-3.5">DIPROSES OLEH</th>
                 <th className="text-center px-4 py-3.5">STATUS</th>
                 <th className="text-right px-5 py-3.5 print:hidden">AKSI</th>
@@ -146,10 +141,17 @@ export function HistoryTable({
                       {req.processor?.name || "Administrator"}
                     </td>
                     <td className="text-center px-4 py-4">
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-[6px] text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/80">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                        Selesai
-                      </span>
+                      {req.status === "DITOLAK" ? (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-[6px] text-[11px] font-bold bg-rose-50 text-rose-700 border border-rose-200/80">
+                          <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+                          Ditolak
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-[6px] text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/80">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                          Selesai
+                        </span>
+                      )}
                     </td>
                     <td className="px-5 py-4 text-right print:hidden">
                       <button

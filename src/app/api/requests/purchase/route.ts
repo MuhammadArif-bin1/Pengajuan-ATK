@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getOrCreateEmployeeUser } from "@/services/user.service";
+import { buildPurchaseReason } from "@/lib/requestHelpers";
 
 export async function POST(request: NextRequest) {
   try {
@@ -81,10 +82,7 @@ export async function POST(request: NextRequest) {
     });
 
     // 2. Construct Reason text
-    const fullReason = [
-      `[PENGAJUAN PEMBELIAN ATK BARU]`,
-      reason?.trim() ? `Alasan: ${reason.trim()}` : `Alasan: Permohonan pengadaan barang baru untuk operasional kantor`,
-    ].join("\n");
+    const fullReason = buildPurchaseReason(reason);
 
     const createdRequests = [];
 

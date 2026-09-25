@@ -24,13 +24,7 @@ export const formatDateTime = (dateStr?: string | null): string => {
   });
 };
 
-export const cleanReason = (rawReason?: string | null): string => {
-  if (!rawReason) return "-";
-  return (
-    rawReason
-      .replace("[PENGAJUAN PEMBELIAN ATK BARU]", "")
-      .replace("[FAST TRACK]", "")
-      .replace(/^Alasan:\s*/i, "")
-      .trim() || "-"
-  );
-};
+import { cleanPurchaseReason } from "@/lib/requestHelpers";
+
+// Re-export as cleanReason for backwards compatibility
+export const cleanReason = cleanPurchaseReason;

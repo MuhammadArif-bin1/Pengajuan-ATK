@@ -11,6 +11,7 @@ export interface QueueListCardProps {
   sortOrder: QueueSortOrder;
   onSortOrderChange: (order: QueueSortOrder) => void;
   debouncedSearch: string;
+  className?: string;
 }
 
 export const QueueListCard: React.FC<QueueListCardProps> = ({
@@ -19,6 +20,7 @@ export const QueueListCard: React.FC<QueueListCardProps> = ({
   sortOrder,
   onSortOrderChange,
   debouncedSearch,
+  className = "",
 }) => {
   const [queueSortOpen, setQueueSortOpen] = useState(false);
   const queueSortRef = useRef<HTMLDivElement>(null);
@@ -34,13 +36,26 @@ export const QueueListCard: React.FC<QueueListCardProps> = ({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // Keyboard Escape handler to close sort dropdown
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape" && queueSortOpen) {
+        setQueueSortOpen(false);
+      }
+    }
+    if (queueSortOpen) {
+      document.addEventListener("keydown", handleKeyDown);
+      return () => document.removeEventListener("keydown", handleKeyDown);
+    }
+  }, [queueSortOpen]);
+
   // Hanya menampilkan permohonan ATK reguler (permohonan pembelian tidak masuk ke antrian)
-  // Pengajuan yang statusnya telah SELESAI hanya muncul pada hari tersebut, dan hilang di hari berikutnya
+  // Pengajuan yang statusnya telah SELESAI atau DITOLAK hanya muncul pada hari tersebut, dan hilang di hari berikutnya
   const displayItems = useMemo(() => {
     return items.filter((item) => {
       if (item.isPurchase) return false;
 
-      if (item.status === "SELESAI") {
+      if (item.status === "SELESAI" || item.status === "DITOLAK") {
         const completionDateStr = item.processedAt || item.updatedAt || item.createdAt;
         if (completionDateStr) {
           const compDate = new Date(completionDateStr);
@@ -58,7 +73,7 @@ export const QueueListCard: React.FC<QueueListCardProps> = ({
   }, [items]);
 
   return (
-    <div className="bg-white rounded-[12px] border border-[#ebeef2] shadow-[0px_1px_3px_0px_rgba(96,108,128,0.05)] p-5 sm:p-6 flex flex-col relative transition-all duration-200 h-full min-h-[460px] lg:min-h-0">
+    <div className={`bg-white rounded-[12px] border border-[#ebeef2] shadow-[0px_1px_3px_0px_rgba(96,108,128,0.05)] p-5 sm:p-6 flex flex-col relative transition-all duration-200 h-full min-h-[460px] lg:min-h-0 ${className}`}>
       {/* Card Header */}
       <div className="flex items-center justify-between pb-5 border-b border-[#ebeef2] shrink-0">
         <div className="flex items-center gap-3">
@@ -126,9 +141,29 @@ export const QueueListCard: React.FC<QueueListCardProps> = ({
       {/* Antrian Items Content List */}
       <div className="flex-1 overflow-y-auto mt-4 pr-1 divide-y divide-slate-100 min-h-0">
         {loading ? (
-          <div className="py-20 text-center">
-            <div className="w-8 h-8 border-3 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-            <p className="text-xs font-medium text-slate-400">Memuat daftar antrian...</p>
+          <div className="space-y-2.5 py-1">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div
+                key={i}
+                className="py-3.5 px-2 rounded-xl flex items-start justify-between gap-4 animate-pulse bg-slate-50/40"
+              >
+                <div className="min-w-0 flex-1 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <div
+                      className="h-3.5 bg-slate-200 rounded-md"
+                      style={{ width: `${90 + (i % 2) * 25}px` }}
+                    />
+                    <div className="h-3 bg-slate-200/60 rounded-md w-20" />
+                  </div>
+                  <div
+                    className="h-3 bg-slate-200/80 rounded-md"
+                    style={{ width: `${140 + (i % 3) * 30}px` }}
+                  />
+                  <div className="h-2.5 bg-slate-200/50 rounded-md w-24" />
+                </div>
+                <div className="h-6 w-20 bg-slate-200 rounded-full shrink-0" />
+              </div>
+            ))}
           </div>
         ) : displayItems.length === 0 ? (
           <div className="py-20 text-center px-4">
@@ -198,7 +233,7 @@ export const QueueListCard: React.FC<QueueListCardProps> = ({
           href="/user/riwayat"
           className="text-[11.5px] font-bold text-[#ff8f00] hover:text-[#e07d00] hover:underline flex items-center gap-1 transition"
         >
-          <span>Lihat Riwayat Selesai</span>
+          <span>Lihat Riwayat</span>
           <span>→</span>
         </Link>
       </div>

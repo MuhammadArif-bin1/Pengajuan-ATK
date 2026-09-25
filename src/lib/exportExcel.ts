@@ -1,3 +1,5 @@
+import { isPurchaseRequest, cleanPurchaseReason } from "@/lib/requestHelpers";
+
 export interface ReportTransactionExport {
   id: string;
   createdAt: string;
@@ -143,18 +145,8 @@ export function exportReportToCsv(params: {
   );
 
   transactions.forEach((tx, idx) => {
-    const isPurchase =
-      tx.type === "purchase" ||
-      (tx.reason && tx.reason.includes("[PENGAJUAN PEMBELIAN ATK BARU]"));
-
-    let cleanReason = (tx.reason || "")
-      .replace("[PENGAJUAN PEMBELIAN ATK BARU]", "")
-      .replace("[PERMINTAAN ATK]", "")
-      .trim();
-
-    if (cleanReason.startsWith("Alasan:")) {
-      cleanReason = cleanReason.replace(/^Alasan:\s*/, "").trim();
-    }
+    const isPurchase = tx.type === "purchase" || isPurchaseRequest(tx.reason);
+    const cleanReason = cleanPurchaseReason(tx.reason);
 
     lines.push(
       [
@@ -277,18 +269,8 @@ export async function exportReportToExcel(params: {
 
   // Sheet 1: Rincian Transaksi
   const txData = transactions.map((tx, idx) => {
-    const isPurchase =
-      tx.type === "purchase" ||
-      (tx.reason && tx.reason.includes("[PENGAJUAN PEMBELIAN ATK BARU]"));
-
-    let cleanReason = (tx.reason || "")
-      .replace("[PENGAJUAN PEMBELIAN ATK BARU]", "")
-      .replace("[PERMINTAAN ATK]", "")
-      .trim();
-
-    if (cleanReason.startsWith("Alasan:")) {
-      cleanReason = cleanReason.replace(/^Alasan:\s*/, "").trim();
-    }
+    const isPurchase = tx.type === "purchase" || isPurchaseRequest(tx.reason);
+    const cleanReason = cleanPurchaseReason(tx.reason);
 
     const formatDateVal = (dateStr?: string) => {
       if (!dateStr) return "-";

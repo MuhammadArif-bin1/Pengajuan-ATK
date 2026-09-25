@@ -10,7 +10,7 @@ import { Modal } from "@/components/ui/Modal";
 import { Textarea } from "@/components/ui/Textarea";
 import { PageLoader } from "@/components/ui/Loading";
 import { useToast } from "@/components/ui/Toast";
-import type { AtkRequestData, RequestStatusType } from "@/types/request";
+import { type AtkRequestData, type RequestStatusType, isPurchaseRequest } from "@/types/request";
 
 export default function DetailPengajuanAdminPage() {
   const params = useParams();
@@ -105,9 +105,7 @@ export default function DetailPengajuanAdminPage() {
     );
   }
 
-  const isPurchase = Boolean(
-    request?.reason?.includes("[PENGAJUAN PEMBELIAN ATK BARU]")
-  );
+  const isPurchase = isPurchaseRequest(request?.reason);
 
   return (
     <AdminLayout>
