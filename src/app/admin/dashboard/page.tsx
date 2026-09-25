@@ -69,6 +69,15 @@ export default function AdminDashboardPage() {
     // Initial fetch displays loading skeleton/indicator
     loadDashboardData(true);
 
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible") {
+        loadDashboardData(false);
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibility);
+    window.addEventListener("focus", handleVisibility);
+
     // Silent background auto-refresh every 30s only when page is visible
     const interval = setInterval(() => {
       if (document.visibilityState === "visible") {
@@ -78,6 +87,8 @@ export default function AdminDashboardPage() {
 
     return () => {
       clearInterval(interval);
+      document.removeEventListener("visibilitychange", handleVisibility);
+      window.removeEventListener("focus", handleVisibility);
     };
   }, [loadDashboardData]);
 

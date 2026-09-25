@@ -45,6 +45,8 @@ model User {
   requests       AtkRequest[] @relation("UserRequests")
   processedItems AtkRequest[] @relation("ProcessedBy")
 
+  @@index([role, isActive])
+  @@index([department])
   @@map("users")
 }
 
@@ -61,6 +63,8 @@ model AtkItem {
   // Relations
   requests AtkRequest[]
 
+  @@index([isActive])
+  @@index([name])
   @@map("atk_items")
 }
 
@@ -82,5 +86,9 @@ model AtkRequest {
   atkItem   AtkItem @relation(fields: [atkItemId], references: [id])
   processor User?   @relation("ProcessedBy", fields: [processedBy], references: [id])
 
+  @@index([status, createdAt])
+  @@index([userId])
+  @@index([atkItemId])
+  @@index([createdAt])
   @@map("atk_requests")
 }

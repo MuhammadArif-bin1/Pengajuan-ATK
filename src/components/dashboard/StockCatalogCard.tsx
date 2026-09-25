@@ -10,6 +10,7 @@ export interface StockCatalogCardProps {
   statusFilter: StockStatusFilter;
   onStatusFilterChange: (filter: StockStatusFilter) => void;
   debouncedSearch: string;
+  className?: string;
 }
 
 export const StockCatalogCard: React.FC<StockCatalogCardProps> = ({
@@ -18,6 +19,7 @@ export const StockCatalogCard: React.FC<StockCatalogCardProps> = ({
   statusFilter,
   onStatusFilterChange,
   debouncedSearch,
+  className = "",
 }) => {
   const [stockFilterOpen, setStockFilterOpen] = useState(false);
   const stockFilterRef = useRef<HTMLDivElement>(null);
@@ -33,8 +35,21 @@ export const StockCatalogCard: React.FC<StockCatalogCardProps> = ({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // Keyboard Escape handler to close filter dropdown
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape" && stockFilterOpen) {
+        setStockFilterOpen(false);
+      }
+    }
+    if (stockFilterOpen) {
+      document.addEventListener("keydown", handleKeyDown);
+      return () => document.removeEventListener("keydown", handleKeyDown);
+    }
+  }, [stockFilterOpen]);
+
   return (
-    <div className="bg-white rounded-[12px] border border-[#ebeef2] shadow-[0px_1px_3px_0px_rgba(96,108,128,0.05)] p-5 sm:p-6 flex flex-col relative transition-all duration-200 h-full min-h-[460px] lg:min-h-0">
+    <div className={`bg-white rounded-[12px] border border-[#ebeef2] shadow-[0px_1px_3px_0px_rgba(96,108,128,0.05)] p-5 sm:p-6 flex flex-col relative transition-all duration-200 h-full min-h-[460px] lg:min-h-0 ${className}`}>
       {/* Card Header */}
       <div className="flex items-center justify-between pb-5 border-b border-[#ebeef2] shrink-0">
         <div className="flex items-center gap-3">
@@ -141,9 +156,25 @@ export const StockCatalogCard: React.FC<StockCatalogCardProps> = ({
       {/* Stock Items Content List */}
       <div className="flex-1 overflow-y-auto mt-4 pr-1 divide-y divide-slate-100 min-h-0">
         {loading ? (
-          <div className="py-20 text-center">
-            <div className="w-8 h-8 border-3 border-orange-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-            <p className="text-xs font-medium text-slate-400">Memuat stok barang ATK...</p>
+          <div className="space-y-2.5 py-1">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div
+                key={i}
+                className="py-3 px-2 rounded-xl flex items-center justify-between gap-3 animate-pulse bg-slate-50/40"
+              >
+                <div className="flex items-center gap-3 min-w-0 flex-1">
+                  <div className="w-9 h-9 rounded-lg bg-slate-200 shrink-0" />
+                  <div className="min-w-0 flex-1 space-y-1.5">
+                    <div
+                      className="h-3.5 bg-slate-200 rounded-md"
+                      style={{ width: `${60 + (i % 3) * 15}%` }}
+                    />
+                    <div className="h-2.5 bg-slate-200/70 rounded-md w-28" />
+                  </div>
+                </div>
+                <div className="h-7 w-20 bg-slate-200 rounded-[6px] shrink-0" />
+              </div>
+            ))}
           </div>
         ) : items.length === 0 ? (
           <div className="py-20 text-center px-4">

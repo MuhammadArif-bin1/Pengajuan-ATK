@@ -75,22 +75,27 @@ export default function AdminStokPage() {
     fetchItems(true);
   }, [fetchItems]);
 
-  // Safe background auto-refresh every 15s (only when tab is visible) + on window focus
+  // Safe background auto-refresh every 15s (only when tab is visible) + on window focus & visibilitychange
   useEffect(() => {
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible") {
+        fetchItems(false);
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibility);
+    window.addEventListener("focus", handleVisibility);
+
     const interval = setInterval(() => {
       if (document.visibilityState === "visible") {
         fetchItems(false);
       }
     }, 15000);
 
-    const handleFocus = () => {
-      fetchItems(false);
-    };
-
-    window.addEventListener("focus", handleFocus);
     return () => {
       clearInterval(interval);
-      window.removeEventListener("focus", handleFocus);
+      document.removeEventListener("visibilitychange", handleVisibility);
+      window.removeEventListener("focus", handleVisibility);
     };
   }, [fetchItems]);
 

@@ -3,7 +3,9 @@
 // ===========================================
 
 import { prisma } from "@/lib/prisma";
+import { getOrCreateEmployeeUser } from "@/services/user.service";
 import type { RequestStatus } from "@/generated/prisma/enums";
+import { PURCHASE_TAG, isPurchaseRequest } from "@/lib/requestHelpers";
 
 // ===========================================
 // CRUD Operations
@@ -23,49 +25,13 @@ export async function createRequest(data: {
 
   // If public employee info is provided, find or create user
   if (!targetUserId && (data.userName || data.userEmail)) {
-    const cleanName = (data.userName || "Karyawan").trim();
-    const cleanDept = (data.department || "Umum").trim();
-    const cleanPos = (data.position || "Staff").trim();
-    const emailKey =
-      data.userEmail?.toLowerCase().trim() ||
-      `${cleanName.toLowerCase().replace(/[^a-z0-9]/g, "")}.${cleanDept.toLowerCase().replace(/[^a-z0-9]/g, "")}@hasamitra.internal`;
-
-    let existingUser = await prisma.user.findFirst({
-      where: {
-        OR: [
-          { email: emailKey },
-          { name: { equals: cleanName, mode: "insensitive" }, department: cleanDept },
-        ],
-      },
+    const employee = await getOrCreateEmployeeUser({
+      name: data.userName || "Karyawan",
+      department: data.department,
+      position: data.position,
+      email: data.userEmail,
     });
-
-    if (!existingUser) {
-      // Create user automatically for employee
-      const { hashPassword } = await import("@/lib/auth");
-      const defaultPassword = await hashPassword("User123!");
-      existingUser = await prisma.user.create({
-        data: {
-          name: cleanName,
-          email: emailKey,
-          password: defaultPassword,
-          role: "USER",
-          department: cleanDept,
-          position: cleanPos,
-          isActive: true,
-        },
-      });
-    } else {
-      // Update name/dept/position to ensure 100% exact match with submitted form
-      existingUser = await prisma.user.update({
-        where: { id: existingUser.id },
-        data: {
-          name: cleanName,
-          department: cleanDept,
-          position: cleanPos,
-        },
-      });
-    }
-    targetUserId = existingUser.id;
+    targetUserId = employee.id;
   }
 
   if (!targetUserId) {
@@ -80,20 +46,28 @@ export async function createRequest(data: {
     throw new Error("Karyawan tidak aktif atau tidak ditemukan");
   }
 
-  // Validate ATK item is active
-  const item = await prisma.atkItem.findUnique({
-    where: { id: data.atkItemId },
-  });
-  if (!item || !item.isActive) {
-    throw new Error("Barang ATK tidak aktif atau tidak ditemukan");
-  }
-
   return prisma.$transaction(async (tx) => {
-    // Otomatis kurangi stok gudang saat pengajuan dibuat dengan status DIPROSES
+    // Ambil item terkini dan validasi stok di dalam transaksi
+    const currentItem = await tx.atkItem.findUnique({
+      where: { id: data.atkItemId },
+      select: { id: true, stock: true, isActive: true },
+    });
+
+    if (!currentItem || !currentItem.isActive) {
+      throw new Error("Barang ATK tidak aktif atau tidak ditemukan");
+    }
+
+    if (currentItem.stock < data.quantity) {
+      throw new Error(
+        `Stok barang tidak mencukupi (Tersedia: ${currentItem.stock}, Diminta: ${data.quantity})`
+      );
+    }
+
+    // Otomatis kurangi stok gudang secara atomic saat pengajuan dibuat dengan status DIPROSES
     await tx.atkItem.update({
       where: { id: data.atkItemId },
       data: {
-        stock: Math.max(0, item.stock - data.quantity),
+        stock: { decrement: data.quantity },
       },
     });
 
@@ -130,7 +104,7 @@ export async function createRequest(data: {
 export async function getRequestsByUser(
   userId: string,
   filters?: {
-    status?: RequestStatus;
+    status?: RequestStatus | string;
     page?: number;
     limit?: number;
   }
@@ -142,7 +116,15 @@ export async function getRequestsByUser(
   const where: Record<string, unknown> = { userId };
 
   if (filters?.status) {
-    where.status = filters.status;
+    if (typeof filters.status === "string" && filters.status.includes(",")) {
+      const statuses = filters.status
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean) as RequestStatus[];
+      where.status = { in: statuses };
+    } else {
+      where.status = filters.status;
+    }
   }
 
   const [requests, total] = await Promise.all([
@@ -170,7 +152,7 @@ export async function getRequestsByUser(
 }
 
 export async function getAllRequests(filters?: {
-  status?: RequestStatus;
+  status?: RequestStatus | string;
   department?: string;
   search?: string;
   startDate?: string;
@@ -186,7 +168,15 @@ export async function getAllRequests(filters?: {
   const where: Record<string, unknown> = {};
 
   if (filters?.status) {
-    where.status = filters.status;
+    if (typeof filters.status === "string" && filters.status.includes(",")) {
+      const statuses = filters.status
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean) as RequestStatus[];
+      where.status = { in: statuses };
+    } else {
+      where.status = filters.status;
+    }
   }
 
   if (filters?.department) {
@@ -194,9 +184,9 @@ export async function getAllRequests(filters?: {
   }
 
   if (filters?.type === "purchase") {
-    where.reason = { contains: "[PENGAJUAN PEMBELIAN ATK BARU]" };
+    where.reason = { contains: PURCHASE_TAG };
   } else if (filters?.type === "regular") {
-    where.NOT = { reason: { contains: "[PENGAJUAN PEMBELIAN ATK BARU]" } };
+    where.NOT = { reason: { contains: PURCHASE_TAG } };
   }
 
   if (filters?.search) {
@@ -310,26 +300,36 @@ export async function updateRequestStatus(
       : request.adminNote;
 
   return prisma.$transaction(async (tx) => {
-    const isPurchase = request.reason?.includes("[PENGAJUAN PEMBELIAN ATK BARU]");
+    const isPurchase = isPurchaseRequest(request.reason);
 
     if (!isPurchase) {
       const isDeducted = (s: string) => s === "DIPROSES" || s === "SELESAI";
       const wasDeducted = isDeducted(request.status);
       const willBeDeducted = isDeducted(status);
 
-      // Jika beralih dari non-deducted (DITOLAK) ke deducted (DIPROSES atau SELESAI): kurangi stok
+      // Jika beralih dari non-deducted (DITOLAK) ke deducted (DIPROSES atau SELESAI): kurangi stok secara atomic
       if (!wasDeducted && willBeDeducted) {
-        const newStock = Math.max(0, request.atkItem.stock - request.quantity);
+        const currentItem = await tx.atkItem.findUnique({
+          where: { id: request.atkItemId },
+          select: { stock: true },
+        });
+
+        if (!currentItem || currentItem.stock < request.quantity) {
+          throw new Error(
+            `Gagal memproses pengajuan: Stok tidak mencukupi (Tersedia: ${currentItem?.stock ?? 0}, Dibutuhkan: ${request.quantity})`
+          );
+        }
+
         await tx.atkItem.update({
           where: { id: request.atkItemId },
-          data: { stock: newStock },
+          data: { stock: { decrement: request.quantity } },
         });
       }
-      // Jika beralih dari deducted (DIPROSES atau SELESAI) ke non-deducted (DITOLAK): kembalikan stok
+      // Jika beralih dari deducted (DIPROSES atau SELESAI) ke non-deducted (DITOLAK): kembalikan stok secara atomic
       else if (wasDeducted && !willBeDeducted) {
         await tx.atkItem.update({
           where: { id: request.atkItemId },
-          data: { stock: request.atkItem.stock + request.quantity },
+          data: { stock: { increment: request.quantity } },
         });
       }
     } else {
@@ -338,7 +338,7 @@ export async function updateRequestStatus(
       if (status === "SELESAI" && addToStock === true) {
         await tx.atkItem.update({
           where: { id: request.atkItemId },
-          data: { stock: request.atkItem.stock + request.quantity },
+          data: { stock: { increment: request.quantity } },
         });
       }
     }
@@ -380,9 +380,9 @@ export async function getRequestStats(userId?: string, type?: "purchase" | "regu
   const where: Record<string, unknown> = userId ? { userId } : {};
 
   if (type === "purchase") {
-    where.reason = { contains: "[PENGAJUAN PEMBELIAN ATK BARU]" };
+    where.reason = { contains: PURCHASE_TAG };
   } else if (type === "regular") {
-    where.NOT = { reason: { contains: "[PENGAJUAN PEMBELIAN ATK BARU]" } };
+    where.NOT = { reason: { contains: PURCHASE_TAG } };
   }
 
   const [total, diproses, selesai, ditolak] =
@@ -415,9 +415,9 @@ export async function getReportData(filters?: {
   }
 
   if (filters?.type === "purchase") {
-    where.reason = { contains: "[PENGAJUAN PEMBELIAN ATK BARU]" };
+    where.reason = { contains: PURCHASE_TAG };
   } else if (filters?.type === "regular") {
-    where.NOT = { reason: { contains: "[PENGAJUAN PEMBELIAN ATK BARU]" } };
+    where.NOT = { reason: { contains: PURCHASE_TAG } };
   }
 
   if (filters?.startDate || filters?.endDate) {

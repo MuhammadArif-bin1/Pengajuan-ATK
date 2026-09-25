@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { PURCHASE_TAG, isPurchaseRequest, cleanPurchaseReason } from "@/lib/requestHelpers";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -17,10 +18,10 @@ export async function GET(request: NextRequest) {
 
     // Filter tipe pengajuan: jika bukan "purchase" atau "all", jangan tampilkan pengajuan pembelian di antrian
     if (type === "purchase") {
-      where.reason = { contains: "[PENGAJUAN PEMBELIAN ATK BARU]" };
+      where.reason = { contains: PURCHASE_TAG };
     } else if (type !== "all") {
       // Default / "regular": Hanya permohonan ATK reguler
-      where.NOT = { reason: { contains: "[PENGAJUAN PEMBELIAN ATK BARU]" } };
+      where.NOT = { reason: { contains: PURCHASE_TAG } };
     }
 
     let idList: string[] = [];
@@ -72,11 +73,8 @@ export async function GET(request: NextRequest) {
 
     const formatted = requests.map((req) => {
       const reasonText = req.reason || "";
-      const isPurchase = reasonText.includes("[PENGAJUAN PEMBELIAN ATK BARU]");
-      let cleanReason = reasonText.replace("[PENGAJUAN PEMBELIAN ATK BARU]", "").trim();
-      if (cleanReason.startsWith("Alasan:")) {
-        cleanReason = cleanReason.replace(/^Alasan:\s*/, "").trim();
-      }
+      const isPurchase = isPurchaseRequest(reasonText);
+      const cleanReason = cleanPurchaseReason(reasonText);
 
       return {
         id: req.id,

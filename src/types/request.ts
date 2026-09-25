@@ -50,7 +50,7 @@ export interface UpdateRequestStatusInput {
 }
 
 export interface RequestFilters {
-  status?: RequestStatusType;
+  status?: RequestStatusType | string;
   department?: string;
   search?: string;
   startDate?: string;
@@ -66,3 +66,5 @@ export interface PaginatedResponse<T> {
   limit: number;
   totalPages: number;
 }
+
+export * from "@/lib/requestHelpers";

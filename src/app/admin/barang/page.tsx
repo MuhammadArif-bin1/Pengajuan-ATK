@@ -102,22 +102,27 @@ export default function AdminPengajuanPembelianPage() {
     fetchRequests(true);
   }, [fetchRequests]);
 
-  // Safe background auto-refresh every 15s (only when tab is visible) + on window focus
+  // Safe background auto-refresh every 15s (only when tab is visible) + on window focus & visibilitychange
   useEffect(() => {
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible") {
+        fetchRequests(false);
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibility);
+    window.addEventListener("focus", handleVisibility);
+
     const interval = setInterval(() => {
       if (document.visibilityState === "visible") {
         fetchRequests(false);
       }
     }, 15000);
 
-    const handleFocus = () => {
-      fetchRequests(false);
-    };
-
-    window.addEventListener("focus", handleFocus);
     return () => {
       clearInterval(interval);
-      window.removeEventListener("focus", handleFocus);
+      document.removeEventListener("visibilitychange", handleVisibility);
+      window.removeEventListener("focus", handleVisibility);
     };
   }, [fetchRequests]);
 

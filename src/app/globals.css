@@ -34,4 +34,56 @@ textarea::placeholder {
   background: #94a3b8;
 }
 
+/* ===========================================
+   Print Styles Optimization
+   =========================================== */
+@media print {
+  @page {
+    size: auto;
+    margin: 12mm 15mm;
+  }
+
+  html, body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    font-size: 10pt !important;
+  }
+
+  /* Hilangkan bayangan box-shadow dan border dekoratif tebal */
+  * {
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+
+  /* Header tabel berulang di tiap halaman jika tabel panjang */
+  thead {
+    display: table-header-group !important;
+  }
+
+  /* Mencegah pemotongan baris tabel di tengah halaman */
+  tr, .print-avoid-break {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  /* Sembunyikan elemen navigasi dan tombol interaktif saat cetak */
+  .print\:hidden,
+  .no-print,
+  button:not(.print-keep),
+  input,
+  select {
+    display: none !important;
+  }
+
+  /* Pastikan border tabel tercetak jelas dan tajam */
+  table {
+    border-collapse: collapse !important;
+    width: 100% !important;
+  }
+
+  th, td {
+    border-color: #cbd5e1 !important;
+  }
+}
+
 

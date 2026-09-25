@@ -1,3 +1,5 @@
+import { isPurchaseRequest, cleanPurchaseReason } from "@/lib/requestHelpers";
+
 export interface ReportTransactionExport {
   id: string;
   createdAt: string;
@@ -143,18 +145,8 @@ export function exportReportToCsv(params: {
   );
 
   transactions.forEach((tx, idx) => {
-    const isPurchase =
-      tx.type === "purchase" ||
-      (tx.reason && tx.reason.includes("[PENGAJUAN PEMBELIAN ATK BARU]"));
-
-    let cleanReason = (tx.reason || "")
-      .replace("[PENGAJUAN PEMBELIAN ATK BARU]", "")
-      .replace("[PERMINTAAN ATK]", "")
-      .trim();
-
-    if (cleanReason.startsWith("Alasan:")) {
-      cleanReason = cleanReason.replace(/^Alasan:\s*/, "").trim();
-    }
+    const isPurchase = tx.type === "purchase" || isPurchaseRequest(tx.reason);
+    const cleanReason = cleanPurchaseReason(tx.reason);
 
     lines.push(
       [
@@ -252,3 +244,95 @@ export function exportReportToCsv(params: {
   document.body.removeChild(link);
   URL.revokeObjectURL(url);
 }
+
+/**
+ * Dynamically loads xlsx library on demand and exports multi-sheet Excel (.xlsx) file
+ */
+export async function exportReportToExcel(params: {
+  transactions: ReportTransactionExport[];
+  departmentSummary: DepartmentSummaryExport[];
+  itemSummary: ItemSummaryExport[];
+  filterInfo: {
+    startDate?: string;
+    endDate?: string;
+    department?: string;
+    type?: string;
+  };
+}) {
+  const XLSX = await import("xlsx");
+
+  const { transactions, departmentSummary, itemSummary } = params;
+
+  const now = new Date();
+  const dateStamp = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}_${String(now.getHours()).padStart(2, "0")}${String(now.getMinutes()).padStart(2, "0")}`;
+  const fileName = `Laporan_ATK_HasamitraJabar_${dateStamp}.xlsx`;
+
+  // Sheet 1: Rincian Transaksi
+  const txData = transactions.map((tx, idx) => {
+    const isPurchase = tx.type === "purchase" || isPurchaseRequest(tx.reason);
+    const cleanReason = cleanPurchaseReason(tx.reason);
+
+    const formatDateVal = (dateStr?: string) => {
+      if (!dateStr) return "-";
+      try {
+        const d = new Date(dateStr);
+        const day = String(d.getDate()).padStart(2, "0");
+        const month = String(d.getMonth() + 1).padStart(2, "0");
+        const year = d.getFullYear();
+        const hours = String(d.getHours()).padStart(2, "0");
+        const mins = String(d.getMinutes()).padStart(2, "0");
+        return `${day}/${month}/${year} ${hours}:${mins}`;
+      } catch {
+        return dateStr;
+      }
+    };
+
+    return {
+      No: idx + 1,
+      "Tanggal Pengajuan": formatDateVal(tx.createdAt),
+      "Jenis Pengajuan": isPurchase ? "Pengajuan Pembelian ATK" : "Permintaan ATK Gudang",
+      "Nama Pemohon": tx.user?.name || "-",
+      Departemen: tx.user?.department || "-",
+      Jabatan: tx.user?.position || "-",
+      "Nama Barang ATK": tx.atkItem?.name || "-",
+      Jumlah: tx.quantity,
+      Satuan: tx.atkItem?.unit || "pcs",
+      Status: tx.status,
+      "Alasan / Keterangan": cleanReason || "-",
+      "Catatan Admin": tx.adminNote || "-",
+    };
+  });
+
+  // Sheet 2: Rekapitulasi Departemen
+  const deptData = departmentSummary.map((dept, idx) => ({
+    No: idx + 1,
+    "Departemen / Divisi": dept.department,
+    "Total Pengajuan": dept.total,
+    Diproses: dept.diproses ?? dept.inProgress ?? 0,
+    Selesai: dept.selesai ?? dept.approved ?? 0,
+    Ditolak: dept.ditolak ?? dept.rejected ?? 0,
+  }));
+
+  // Sheet 3: Rekapitulasi Barang ATK
+  const itemData = itemSummary.map((item, idx) => ({
+    No: idx + 1,
+    "Nama Barang ATK": item.name,
+    "Frekuensi Pengajuan": `${item.total} kali`,
+    "Total Kuantitas": item.quantity,
+    Satuan: item.unit || "pcs",
+  }));
+
+  const wb = XLSX.utils.book_new();
+
+  const wsTx = XLSX.utils.json_to_sheet(txData);
+  XLSX.utils.book_append_sheet(wb, wsTx, "Daftar Transaksi");
+
+  const wsDept = XLSX.utils.json_to_sheet(deptData);
+  XLSX.utils.book_append_sheet(wb, wsDept, "Rekap Departemen");
+
+  const wsItem = XLSX.utils.json_to_sheet(itemData);
+  XLSX.utils.book_append_sheet(wb, wsItem, "Rekap Barang ATK");
+
+  XLSX.writeFile(wb, fileName);
+}
+

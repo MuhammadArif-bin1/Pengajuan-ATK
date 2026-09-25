@@ -90,11 +90,8 @@ export default function AdminLoginPage() {
           </div>
 
           <h1 className="mt-3 sm:mt-4 text-xl sm:text-3xl font-black tracking-tight text-white drop-shadow-md">
-            Halaman Admin
+            Halaman Admin ATK
           </h1>
-          <p className="mt-1 text-xs sm:text-sm text-slate-200 font-medium drop-shadow-sm px-2">
-            Masuk untuk mengelola persetujuan, inventaris, dan laporan ATK
-          </p>
         </div>
 
         {/* Login Card */}

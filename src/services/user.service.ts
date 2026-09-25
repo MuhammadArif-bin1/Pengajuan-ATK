@@ -215,6 +215,60 @@ export async function checkEmailExists(
   return !!user;
 }
 
+/**
+ * Mencari atau membuat data user karyawan secara otomatis saat pengajuan publik dikirim.
+ * Menggunakan format email internal yang konsisten dan hashing kata sandi default.
+ */
+export async function getOrCreateEmployeeUser(params: {
+  name: string;
+  department?: string;
+  position?: string;
+  email?: string;
+}) {
+  const cleanName = params.name.trim();
+  const cleanDept = (params.department || "Umum").trim();
+  const cleanPos = (params.position || "Staff").trim();
+
+  const emailKey =
+    params.email?.toLowerCase().trim() ||
+    `${cleanName.toLowerCase().replace(/[^a-z0-9]/g, "")}.${cleanDept.toLowerCase().replace(/[^a-z0-9]/g, "")}@hasamitra.internal`;
+
+  let user = await prisma.user.findFirst({
+    where: {
+      OR: [
+        { email: emailKey },
+        { name: { equals: cleanName, mode: "insensitive" }, department: cleanDept },
+      ],
+    },
+  });
+
+  if (!user) {
+    const defaultPassword = await hashPassword("User123!");
+    user = await prisma.user.create({
+      data: {
+        name: cleanName,
+        email: emailKey,
+        password: defaultPassword,
+        role: "USER",
+        department: cleanDept,
+        position: cleanPos,
+        isActive: true,
+      },
+    });
+  } else {
+    user = await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        name: cleanName,
+        department: cleanDept,
+        position: cleanPos,
+      },
+    });
+  }
+
+  return user;
+}
+
 // ===========================================
 // Statistics
 // ===========================================

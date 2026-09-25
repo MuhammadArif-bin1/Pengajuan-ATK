@@ -4,7 +4,8 @@ import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Badge } from "@/components/ui/Badge";
 import { useToast } from "@/components/ui/Toast";
-import { exportReportToCsv } from "@/lib/exportExcel";
+import { exportReportToCsv, exportReportToExcel } from "@/lib/exportExcel";
+import { isPurchaseRequest, cleanPurchaseReason } from "@/lib/requestHelpers";
 
 interface ReportSummary {
   total: number;
@@ -28,6 +29,7 @@ export default function AdminLaporanPage() {
 
   const [loading, setLoading] = useState(true);
   const [isExporting, setIsExporting] = useState(false);
+  const [isExportingExcel, setIsExportingExcel] = useState(false);
   const [reportData, setReportData] = useState<{
     requests: any[];
     summary: ReportSummary;
@@ -87,22 +89,27 @@ export default function AdminLaporanPage() {
     fetchReport();
   }, [fetchReport]);
 
-  // Safe background auto-refresh every 15s (only when tab is visible) + on window focus
+  // Safe background auto-refresh every 15s (only when tab is visible) + on window focus & visibilitychange
   useEffect(() => {
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible") {
+        fetchReport();
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibility);
+    window.addEventListener("focus", handleVisibility);
+
     const interval = setInterval(() => {
       if (document.visibilityState === "visible") {
         fetchReport();
       }
     }, 15000);
 
-    const handleFocus = () => {
-      fetchReport();
-    };
-
-    window.addEventListener("focus", handleFocus);
     return () => {
       clearInterval(interval);
-      window.removeEventListener("focus", handleFocus);
+      document.removeEventListener("visibilitychange", handleVisibility);
+      window.removeEventListener("focus", handleVisibility);
     };
   }, [fetchReport]);
 
@@ -169,6 +176,58 @@ export default function AdminLaporanPage() {
     }
   };
 
+  const handleExportExcel = async () => {
+    if (!reportData || reportData.requests.length === 0) {
+      toast.error("Tidak ada data untuk diekspor");
+      return;
+    }
+
+    try {
+      setIsExportingExcel(true);
+
+      const departmentSummary = Object.entries(reportData.summary.byDepartment).map(
+        ([dept, val]) => ({
+          department: dept,
+          total: val.total,
+          diproses: val.diproses ?? val.inProgress ?? 0,
+          selesai: val.selesai ?? val.approved ?? 0,
+          ditolak: val.ditolak ?? val.rejected ?? 0,
+          approved: val.selesai ?? val.approved ?? 0,
+          inProgress: val.diproses ?? val.inProgress ?? 0,
+          rejected: val.ditolak ?? val.rejected ?? 0,
+        })
+      );
+
+      const itemSummary = Object.entries(reportData.summary.byItem).map(
+        ([name, val]) => ({
+          name,
+          total: val.total,
+          quantity: val.quantity,
+          unit: val.unit || "pcs",
+        })
+      );
+
+      await exportReportToExcel({
+        transactions: reportData.requests,
+        departmentSummary,
+        itemSummary,
+        filterInfo: {
+          startDate,
+          endDate,
+          department,
+          type: typeFilter,
+        },
+      });
+
+      toast.success("File Excel (.xlsx) laporan berhasil diunduh!");
+    } catch (err: any) {
+      console.error("Excel export error:", err);
+      toast.error("Gagal mengekspor file Excel");
+    } finally {
+      setIsExportingExcel(false);
+    }
+  };
+
   const departmentRows = useMemo(() => {
     return Object.entries(reportData.summary.byDepartment).map(([dept, val]) => ({
       department: dept,
@@ -194,17 +253,7 @@ export default function AdminLaporanPage() {
     return departmentRows.reduce((acc, curr) => acc + curr.selesai, 0);
   }, [departmentRows]);
 
-  const getCleanReason = (reason: string) => {
-    if (!reason) return "-";
-    let clean = reason
-      .replace("[PENGAJUAN PEMBELIAN ATK BARU]", "")
-      .replace("[PERMINTAAN ATK]", "")
-      .trim();
-    if (clean.startsWith("Alasan:")) {
-      clean = clean.replace(/^Alasan:\s*/, "").trim();
-    }
-    return clean || "-";
-  };
+  const getCleanReason = cleanPurchaseReason;
 
   const isFiltered = Boolean(startDate || endDate || department || typeFilter);
 
@@ -232,14 +281,26 @@ export default function AdminLaporanPage() {
                 </button>
               )}
 
-              {/* Action Buttons: Ekspor CSV & Cetak Laporan */}
+              {/* Action Buttons: Ekspor Excel, Ekspor CSV & Cetak Laporan */}
+              <button
+                type="button"
+                disabled={isExportingExcel || reportData.requests.length === 0}
+                onClick={handleExportExcel}
+                className="inline-flex items-center gap-1.5 px-3.5 h-8.5 rounded-[8px] bg-[#01923f] hover:bg-emerald-700 text-white text-xs font-bold transition shadow-2xs cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <span>{isExportingExcel ? "Menyiapkan Excel..." : "Ekspor Excel"}</span>
+              </button>
+
               <button
                 type="button"
                 disabled={isExporting || reportData.requests.length === 0}
                 onClick={handleExportCsv}
-                className="inline-flex items-center gap-1.5 px-3.5 h-8.5 rounded-[8px] bg-[#01923f] hover:bg-emerald-700 text-white text-xs font-bold transition shadow-2xs cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                className="inline-flex items-center gap-1.5 px-3.5 h-8.5 rounded-[8px] border border-[#ebeef2] bg-white hover:bg-slate-50 text-xs font-bold text-[#323c4d] transition shadow-2xs cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <svg className="w-3.5 h-3.5 text-[#606c80]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
                 <span>{isExporting ? "Menyiapkan CSV..." : "Ekspor CSV"}</span>
@@ -585,9 +646,7 @@ export default function AdminLaporanPage() {
                   </tr>
                 ) : (
                   reportData.requests.map((row, idx) => {
-                    const isPurchase =
-                      row.reason &&
-                      row.reason.includes("[PENGAJUAN PEMBELIAN ATK BARU]");
+                    const isPurchase = isPurchaseRequest(row.reason);
 
                     const cleanReason = getCleanReason(row.reason);
 
