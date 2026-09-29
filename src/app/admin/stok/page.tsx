@@ -28,7 +28,16 @@ export default function AdminStokPage() {
 
   // Filters
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [stockStatusFilter, setStockStatusFilter] = useState<"all" | "ready" | "low" | "empty">("all");
+
+  // Debounce search (1000ms)
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearch(search);
+    }, 1000);
+    return () => clearTimeout(handler);
+  }, [search]);
 
   // Create / Edit Modal State
   const [formModalOpen, setFormModalOpen] = useState(false);
@@ -109,9 +118,9 @@ export default function AdminStokPage() {
   const filteredItems = useMemo(() => {
     return items.filter((i) => {
       const matchSearch =
-        !search.trim() ||
-        i.name.toLowerCase().includes(search.toLowerCase()) ||
-        (i.description && i.description.toLowerCase().includes(search.toLowerCase()));
+        !debouncedSearch.trim() ||
+        i.name.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+        (i.description && i.description.toLowerCase().includes(debouncedSearch.toLowerCase()));
 
       let matchStock = true;
       if (stockStatusFilter === "ready") matchStock = i.stock > 5;
@@ -120,7 +129,7 @@ export default function AdminStokPage() {
 
       return matchSearch && matchStock;
     });
-  }, [items, search, stockStatusFilter]);
+  }, [items, debouncedSearch, stockStatusFilter]);
 
   // Open Create Modal
   const handleOpenCreateModal = () => {

@@ -325,12 +325,24 @@ export const PortalHeader: React.FC<PortalHeaderProps> = ({
                 <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
             </div>
-            {search.isDebouncing && (
-              <span className="absolute right-3.5 top-1/2 -translate-y-1/2 flex h-2.5 w-2.5">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75" />
-                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#ff8f00]" />
-              </span>
-            )}
+            <div className="absolute right-3.5 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
+              {search.isDebouncing && (
+                <span className="flex h-2.5 w-2.5 relative">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75" />
+                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#ff8f00]" />
+                </span>
+              )}
+              {search.value && !search.isDebouncing && (
+                <button
+                  type="button"
+                  onClick={search.onClear}
+                  className="text-[#6b7a99] hover:text-slate-700 text-xs font-bold p-1 rounded-full cursor-pointer"
+                  title="Hapus pencarian"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
           </div>
         </div>
       )}
