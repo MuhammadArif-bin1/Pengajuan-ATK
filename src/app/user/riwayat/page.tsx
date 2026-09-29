@@ -71,12 +71,12 @@ export default function RiwayatPengajuanPage() {
     markAsRead,
   } = usePortalNotifications({ limit: 20, enableToastAlert: toastAlert });
 
-  // Debounce search
+  // Debounce search (1000ms)
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedSearch(search);
       setPage(1);
-    }, 300);
+    }, 1000);
     return () => clearTimeout(handler);
   }, [search]);
 

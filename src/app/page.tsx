@@ -24,10 +24,27 @@ export default function DashboardPengajuanPage() {
   const [activeTab, setActiveTab] = useState<string>("dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  // Search State with 1.5s Debounce
+  // Search State with 1000ms Debounce
   const [searchInput, setSearchInput] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [isDebouncing, setIsDebouncing] = useState(false);
+
+  // Synchronize Search Input with Debounced State (1000ms)
+  useEffect(() => {
+    if (!searchInput.trim()) {
+      setDebouncedSearch("");
+      setIsDebouncing(false);
+      return;
+    }
+
+    setIsDebouncing(true);
+    const handler = setTimeout(() => {
+      setDebouncedSearch(searchInput.trim());
+      setIsDebouncing(false);
+    }, 1000);
+
+    return () => clearTimeout(handler);
+  }, [searchInput]);
 
   // Filter & Sort States
   const [stockStatusFilter, setStockStatusFilter] = useState<StockStatusFilter>("ALL");
@@ -215,6 +232,7 @@ export default function DashboardPengajuanPage() {
           onSearchClear={() => {
             setSearchInput("");
             setDebouncedSearch("");
+            setIsDebouncing(false);
           }}
           isDebouncing={isDebouncing}
           notifications={notifications}
@@ -227,33 +245,6 @@ export default function DashboardPengajuanPage() {
           livePopup={livePopup}
           onDismissLivePopup={dismissLivePopup}
         />
-
-        {/* Active Search Filter Banner */}
-        {debouncedSearch && (
-          <div className="px-4 sm:px-8 pt-4 shrink-0">
-            <div className="bg-orange-50 border border-orange-200/80 rounded-2xl px-4 py-2.5 flex items-center justify-between text-xs text-orange-900">
-              <div className="flex items-center gap-2">
-                <span className="font-bold">🔍 Hasil Pencarian:</span>
-                <span className="font-semibold px-2 py-0.5 rounded-lg bg-white border border-orange-200">
-                  &ldquo;{debouncedSearch}&rdquo;
-                </span>
-                <span className="text-slate-500">
-                  ({filteredStockItems.length} barang ATK, {filteredQueueItems.length} antrian)
-                </span>
-              </div>
-              <button
-                type="button"
-                onClick={() => {
-                  setSearchInput("");
-                  setDebouncedSearch("");
-                }}
-                className="font-bold text-xs text-[#ff8f00] hover:underline cursor-pointer"
-              >
-                Reset
-              </button>
-            </div>
-          </div>
-        )}
 
         {/* Main 2-Column Dashboard Cards (Stok: +20% / 60%, Antrian: -20% / 40%) */}
         <main className="flex-1 p-4 sm:p-6 lg:p-8 flex flex-col min-h-0">

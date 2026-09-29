@@ -21,6 +21,7 @@ export default function AdminPengajuanPembelianPage() {
 
   // Filters
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [departmentFilter, setDepartmentFilter] = useState("");
   const [dateMode, setDateMode] = useState<"all" | "today" | "date" | "month" | "year" | "range">("all");
@@ -51,6 +52,15 @@ export default function AdminPengajuanPembelianPage() {
   const [bulkDeleteModalOpen, setBulkDeleteModalOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
+  // Debounce search (1000ms)
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearch(search);
+      setPage(1);
+    }, 1000);
+    return () => clearTimeout(handler);
+  }, [search]);
+
   const fetchDepartments = async () => {
     try {
       const res = await fetch("/api/users/departments");
@@ -71,7 +81,7 @@ export default function AdminPengajuanPembelianPage() {
         params.set("page", page.toString());
         params.set("limit", "10");
         params.set("type", "purchase"); // Only purchase requests
-        if (search) params.set("search", search);
+        if (debouncedSearch) params.set("search", debouncedSearch);
         if (statusFilter) params.set("status", statusFilter);
         if (departmentFilter) params.set("department", departmentFilter);
         if (startDate) params.set("startDate", startDate);
@@ -91,7 +101,7 @@ export default function AdminPengajuanPembelianPage() {
         if (showLoading) setLoading(false);
       }
     },
-    [page, search, statusFilter, departmentFilter, startDate, endDate, toast]
+    [page, debouncedSearch, statusFilter, departmentFilter, startDate, endDate, toast]
   );
 
   useEffect(() => {
@@ -288,6 +298,7 @@ export default function AdminPengajuanPembelianPage() {
 
   const handleResetFilters = () => {
     setSearch("");
+    setDebouncedSearch("");
     setStatusFilter("");
     setDepartmentFilter("");
     setDateMode("all");
