@@ -35,7 +35,8 @@ export async function PATCH(
       session.userId,
       parsed.data.status,
       parsed.data.adminNote,
-      parsed.data.addToStock
+      parsed.data.addToStock,
+      parsed.data.price
     );
 
     return NextResponse.json({

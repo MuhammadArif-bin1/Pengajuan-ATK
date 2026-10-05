@@ -225,6 +225,11 @@ export const updateRequestStatusSchema = z.object({
     .nullable()
     .transform(sanitizeOptionalText),
   addToStock: z.boolean().optional(),
+  price: z
+    .number({ invalid_type_error: "Harga harus berupa angka" })
+    .min(0, "Harga tidak boleh negatif")
+    .optional()
+    .nullable(),
 });
 
 // ===========================================

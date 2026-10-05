@@ -23,6 +23,8 @@ enum RequestStatus {
   DIPROSES
   DITOLAK
   SELESAI
+  MENUNGGU
+  DISETUJUI
 }
 
 // ============================================
@@ -76,6 +78,7 @@ model AtkRequest {
   reason      String
   status      RequestStatus @default(DIPROSES)
   adminNote   String?
+  price       Float?
   processedBy String?
   processedAt DateTime?
   createdAt   DateTime      @default(now())

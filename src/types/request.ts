@@ -15,6 +15,7 @@ export interface AtkRequestData {
   reason: string;
   status: RequestStatusType;
   adminNote: string | null;
+  price?: number | null;
   processedBy: string | null;
   processedAt: string | null;
   createdAt: string;

@@ -253,6 +253,12 @@ export default function AdminLaporanPage() {
     return departmentRows.reduce((acc, curr) => acc + curr.selesai, 0);
   }, [departmentRows]);
 
+  const totalBiayaPembelian = useMemo(() => {
+    return reportData.requests.reduce((acc, curr) => {
+      return acc + (typeof curr.price === "number" ? curr.price : 0);
+    }, 0);
+  }, [reportData.requests]);
+
   const getCleanReason = cleanPurchaseReason;
 
   const isFiltered = Boolean(startDate || endDate || department || typeFilter);
@@ -384,7 +390,7 @@ export default function AdminLaporanPage() {
         </div>
 
         {/* ─── SUMMARY STATISTIC CARDS ─── */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
           {/* Card 1: Total Transaksi */}
           <div className="bg-white p-4 sm:p-5 rounded-[10px] border border-[#ebeef2] shadow-[0px_1px_3px_0px_rgba(96,108,128,0.05)] flex items-center justify-between">
             <div className="space-y-1">
@@ -462,6 +468,24 @@ export default function AdminLaporanPage() {
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
+            </div>
+          </div>
+
+          {/* Card 5: Total Biaya Pembelian */}
+          <div className="bg-white p-4 sm:p-5 rounded-[10px] border border-emerald-200/80 shadow-[0px_1px_3px_0px_rgba(1,146,63,0.08)] flex items-center justify-between bg-gradient-to-br from-white to-emerald-50/40">
+            <div className="space-y-1">
+              <span className="text-[11px] font-semibold text-emerald-800 uppercase tracking-wider">
+                Total Biaya Pembelian
+              </span>
+              <p className="text-xl sm:text-2xl font-bold text-emerald-700 tracking-tight">
+                Rp {totalBiayaPembelian.toLocaleString("id-ID")}
+              </p>
+              <span className="text-[11px] text-[#606c80] block">
+                Akumulasi pengeluaran ATK
+              </span>
+            </div>
+            <div className="w-10 h-10 rounded-[8px] bg-emerald-100 text-emerald-800 border border-emerald-200 flex items-center justify-center shrink-0 text-base font-bold">
+              💵
             </div>
           </div>
         </div>
@@ -622,13 +646,14 @@ export default function AdminLaporanPage() {
                   <th className="px-4 py-3">Jenis</th>
                   <th className="px-4 py-3">Barang ATK</th>
                   <th className="px-4 py-3 text-center">Jumlah</th>
+                  <th className="px-4 py-3 text-right">Harga Pembelian</th>
                   <th className="px-4 py-3">Status</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#ebeef2]">
                 {loading ? (
                   <tr>
-                    <td colSpan={8} className="px-4 py-12 text-center text-[#606c80]">
+                    <td colSpan={9} className="px-4 py-12 text-center text-[#606c80]">
                       <div className="flex items-center justify-center gap-2">
                         <svg className="animate-spin h-5 w-5 text-[#ff8f00]" fill="none" viewBox="0 0 24 24">
                           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
@@ -640,7 +665,7 @@ export default function AdminLaporanPage() {
                   </tr>
                 ) : reportData.requests.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="px-4 py-10 text-center text-[#606c80]">
+                    <td colSpan={9} className="px-4 py-10 text-center text-[#606c80]">
                       Tidak ada transaksi pengajuan pada parameter filter yang dipilih.
                     </td>
                   </tr>
@@ -700,6 +725,15 @@ export default function AdminLaporanPage() {
                         </td>
                         <td className="px-4 py-3.5 text-center whitespace-nowrap font-bold text-[#323c4d]">
                           {row.quantity} <span className="text-[11px] font-normal text-[#606c80]">{row.atkItem?.unit || "pcs"}</span>
+                        </td>
+                        <td className="px-4 py-3.5 text-right whitespace-nowrap">
+                          {row.price != null && row.price > 0 ? (
+                            <span className="font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-[6px] border border-emerald-200/80 inline-block">
+                              Rp {row.price.toLocaleString("id-ID")}
+                            </span>
+                          ) : (
+                            <span className="text-[#94a3b8] font-medium">-</span>
+                          )}
                         </td>
                         <td className="px-4 py-3.5">
                           <Badge status={row.status} size="sm" />

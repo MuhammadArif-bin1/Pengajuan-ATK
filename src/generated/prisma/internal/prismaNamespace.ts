@@ -718,6 +718,7 @@ export const AtkRequestScalarFieldEnum = {
   reason: 'reason',
   status: 'status',
   adminNote: 'adminNote',
+  price: 'price',
   processedBy: 'processedBy',
   processedAt: 'processedAt',
   createdAt: 'createdAt',

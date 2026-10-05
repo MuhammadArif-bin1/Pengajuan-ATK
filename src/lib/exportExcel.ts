@@ -18,6 +18,7 @@ export interface ReportTransactionExport {
   status: string;
   reason?: string;
   adminNote?: string;
+  price?: number | null;
 }
 
 export interface DepartmentSummaryExport {
@@ -115,12 +116,19 @@ export function exportReportToCsv(params: {
   lines.push("");
 
   // Metadata / Parameter Filter
+  const totalPurchaseExpenditure = transactions
+    .filter((t) => typeof t.price === "number")
+    .reduce((acc, curr) => acc + (curr.price || 0), 0);
+
   lines.push([escapeCsv("INFORMASI & FILTER LAPORAN")].join(","));
   lines.push([escapeCsv("Periode Tanggal"), escapeCsv(periodText)].join(","));
   lines.push([escapeCsv("Kategori Pengajuan"), escapeCsv(categoryText)].join(","));
   lines.push([escapeCsv("Departemen / Divisi"), escapeCsv(departmentText)].join(","));
   lines.push([escapeCsv("Waktu Cetak / Unduh"), escapeCsv(printedAt)].join(","));
   lines.push([escapeCsv("Total Transaksi Masuk"), escapeCsv(`${transactions.length} Berkas`)].join(","));
+  if (totalPurchaseExpenditure > 0) {
+    lines.push([escapeCsv("Total Biaya Pembelian"), escapeCsv(`Rp ${totalPurchaseExpenditure.toLocaleString("id-ID")}`)].join(","));
+  }
   lines.push("");
 
   // ══════════════════════════════════════════════════════════════════
@@ -138,6 +146,7 @@ export function exportReportToCsv(params: {
       escapeCsv("Nama Barang ATK"),
       escapeCsv("Jumlah"),
       escapeCsv("Satuan"),
+      escapeCsv("Harga Pembelian (Rp)"),
       escapeCsv("Status"),
       escapeCsv("Alasan / Keterangan"),
       escapeCsv("Catatan Admin"),
@@ -159,6 +168,7 @@ export function exportReportToCsv(params: {
         escapeCsv(tx.atkItem?.name || "-"),
         escapeCsv(tx.quantity),
         escapeCsv(tx.atkItem?.unit || "pcs"),
+        escapeCsv(tx.price !== null && tx.price !== undefined ? tx.price : "-"),
         escapeCsv(tx.status),
         escapeCsv(cleanReason || "-"),
         escapeCsv(tx.adminNote || "-"),
@@ -297,6 +307,7 @@ export async function exportReportToExcel(params: {
       "Nama Barang ATK": tx.atkItem?.name || "-",
       Jumlah: tx.quantity,
       Satuan: tx.atkItem?.unit || "pcs",
+      "Harga Pembelian (Rp)": tx.price !== null && tx.price !== undefined ? tx.price : "-",
       Status: tx.status,
       "Alasan / Keterangan": cleanReason || "-",
       "Catatan Admin": tx.adminNote || "-",

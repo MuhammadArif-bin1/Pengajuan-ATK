@@ -40,11 +40,13 @@ export default function AdminPengajuanPembelianPage() {
   // Modal States
   const [selectedRequest, setSelectedRequest] = useState<AtkRequestData | null>(null);
   const [adminNoteEdit, setAdminNoteEdit] = useState("");
+  const [adminPriceEdit, setAdminPriceEdit] = useState("");
   const [isSavingNote, setIsSavingNote] = useState(false);
   const [rejectModalOpen, setRejectModalOpen] = useState(false);
   const [rejectNote, setRejectNote] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
   const [completeTarget, setCompleteTarget] = useState<AtkRequestData | null>(null);
+  const [completePrice, setCompletePrice] = useState("");
 
 
   // Delete Modals
@@ -136,10 +138,21 @@ export default function AdminPengajuanPembelianPage() {
     };
   }, [fetchRequests]);
 
-  // Open review modal and sync admin note
+  // Open review modal and sync admin note & price
   const handleOpenReview = (request: AtkRequestData) => {
     setSelectedRequest(request);
     setAdminNoteEdit(request.adminNote || "");
+    setAdminPriceEdit(
+      request.price !== null && request.price !== undefined ? String(request.price) : ""
+    );
+  };
+
+  // Open complete confirmation modal and sync price
+  const handleOpenComplete = (request: AtkRequestData) => {
+    setCompleteTarget(request);
+    setCompletePrice(
+      request.price !== null && request.price !== undefined ? String(request.price) : ""
+    );
   };
 
   // Update Status (Setujui, Tolak, Diproses, Selesai)
@@ -147,18 +160,28 @@ export default function AdminPengajuanPembelianPage() {
     requestId: string,
     status: RequestStatusType,
     adminNote?: string,
-    addToStock?: boolean
+    addToStock?: boolean,
+    price?: number | null
   ) => {
     try {
       setIsProcessing(true);
+      const payload: Record<string, any> = {
+        status,
+        adminNote: adminNote ?? adminNoteEdit,
+        addToStock,
+      };
+
+      if (price !== undefined) {
+        payload.price = price;
+      } else if (adminPriceEdit.trim()) {
+        const parsed = parseFloat(adminPriceEdit.replace(/[^\d.]/g, ""));
+        if (!isNaN(parsed)) payload.price = parsed;
+      }
+
       const res = await fetch(`/api/requests/${requestId}/status`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          status,
-          adminNote: adminNote ?? adminNoteEdit,
-          addToStock,
-        }),
+        body: JSON.stringify(payload),
       });
 
       const data = await res.json();
@@ -181,6 +204,8 @@ export default function AdminPengajuanPembelianPage() {
       setCompleteTarget(null);
       setRejectModalOpen(false);
       setRejectNote("");
+      setAdminPriceEdit("");
+      setCompletePrice("");
       fetchRequests(false);
     } catch (err: any) {
       toast.error(err.message || "Terjadi kesalahan saat mengubah status");
@@ -189,31 +214,44 @@ export default function AdminPengajuanPembelianPage() {
     }
   };
 
-  // Save admin note only
+  // Save admin note and price
   const handleSaveAdminNote = async () => {
     if (!selectedRequest) return;
     try {
       setIsSavingNote(true);
+      const parsedPrice = adminPriceEdit.trim()
+        ? parseFloat(adminPriceEdit.replace(/[^\d.]/g, ""))
+        : null;
+
       const res = await fetch(`/api/requests/${selectedRequest.id}/status`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           status: selectedRequest.status,
           adminNote: adminNoteEdit,
+          price: isNaN(Number(parsedPrice)) ? null : parsedPrice,
         }),
       });
 
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data.error || "Gagal menyimpan catatan admin");
+        throw new Error(data.error || "Gagal menyimpan catatan admin dan harga");
       }
 
-      toast.success("Catatan admin berhasil disimpan!");
-      setSelectedRequest((prev) => (prev ? { ...prev, adminNote: adminNoteEdit } : null));
+      toast.success("Catatan admin dan harga berhasil disimpan!");
+      setSelectedRequest((prev) =>
+        prev
+          ? {
+              ...prev,
+              adminNote: adminNoteEdit,
+              price: isNaN(Number(parsedPrice)) ? null : parsedPrice,
+            }
+          : null
+      );
       fetchRequests(false);
     } catch (err: any) {
-      toast.error(err.message || "Gagal menyimpan catatan");
+      toast.error(err.message || "Gagal menyimpan catatan dan harga");
     } finally {
       setIsSavingNote(false);
     }
@@ -388,6 +426,20 @@ export default function AdminPengajuanPembelianPage() {
       ),
     },
     {
+      header: "Biaya / Harga",
+      accessor: (row) => (
+        <div>
+          {row.price ? (
+            <span className="inline-block px-2 py-0.5 rounded-[6px] bg-emerald-50 text-emerald-800 font-bold text-xs border border-emerald-200">
+              Rp {row.price.toLocaleString("id-ID")}
+            </span>
+          ) : (
+            <span className="text-[11px] text-[#606c80] italic">-</span>
+          )}
+        </div>
+      ),
+    },
+    {
       header: "Tanggal Pengajuan",
       accessor: (row) => (
         <span className="text-xs text-[#606c80]">
@@ -421,7 +473,7 @@ export default function AdminPengajuanPembelianPage() {
             <>
               <button
                 type="button"
-                onClick={() => setCompleteTarget(row)}
+                onClick={() => handleOpenComplete(row)}
                 title="Selesaikan & Konfirmasi Penerimaan Pembelian"
                 className="px-2 py-1 rounded-[8px] text-xs font-bold bg-emerald-50 text-[#01923f] border border-emerald-200 hover:bg-emerald-100 transition cursor-pointer"
               >
@@ -766,7 +818,7 @@ export default function AdminPengajuanPembelianPage() {
                     onClick={() => {
                       const req = selectedRequest;
                       setSelectedRequest(null);
-                      setCompleteTarget(req);
+                      handleOpenComplete(req);
                     }}
                     className="px-4 py-2 rounded-[8px] text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 shadow-xs transition cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
                   >
@@ -898,7 +950,42 @@ export default function AdminPengajuanPembelianPage() {
               </div>
             </div>
 
-            {/* ─── 4. EDITABLE ADMIN NOTE CARD ─── */}
+            {/* ─── 4. HARGA / BIAYA PEMBELIAN CARD ─── */}
+            <div className="p-4 bg-white rounded-[10px] border border-[#ebeef2] shadow-[0px_1px_3px_0px_rgba(96,108,128,0.05)] space-y-2.5">
+              <div className="flex items-center justify-between pb-2 border-b border-[#ebeef2]">
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-6 rounded-[6px] bg-emerald-100 text-emerald-700 flex items-center justify-center text-xs font-bold">
+                    💵
+                  </div>
+                  <h4 className="text-xs font-bold text-[#323c4d] uppercase tracking-wider">
+                    Harga / Biaya Pembelian (Opsional)
+                  </h4>
+                </div>
+                {selectedRequest.price !== null && selectedRequest.price !== undefined && (
+                  <span className="text-[11px] font-bold px-2 py-0.5 rounded-[6px] bg-emerald-50 text-emerald-700 border border-emerald-200">
+                    Tersimpan: Rp {selectedRequest.price.toLocaleString("id-ID")}
+                  </span>
+                )}
+              </div>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-[#606c80]">
+                  Rp
+                </span>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  placeholder="0 (Contoh: 150000)"
+                  value={adminPriceEdit}
+                  onChange={(e) => setAdminPriceEdit(e.target.value.replace(/[^\d]/g, ""))}
+                  className="w-full rounded-[8px] border border-[#ebeef2] bg-white pl-10 pr-3 py-2 text-xs font-semibold text-[#323c4d] focus:outline-none focus:ring-2 focus:ring-[#ff8f00]/25 focus:border-[#ff8f00] transition"
+                />
+              </div>
+              <p className="text-[11px] text-[#606c80]">
+                Catat nominal pembelian barang untuk keperluan rekapitulasi laporan keuangan & pengeluaran.
+              </p>
+            </div>
+
+            {/* ─── 5. EDITABLE ADMIN NOTE CARD ─── */}
             <div className="p-4 bg-white rounded-[10px] border border-[#ebeef2] shadow-[0px_1px_3px_0px_rgba(96,108,128,0.05)] space-y-2.5">
               <div className="flex items-center justify-between pb-2 border-b border-[#ebeef2]">
                 <div className="flex items-center gap-2">
@@ -915,7 +1002,7 @@ export default function AdminPengajuanPembelianPage() {
                   onClick={handleSaveAdminNote}
                   className="px-3 py-1.5 rounded-[8px] text-xs text-[#ff8f00] border border-orange-200 hover:bg-orange-50 font-bold transition cursor-pointer disabled:opacity-50"
                 >
-                  {isSavingNote ? "Menyimpan..." : "💾 Simpan Catatan"}
+                  {isSavingNote ? "Menyimpan..." : "💾 Simpan Catatan & Harga"}
                 </button>
               </div>
               <Textarea
@@ -1048,7 +1135,10 @@ export default function AdminPengajuanPembelianPage() {
               <button
                 type="button"
                 disabled={isProcessing}
-                onClick={() => handleUpdateStatus(completeTarget.id, "SELESAI", undefined, false)}
+                onClick={() => {
+                  const p = completePrice.trim() ? parseFloat(completePrice.replace(/[^\d.]/g, "")) : null;
+                  handleUpdateStatus(completeTarget.id, "SELESAI", undefined, false, isNaN(Number(p)) ? null : p);
+                }}
                 className="w-full sm:w-auto px-4 py-2 rounded-[8px] bg-slate-100 hover:bg-slate-200 text-[#323c4d] border border-[#ebeef2] text-xs font-bold transition cursor-pointer disabled:opacity-50"
                 title="Selesaikan pengajuan tanpa menambah stok inventaris"
               >
@@ -1057,7 +1147,10 @@ export default function AdminPengajuanPembelianPage() {
               <button
                 type="button"
                 disabled={isProcessing}
-                onClick={() => handleUpdateStatus(completeTarget.id, "SELESAI", undefined, true)}
+                onClick={() => {
+                  const p = completePrice.trim() ? parseFloat(completePrice.replace(/[^\d.]/g, "")) : null;
+                  handleUpdateStatus(completeTarget.id, "SELESAI", undefined, true, isNaN(Number(p)) ? null : p);
+                }}
                 className="w-full sm:w-auto px-4.5 py-2 rounded-[8px] bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition shadow-xs cursor-pointer flex items-center justify-center gap-1.5 disabled:opacity-50"
                 title={`Selesaikan dan tambahkan +${completeTarget.quantity} ${completeTarget.atkItem.unit} ke stok gudang`}
               >
@@ -1119,6 +1212,36 @@ export default function AdminPengajuanPembelianPage() {
                   </span>
                 </div>
               </div>
+            </div>
+
+            {/* Input Opsional Harga / Biaya Pembelian */}
+            <div className="p-3.5 bg-white rounded-[10px] border border-[#ebeef2] space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="block text-[11px] font-bold text-[#323c4d] uppercase tracking-wider">
+                  Harga / Biaya Pembelian Barang (Opsional)
+                </label>
+                {completeTarget.price !== null && completeTarget.price !== undefined && (
+                  <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-[4px] border border-emerald-200">
+                    Sebelumnya: Rp {completeTarget.price.toLocaleString("id-ID")}
+                  </span>
+                )}
+              </div>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-[#606c80]">
+                  Rp
+                </span>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  placeholder="0 (Contoh: 150000)"
+                  value={completePrice}
+                  onChange={(e) => setCompletePrice(e.target.value.replace(/[^\d]/g, ""))}
+                  className="w-full rounded-[8px] border border-[#ebeef2] bg-white pl-10 pr-3 py-2 text-xs font-bold text-[#323c4d] focus:outline-none focus:ring-2 focus:ring-[#ff8f00]/25 focus:border-[#ff8f00] transition"
+                />
+              </div>
+              <p className="text-[10px] text-[#606c80]">
+                Nominal biaya ini akan otomatis dicatat dan direkap ke dalam rincian Laporan Admin.
+              </p>
             </div>
           </div>
         </Modal>

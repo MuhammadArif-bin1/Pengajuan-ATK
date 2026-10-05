@@ -280,7 +280,8 @@ export async function updateRequestStatus(
   adminId: string,
   status: RequestStatus,
   adminNote?: string | null,
-  addToStock?: boolean
+  addToStock?: boolean,
+  price?: number | null
 ) {
   const request = await prisma.atkRequest.findUnique({
     where: { id },
@@ -348,6 +349,7 @@ export async function updateRequestStatus(
       data: {
         status,
         adminNote: finalNote,
+        price: price !== undefined ? price : undefined,
         processedBy: adminId,
         processedAt: new Date(),
       },

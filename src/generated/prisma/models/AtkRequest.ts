@@ -28,10 +28,12 @@ export type AggregateAtkRequest = {
 
 export type AtkRequestAvgAggregateOutputType = {
   quantity: number | null
+  price: number | null
 }
 
 export type AtkRequestSumAggregateOutputType = {
   quantity: number | null
+  price: number | null
 }
 
 export type AtkRequestMinAggregateOutputType = {
@@ -42,6 +44,7 @@ export type AtkRequestMinAggregateOutputType = {
   reason: string | null
   status: $Enums.RequestStatus | null
   adminNote: string | null
+  price: number | null
   processedBy: string | null
   processedAt: Date | null
   createdAt: Date | null
@@ -56,6 +59,7 @@ export type AtkRequestMaxAggregateOutputType = {
   reason: string | null
   status: $Enums.RequestStatus | null
   adminNote: string | null
+  price: number | null
   processedBy: string | null
   processedAt: Date | null
   createdAt: Date | null
@@ -70,6 +74,7 @@ export type AtkRequestCountAggregateOutputType = {
   reason: number
   status: number
   adminNote: number
+  price: number
   processedBy: number
   processedAt: number
   createdAt: number
@@ -80,10 +85,12 @@ export type AtkRequestCountAggregateOutputType = {
 
 export type AtkRequestAvgAggregateInputType = {
   quantity?: true
+  price?: true
 }
 
 export type AtkRequestSumAggregateInputType = {
   quantity?: true
+  price?: true
 }
 
 export type AtkRequestMinAggregateInputType = {
@@ -94,6 +101,7 @@ export type AtkRequestMinAggregateInputType = {
   reason?: true
   status?: true
   adminNote?: true
+  price?: true
   processedBy?: true
   processedAt?: true
   createdAt?: true
@@ -108,6 +116,7 @@ export type AtkRequestMaxAggregateInputType = {
   reason?: true
   status?: true
   adminNote?: true
+  price?: true
   processedBy?: true
   processedAt?: true
   createdAt?: true
@@ -122,6 +131,7 @@ export type AtkRequestCountAggregateInputType = {
   reason?: true
   status?: true
   adminNote?: true
+  price?: true
   processedBy?: true
   processedAt?: true
   createdAt?: true
@@ -223,6 +233,7 @@ export type AtkRequestGroupByOutputType = {
   reason: string
   status: $Enums.RequestStatus
   adminNote: string | null
+  price: number | null
   processedBy: string | null
   processedAt: Date | null
   createdAt: Date
@@ -260,6 +271,7 @@ export type AtkRequestWhereInput = {
   reason?: Prisma.StringFilter<"AtkRequest"> | string
   status?: Prisma.EnumRequestStatusFilter<"AtkRequest"> | $Enums.RequestStatus
   adminNote?: Prisma.StringNullableFilter<"AtkRequest"> | string | null
+  price?: Prisma.FloatNullableFilter<"AtkRequest"> | number | null
   processedBy?: Prisma.StringNullableFilter<"AtkRequest"> | string | null
   processedAt?: Prisma.DateTimeNullableFilter<"AtkRequest"> | Date | string | null
   createdAt?: Prisma.DateTimeFilter<"AtkRequest"> | Date | string
@@ -277,6 +289,7 @@ export type AtkRequestOrderByWithRelationInput = {
   reason?: Prisma.SortOrder
   status?: Prisma.SortOrder
   adminNote?: Prisma.SortOrderInput | Prisma.SortOrder
+  price?: Prisma.SortOrderInput | Prisma.SortOrder
   processedBy?: Prisma.SortOrderInput | Prisma.SortOrder
   processedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -297,6 +310,7 @@ export type AtkRequestWhereUniqueInput = Prisma.AtLeast<{
   reason?: Prisma.StringFilter<"AtkRequest"> | string
   status?: Prisma.EnumRequestStatusFilter<"AtkRequest"> | $Enums.RequestStatus
   adminNote?: Prisma.StringNullableFilter<"AtkRequest"> | string | null
+  price?: Prisma.FloatNullableFilter<"AtkRequest"> | number | null
   processedBy?: Prisma.StringNullableFilter<"AtkRequest"> | string | null
   processedAt?: Prisma.DateTimeNullableFilter<"AtkRequest"> | Date | string | null
   createdAt?: Prisma.DateTimeFilter<"AtkRequest"> | Date | string
@@ -314,6 +328,7 @@ export type AtkRequestOrderByWithAggregationInput = {
   reason?: Prisma.SortOrder
   status?: Prisma.SortOrder
   adminNote?: Prisma.SortOrderInput | Prisma.SortOrder
+  price?: Prisma.SortOrderInput | Prisma.SortOrder
   processedBy?: Prisma.SortOrderInput | Prisma.SortOrder
   processedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -336,6 +351,7 @@ export type AtkRequestScalarWhereWithAggregatesInput = {
   reason?: Prisma.StringWithAggregatesFilter<"AtkRequest"> | string
   status?: Prisma.EnumRequestStatusWithAggregatesFilter<"AtkRequest"> | $Enums.RequestStatus
   adminNote?: Prisma.StringNullableWithAggregatesFilter<"AtkRequest"> | string | null
+  price?: Prisma.FloatNullableWithAggregatesFilter<"AtkRequest"> | number | null
   processedBy?: Prisma.StringNullableWithAggregatesFilter<"AtkRequest"> | string | null
   processedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"AtkRequest"> | Date | string | null
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"AtkRequest"> | Date | string
@@ -348,6 +364,7 @@ export type AtkRequestCreateInput = {
   reason: string
   status?: $Enums.RequestStatus
   adminNote?: string | null
+  price?: number | null
   processedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -364,6 +381,7 @@ export type AtkRequestUncheckedCreateInput = {
   reason: string
   status?: $Enums.RequestStatus
   adminNote?: string | null
+  price?: number | null
   processedBy?: string | null
   processedAt?: Date | string | null
   createdAt?: Date | string
@@ -376,6 +394,7 @@ export type AtkRequestUpdateInput = {
   reason?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumRequestStatusFieldUpdateOperationsInput | $Enums.RequestStatus
   adminNote?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  price?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   processedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -392,6 +411,7 @@ export type AtkRequestUncheckedUpdateInput = {
   reason?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumRequestStatusFieldUpdateOperationsInput | $Enums.RequestStatus
   adminNote?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  price?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   processedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   processedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -406,6 +426,7 @@ export type AtkRequestCreateManyInput = {
   reason: string
   status?: $Enums.RequestStatus
   adminNote?: string | null
+  price?: number | null
   processedBy?: string | null
   processedAt?: Date | string | null
   createdAt?: Date | string
@@ -418,6 +439,7 @@ export type AtkRequestUpdateManyMutationInput = {
   reason?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumRequestStatusFieldUpdateOperationsInput | $Enums.RequestStatus
   adminNote?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  price?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   processedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -431,6 +453,7 @@ export type AtkRequestUncheckedUpdateManyInput = {
   reason?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumRequestStatusFieldUpdateOperationsInput | $Enums.RequestStatus
   adminNote?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  price?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   processedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   processedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -455,6 +478,7 @@ export type AtkRequestCountOrderByAggregateInput = {
   reason?: Prisma.SortOrder
   status?: Prisma.SortOrder
   adminNote?: Prisma.SortOrder
+  price?: Prisma.SortOrder
   processedBy?: Prisma.SortOrder
   processedAt?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -463,6 +487,7 @@ export type AtkRequestCountOrderByAggregateInput = {
 
 export type AtkRequestAvgOrderByAggregateInput = {
   quantity?: Prisma.SortOrder
+  price?: Prisma.SortOrder
 }
 
 export type AtkRequestMaxOrderByAggregateInput = {
@@ -473,6 +498,7 @@ export type AtkRequestMaxOrderByAggregateInput = {
   reason?: Prisma.SortOrder
   status?: Prisma.SortOrder
   adminNote?: Prisma.SortOrder
+  price?: Prisma.SortOrder
   processedBy?: Prisma.SortOrder
   processedAt?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -487,6 +513,7 @@ export type AtkRequestMinOrderByAggregateInput = {
   reason?: Prisma.SortOrder
   status?: Prisma.SortOrder
   adminNote?: Prisma.SortOrder
+  price?: Prisma.SortOrder
   processedBy?: Prisma.SortOrder
   processedAt?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -495,6 +522,7 @@ export type AtkRequestMinOrderByAggregateInput = {
 
 export type AtkRequestSumOrderByAggregateInput = {
   quantity?: Prisma.SortOrder
+  price?: Prisma.SortOrder
 }
 
 export type AtkRequestCreateNestedManyWithoutUserInput = {
@@ -627,6 +655,14 @@ export type EnumRequestStatusFieldUpdateOperationsInput = {
   set?: $Enums.RequestStatus
 }
 
+export type NullableFloatFieldUpdateOperationsInput = {
+  set?: number | null
+  increment?: number
+  decrement?: number
+  multiply?: number
+  divide?: number
+}
+
 export type NullableDateTimeFieldUpdateOperationsInput = {
   set?: Date | string | null
 }
@@ -637,6 +673,7 @@ export type AtkRequestCreateWithoutUserInput = {
   reason: string
   status?: $Enums.RequestStatus
   adminNote?: string | null
+  price?: number | null
   processedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -651,6 +688,7 @@ export type AtkRequestUncheckedCreateWithoutUserInput = {
   reason: string
   status?: $Enums.RequestStatus
   adminNote?: string | null
+  price?: number | null
   processedBy?: string | null
   processedAt?: Date | string | null
   createdAt?: Date | string
@@ -673,6 +711,7 @@ export type AtkRequestCreateWithoutProcessorInput = {
   reason: string
   status?: $Enums.RequestStatus
   adminNote?: string | null
+  price?: number | null
   processedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -688,6 +727,7 @@ export type AtkRequestUncheckedCreateWithoutProcessorInput = {
   reason: string
   status?: $Enums.RequestStatus
   adminNote?: string | null
+  price?: number | null
   processedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -730,6 +770,7 @@ export type AtkRequestScalarWhereInput = {
   reason?: Prisma.StringFilter<"AtkRequest"> | string
   status?: Prisma.EnumRequestStatusFilter<"AtkRequest"> | $Enums.RequestStatus
   adminNote?: Prisma.StringNullableFilter<"AtkRequest"> | string | null
+  price?: Prisma.FloatNullableFilter<"AtkRequest"> | number | null
   processedBy?: Prisma.StringNullableFilter<"AtkRequest"> | string | null
   processedAt?: Prisma.DateTimeNullableFilter<"AtkRequest"> | Date | string | null
   createdAt?: Prisma.DateTimeFilter<"AtkRequest"> | Date | string
@@ -758,6 +799,7 @@ export type AtkRequestCreateWithoutAtkItemInput = {
   reason: string
   status?: $Enums.RequestStatus
   adminNote?: string | null
+  price?: number | null
   processedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -772,6 +814,7 @@ export type AtkRequestUncheckedCreateWithoutAtkItemInput = {
   reason: string
   status?: $Enums.RequestStatus
   adminNote?: string | null
+  price?: number | null
   processedBy?: string | null
   processedAt?: Date | string | null
   createdAt?: Date | string
@@ -811,6 +854,7 @@ export type AtkRequestCreateManyUserInput = {
   reason: string
   status?: $Enums.RequestStatus
   adminNote?: string | null
+  price?: number | null
   processedBy?: string | null
   processedAt?: Date | string | null
   createdAt?: Date | string
@@ -825,6 +869,7 @@ export type AtkRequestCreateManyProcessorInput = {
   reason: string
   status?: $Enums.RequestStatus
   adminNote?: string | null
+  price?: number | null
   processedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -836,6 +881,7 @@ export type AtkRequestUpdateWithoutUserInput = {
   reason?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumRequestStatusFieldUpdateOperationsInput | $Enums.RequestStatus
   adminNote?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  price?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   processedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -850,6 +896,7 @@ export type AtkRequestUncheckedUpdateWithoutUserInput = {
   reason?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumRequestStatusFieldUpdateOperationsInput | $Enums.RequestStatus
   adminNote?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  price?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   processedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   processedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -863,6 +910,7 @@ export type AtkRequestUncheckedUpdateManyWithoutUserInput = {
   reason?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumRequestStatusFieldUpdateOperationsInput | $Enums.RequestStatus
   adminNote?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  price?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   processedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   processedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -875,6 +923,7 @@ export type AtkRequestUpdateWithoutProcessorInput = {
   reason?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumRequestStatusFieldUpdateOperationsInput | $Enums.RequestStatus
   adminNote?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  price?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   processedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -890,6 +939,7 @@ export type AtkRequestUncheckedUpdateWithoutProcessorInput = {
   reason?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumRequestStatusFieldUpdateOperationsInput | $Enums.RequestStatus
   adminNote?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  price?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   processedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -903,6 +953,7 @@ export type AtkRequestUncheckedUpdateManyWithoutProcessorInput = {
   reason?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumRequestStatusFieldUpdateOperationsInput | $Enums.RequestStatus
   adminNote?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  price?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   processedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -915,6 +966,7 @@ export type AtkRequestCreateManyAtkItemInput = {
   reason: string
   status?: $Enums.RequestStatus
   adminNote?: string | null
+  price?: number | null
   processedBy?: string | null
   processedAt?: Date | string | null
   createdAt?: Date | string
@@ -927,6 +979,7 @@ export type AtkRequestUpdateWithoutAtkItemInput = {
   reason?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumRequestStatusFieldUpdateOperationsInput | $Enums.RequestStatus
   adminNote?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  price?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   processedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -941,6 +994,7 @@ export type AtkRequestUncheckedUpdateWithoutAtkItemInput = {
   reason?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumRequestStatusFieldUpdateOperationsInput | $Enums.RequestStatus
   adminNote?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  price?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   processedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   processedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -954,6 +1008,7 @@ export type AtkRequestUncheckedUpdateManyWithoutAtkItemInput = {
   reason?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumRequestStatusFieldUpdateOperationsInput | $Enums.RequestStatus
   adminNote?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  price?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   processedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   processedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -970,6 +1025,7 @@ export type AtkRequestSelect<ExtArgs extends runtime.Types.Extensions.InternalAr
   reason?: boolean
   status?: boolean
   adminNote?: boolean
+  price?: boolean
   processedBy?: boolean
   processedAt?: boolean
   createdAt?: boolean
@@ -987,6 +1043,7 @@ export type AtkRequestSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Ex
   reason?: boolean
   status?: boolean
   adminNote?: boolean
+  price?: boolean
   processedBy?: boolean
   processedAt?: boolean
   createdAt?: boolean
@@ -1004,6 +1061,7 @@ export type AtkRequestSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Ex
   reason?: boolean
   status?: boolean
   adminNote?: boolean
+  price?: boolean
   processedBy?: boolean
   processedAt?: boolean
   createdAt?: boolean
@@ -1021,13 +1079,14 @@ export type AtkRequestSelectScalar = {
   reason?: boolean
   status?: boolean
   adminNote?: boolean
+  price?: boolean
   processedBy?: boolean
   processedAt?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }
 
-export type AtkRequestOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "userId" | "atkItemId" | "quantity" | "reason" | "status" | "adminNote" | "processedBy" | "processedAt" | "createdAt" | "updatedAt", ExtArgs["result"]["atkRequest"]>
+export type AtkRequestOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "userId" | "atkItemId" | "quantity" | "reason" | "status" | "adminNote" | "price" | "processedBy" | "processedAt" | "createdAt" | "updatedAt", ExtArgs["result"]["atkRequest"]>
 export type AtkRequestInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
   atkItem?: boolean | Prisma.AtkItemDefaultArgs<ExtArgs>
@@ -1059,6 +1118,7 @@ export type $AtkRequestPayload<ExtArgs extends runtime.Types.Extensions.Internal
     reason: string
     status: $Enums.RequestStatus
     adminNote: string | null
+    price: number | null
     processedBy: string | null
     processedAt: Date | null
     createdAt: Date
@@ -1496,6 +1556,7 @@ export interface AtkRequestFieldRefs {
   readonly reason: Prisma.FieldRef<"AtkRequest", 'String'>
   readonly status: Prisma.FieldRef<"AtkRequest", 'RequestStatus'>
   readonly adminNote: Prisma.FieldRef<"AtkRequest", 'String'>
+  readonly price: Prisma.FieldRef<"AtkRequest", 'Float'>
   readonly processedBy: Prisma.FieldRef<"AtkRequest", 'String'>
   readonly processedAt: Prisma.FieldRef<"AtkRequest", 'DateTime'>
   readonly createdAt: Prisma.FieldRef<"AtkRequest", 'DateTime'>
