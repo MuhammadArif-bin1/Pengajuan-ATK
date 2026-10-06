@@ -55,6 +55,16 @@ export default function DashboardPengajuanPage() {
   const [catalogLoading, setCatalogLoading] = useState(true);
   // Modals
   const [pengajuanAtkOpen, setPengajuanAtkOpen] = useState(false);
+  const [selectedStockItem, setSelectedStockItem] = useState<AtkCatalogItem | null>(null);
+
+  const handleSelectStockItem = (item: AtkCatalogItem) => {
+    if (item.stock <= 0) {
+      toast.info(`Stok "${item.name}" saat ini sedang kosong/habis. Silakan ajukan melalui menu Pengadaan ATK Baru.`);
+      return;
+    }
+    setSelectedStockItem(item);
+    setPengajuanAtkOpen(true);
+  };
 
   // Real-time Notifications & Queue State via Shared Hook
   const toastAlert = useCallback((item: PortalNotificationItem) => {
@@ -257,6 +267,7 @@ export default function DashboardPengajuanPage() {
               statusFilter={stockStatusFilter}
               onStatusFilterChange={setStockStatusFilter}
               debouncedSearch={debouncedSearch}
+              onSelectItem={handleSelectStockItem}
             />
 
             {/* Column 2: Antrian Pengajuan (diperkecil 20% -> 40% / 2 dari 5 kolom) */}
@@ -275,7 +286,10 @@ export default function DashboardPengajuanPage() {
       {/* Floating Action Button (+) Pengajuan ATK Baru di Halaman Utama */}
       <button
         type="button"
-        onClick={() => setPengajuanAtkOpen(true)}
+        onClick={() => {
+          setSelectedStockItem(null);
+          setPengajuanAtkOpen(true);
+        }}
         className="fixed bottom-8 right-8 z-30 w-[84px] h-[84px] bg-[#1d1633] hover:bg-[#2c224d] active:scale-95 text-white rounded-[28px] shadow-2xl flex items-center justify-center transition-all cursor-pointer group hover:shadow-indigo-950/30"
         title="Ajukan Pengajuan ATK Baru"
         aria-label="Tambah Pengajuan ATK"
@@ -297,8 +311,12 @@ export default function DashboardPengajuanPage() {
       {/* Floating Form Card: Pengajuan ATK */}
       <PengajuanAtkModal
         isOpen={pengajuanAtkOpen}
-        onClose={() => setPengajuanAtkOpen(false)}
+        onClose={() => {
+          setPengajuanAtkOpen(false);
+          setSelectedStockItem(null);
+        }}
         catalogItems={catalogItems}
+        initialSelectedItem={selectedStockItem}
         onSuccess={() => {
           fetchRequests();
           fetchCatalog();

@@ -11,6 +11,7 @@ export interface StockCatalogCardProps {
   onStatusFilterChange: (filter: StockStatusFilter) => void;
   debouncedSearch: string;
   className?: string;
+  onSelectItem?: (item: AtkCatalogItem) => void;
 }
 
 export const StockCatalogCard: React.FC<StockCatalogCardProps> = ({
@@ -20,6 +21,7 @@ export const StockCatalogCard: React.FC<StockCatalogCardProps> = ({
   onStatusFilterChange,
   debouncedSearch,
   className = "",
+  onSelectItem,
 }) => {
   const [stockFilterOpen, setStockFilterOpen] = useState(false);
   const stockFilterRef = useRef<HTMLDivElement>(null);
@@ -66,7 +68,7 @@ export const StockCatalogCard: React.FC<StockCatalogCardProps> = ({
               Stok Barang ATK
             </h2>
             <p className="text-[11px] text-[#606c80] font-medium">
-              Monitoring persediaan master logistik kantor
+              Monitoring persediaan
             </p>
           </div>
         </div>
@@ -189,48 +191,93 @@ export const StockCatalogCard: React.FC<StockCatalogCardProps> = ({
             </p>
           </div>
         ) : (
-          items.map((item) => (
-            <div
-              key={item.id}
-              className="py-3.5 first:pt-1 last:pb-1 flex items-center justify-between gap-4 group hover:bg-slate-50/70 px-2 rounded-xl transition"
-            >
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2">
-                  <p className="text-sm font-bold text-slate-900 group-hover:text-[#FF7A00] transition-colors truncate">
-                    {item.name}
-                  </p>
-                  <StockBadge stock={item.stock} />
+          items.map((item) => {
+            const isReady = item.stock > 0;
+            return (
+              <div
+                key={item.id}
+                role="button"
+                tabIndex={0}
+                onClick={() => onSelectItem?.(item)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    onSelectItem?.(item);
+                  }
+                }}
+                className={`py-3 px-2.5 my-1 rounded-xl flex items-center justify-between gap-3 sm:gap-4 transition-all select-none border ${
+                  isReady
+                    ? "cursor-pointer bg-white hover:bg-orange-50/70 border-slate-100/80 hover:border-orange-200 shadow-2xs hover:shadow-xs active:scale-[0.99] group"
+                    : "cursor-not-allowed bg-slate-50/60 border-slate-100/60 opacity-60"
+                }`}
+                title={
+                  isReady
+                    ? `Klik / sentuh untuk langsung mengajukan ${item.name}`
+                    : `Stok ${item.name} sedang habis`
+                }
+              >
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-bold text-slate-900 group-hover:text-[#ff8f00] transition-colors truncate">
+                      {item.name}
+                    </p>
+                    <StockBadge stock={item.stock} />
+                  </div>
+                  {item.description ? (
+                    <p className="text-xs text-slate-500 mt-0.5 line-clamp-1">
+                      {item.description}
+                    </p>
+                  ) : (
+                    <p className="text-[11px] text-slate-400 mt-0.5 italic">
+                      Tanpa keterangan tambahan
+                    </p>
+                  )}
                 </div>
-                {item.description ? (
-                  <p className="text-xs text-slate-500 mt-0.5 line-clamp-1">
-                    {item.description}
-                  </p>
-                ) : (
-                  <p className="text-[11px] text-slate-400 mt-0.5 italic">
-                    Tanpa keterangan tambahan
-                  </p>
-                )}
-              </div>
 
-              <div className="text-right shrink-0">
-                <div className="inline-flex items-baseline gap-1">
-                  <span className="text-base font-black text-slate-900">
-                    {item.stock}
-                  </span>
-                  <span className="text-xs font-semibold text-slate-500 uppercase">
-                    {item.unit || "pcs"}
-                  </span>
+                <div className="flex items-center gap-2.5 sm:gap-3.5 shrink-0">
+                  <div className="text-right">
+                    <div className="inline-flex items-baseline gap-1">
+                      <span className="text-base font-black text-slate-900 group-hover:text-[#ff8f00] transition-colors">
+                        {item.stock}
+                      </span>
+                      <span className="text-xs font-semibold text-slate-500 uppercase">
+                        {item.unit || "pcs"}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Quick Action Button (+) */}
+                  {isReady && (
+                    <div
+                      className="w-8 h-8 rounded-lg bg-orange-50 border border-orange-200/70 text-[#ff8f00] group-hover:bg-[#ff8f00] group-hover:text-white group-hover:border-[#ff8f00] flex items-center justify-center transition-all shadow-2xs group-hover:scale-105 shrink-0"
+                      title={`Ajukan ${item.name}`}
+                      aria-label={`Ajukan ${item.name}`}
+                    >
+                      <svg
+                        className="w-4 h-4"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        strokeWidth={2.5}
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                      </svg>
+                    </div>
+                  )}
                 </div>
               </div>
-            </div>
-          ))
+            );
+          })
         )}
       </div>
 
       {/* Card Footer Summary */}
       <div className="pt-4 border-t border-slate-100 mt-auto flex items-center justify-between text-xs text-slate-500 font-medium shrink-0">
         <span>Total: <b className="text-slate-800">{items.length}</b> barang ATK</span>
-        <span className="text-[11px] text-slate-400">Pembaruan otomatis real-time</span>
+        <span className="text-[11px] text-[#ff8f00] font-semibold flex items-center gap-1.5">
+          <span className="inline-block w-1.5 h-1.5 rounded-full bg-[#ff8f00] animate-pulse" />
+          Klik barang untuk mengajukan
+        </span>
       </div>
     </div>
   );

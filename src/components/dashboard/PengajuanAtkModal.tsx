@@ -21,6 +21,7 @@ export interface PengajuanAtkModalProps {
   catalogItems?: AtkCatalogItem[];
   onSuccess?: () => void;
   soundEnabled?: boolean;
+  initialSelectedItem?: AtkCatalogItem | null;
 }
 
 export const PengajuanAtkModal: React.FC<PengajuanAtkModalProps> = ({
@@ -29,6 +30,7 @@ export const PengajuanAtkModal: React.FC<PengajuanAtkModalProps> = ({
   catalogItems = [],
   onSuccess,
   soundEnabled = true,
+  initialSelectedItem,
 }) => {
   const toast = useToast();
 
@@ -48,6 +50,38 @@ export const PengajuanAtkModal: React.FC<PengajuanAtkModalProps> = ({
   // Validation errors & loading
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
+
+  // Set initial selected item when opened via stock catalog item click or reset if empty
+  useEffect(() => {
+    if (isOpen) {
+      if (initialSelectedItem && initialSelectedItem.stock > 0) {
+        setItems([
+          {
+            id: `atk-row-${Date.now()}`,
+            atkItemId: initialSelectedItem.id,
+            itemName: initialSelectedItem.name,
+            unit: initialSelectedItem.unit || "pcs",
+            maxStock: initialSelectedItem.stock,
+            quantity: "1",
+          },
+        ]);
+        setErrors((prev) => {
+          const next = { ...prev };
+          Object.keys(next).forEach((k) => {
+            if (k.startsWith("item_") || k.startsWith("quantity_")) {
+              delete next[k];
+            }
+          });
+          return next;
+        });
+      } else if (!initialSelectedItem) {
+        setItems((prev) => {
+          if (prev.length === 1 && !prev[0].atkItemId) return prev;
+          return [{ id: "atk-row-1", atkItemId: "", itemName: "", unit: "pcs", maxStock: 0, quantity: "1" }];
+        });
+      }
+    }
+  }, [isOpen, initialSelectedItem]);
 
   // Close modal on Escape key
   useEffect(() => {
@@ -132,13 +166,17 @@ export const PengajuanAtkModal: React.FC<PengajuanAtkModalProps> = ({
 
   // Reset & Close
   const handleResetAndClose = () => {
-    if (
-      applicantName ||
-      department ||
-      position ||
-      items.some((i) => i.atkItemId) ||
-      notes
-    ) {
+    const isDirty = Boolean(
+      applicantName.trim() ||
+      department.trim() ||
+      position.trim() ||
+      notes.trim() ||
+      items.length > 1 ||
+      (items.length === 1 && items[0].quantity !== "1") ||
+      (items.length === 1 && items[0].atkItemId && !initialSelectedItem)
+    );
+
+    if (isDirty) {
       if (!window.confirm("Apakah Anda yakin ingin membatalkan pengisian formulir pengajuan ATK?")) {
         return;
       }
