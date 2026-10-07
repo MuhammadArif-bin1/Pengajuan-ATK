@@ -290,7 +290,7 @@ export default function DashboardPengajuanPage() {
           setSelectedStockItem(null);
           setPengajuanAtkOpen(true);
         }}
-        className="fixed bottom-8 right-8 z-30 w-[84px] h-[84px] bg-[#1d1633] hover:bg-[#2c224d] active:scale-95 text-white rounded-[28px] shadow-2xl flex items-center justify-center transition-all cursor-pointer group hover:shadow-indigo-950/30"
+        className="fixed bottom-8 right-8 z-30 w-[84px] h-[84px] bg-[#1d1633] hover:bg-[#2c224d] active:scale-95 text-white rounded-[12px] shadow-2xl flex items-center justify-center transition-all cursor-pointer group hover:shadow-indigo-950/30"
         title="Ajukan Pengajuan ATK Baru"
         aria-label="Tambah Pengajuan ATK"
       >
